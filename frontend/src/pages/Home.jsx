@@ -13,15 +13,15 @@ export default function Home() {
   const isDark = theme === "dark";
 
   const heroStyle = useMemo(
-    () => ({
-      backgroundImage:
-        'linear-gradient(to top, rgba(0,0,0,0.60), rgba(0,0,0,0.10)), url("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=60")',
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      minHeight: 280
-    }),
-    []
-  );
+  () => ({
+    backgroundImage:
+      'linear-gradient(to top, rgba(0,0,0,0.60), rgba(0,0,0,0.10)), url("https://lh3.googleusercontent.com/aida-public/AB6AXuC4DE62OFAtQHYBNcfSUjBHKdszlDKoKcQ3uaJkj5-FQ-iwVjU6CdZuKJ08cSbzaVR_7IPWOQPBC7GiZKxFVPRxVey183GVFCnZm7KcHNZE_4mbgwWk-u3yk7FLNd6JzeKCm2S3GpeyKNJEbClCDmHYIR_nLnbea69hQ1o0Y0LEnLa35NzuvRPlaQV8qOOPzlzjrBtVslvUC-hooTR8jdPpB59JhlMr-3l3HNSilhHBBsaUhgDd3UYwAfY-FDS_JfgmCe_yM4RMQFY")',
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    minHeight: 280
+  }),
+  []
+);
 
   return (
     <div
@@ -29,11 +29,8 @@ export default function Home() {
       style={{ minHeight: "100vh", width: "100%", overflowX: "hidden" }}
     >
       {/* Top Navbar */}
-      <nav
-        className={`sticky-top border-bottom ${isDark ? "bg-dark" : "bg-light"}`}
-        style={{ width: "100%" }}
-      >
-        <div className="container-fluid py-3">
+      <nav className={`sticky-top border-bottom ${isDark ? "bg-dark" : "bg-light"}`}>
+        <div className="container py-3">
           <div
             className="mx-auto d-flex align-items-center justify-content-between"
             style={{ maxWidth: 1200 }}
@@ -67,10 +64,10 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="container-fluid py-4">
+      <main className="container py-4">
         <div className="mx-auto" style={{ maxWidth: 1200 }}>
           {/* Hero */}
-          <div className="rounded- shadow-sm border overflow-hidden" style={heroStyle}>
+          <div className="rounded-4 shadow-sm border overflow-hidden" style={heroStyle}>
             <div className="p-4 p-md-5">
               <span
                 className="badge text-bg-success text-uppercase fw-semibold"
@@ -118,67 +115,67 @@ export default function Home() {
 
           {/* Why choose */}
           <section className="mt-5">
-            <h3 className="text-center fw-bold mb-4">Pourquoi choisir CampusRide ?</h3>
+          <h3 className="text-center fw-bold mb-4">Pourquoi choisir CampusRide ?</h3>
 
-            <div className="row g-3">
-              <div className="col-12">
-                <div className={`card border ${isDark ? "bg-dark text-light" : "bg-white"}`}>
-                  <div className="card-body d-flex gap-3">
-                    <div
-                      className="d-flex align-items-center justify-content-center rounded"
-                      style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
-                    >
-                      <span style={{ fontSize: 20 }}>✅</span>
-                    </div>
-                    <div>
-                      <h5 className="card-title mb-1 fw-bold">Sécurité</h5>
-                      <p className={`card-text mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
-                        Trajets réservés exclusivement à la communauté étudiante et au personnel.
-                      </p>
-                    </div>
+          <div className="row g-3">
+            <div className="col-12">
+              <div className={`card border ${isDark ? "bg-dark text-light" : "bg-white"}`}>
+                <div className="card-body d-flex gap-3">
+                  <div
+                    className="d-flex align-items-center justify-content-center rounded"
+                    style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
+                  >
+                    <i className="bi bi-shield-check" style={{ color: "#198754", fontSize: 22 }} />
                   </div>
-                </div>
-              </div>
-
-              <div className="col-12">
-                <div className={`card border ${isDark ? "bg-dark text-light" : "bg-white"}`}>
-                  <div className="card-body d-flex gap-3">
-                    <div
-                      className="d-flex align-items-center justify-content-center rounded"
-                      style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
-                    >
-                      <span style={{ fontSize: 20 }}>💰</span>
-                    </div>
-                    <div>
-                      <h5 className="card-title mb-1 fw-bold">Économie</h5>
-                      <p className={`card-text mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
-                        Partagez les frais d&apos;essence et de stationnement pour réduire votre budget transport.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-12">
-                <div className={`card border ${isDark ? "bg-dark text-light" : "bg-white"}`}>
-                  <div className="card-body d-flex gap-3">
-                    <div
-                      className="d-flex align-items-center justify-content-center rounded"
-                      style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
-                    >
-                      <span style={{ fontSize: 20 }}>🤝</span>
-                    </div>
-                    <div>
-                      <h5 className="card-title mb-1 fw-bold">Communauté</h5>
-                      <p className={`card-text mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
-                        Rencontrez d&apos;autres étudiants et facilitez vos trajets au quotidien.
-                      </p>
-                    </div>
+                  <div>
+                    <h5 className="card-title mb-1 fw-bold">Sécurité</h5>
+                    <p className={`card-text mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+                      Trajets réservés exclusivement à la communauté étudiante et au personnel de La Cité.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
+
+            <div className="col-12">
+              <div className={`card border ${isDark ? "bg-dark text-light" : "bg-white"}`}>
+                <div className="card-body d-flex gap-3">
+                  <div
+                    className="d-flex align-items-center justify-content-center rounded"
+                    style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
+                  >
+                    <i className="bi bi-cash-coin" style={{ color: "#198754", fontSize: 22 }} />
+                  </div>
+                  <div>
+                    <h5 className="card-title mb-1 fw-bold">Économie</h5>
+                    <p className={`card-text mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+                      Partagez les frais d&apos;essence et de stationnement pour réduire votre budget transport.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-12">
+              <div className={`card border ${isDark ? "bg-dark text-light" : "bg-white"}`}>
+                <div className="card-body d-flex gap-3">
+                  <div
+                    className="d-flex align-items-center justify-content-center rounded"
+                    style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
+                  >
+                    <i className="bi bi-leaf" style={{ color: "#198754", fontSize: 22 }} />
+                  </div>
+                  <div>
+                    <h5 className="card-title mb-1 fw-bold">Écologie</h5>
+                    <p className={`card-text mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+                      Réduisez l&apos;empreinte carbone du campus en limitant le nombre de voitures sur la route.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
           {/* Footer */}
           <footer className="text-center mt-5 pt-4">
@@ -188,7 +185,8 @@ export default function Home() {
               <span>Ottawa, Canada</span>
             </div>
             <p className={`mt-2 small ${isDark ? "text-secondary" : "text-muted"}`}>
-              © {new Date().getFullYear()} CampusRide. Tous droits réservés. Conditions d&apos;utilisation | Confidentialité
+              © {new Date().getFullYear()} CampusRide. Tous droits réservés. Conditions d&apos;utilisation |
+              Confidentialité
             </p>
 
             <div className="d-flex justify-content-center mt-4">
