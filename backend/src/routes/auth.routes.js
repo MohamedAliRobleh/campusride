@@ -10,56 +10,57 @@ const router = Router();
   RÔLE  : Inscription d’un nouvel utilisateur
 */
 router.post("/register", async (req, res) => {
-    try {
-        const { prenom, nom, email, motDePasse, role } = req.body;
+  console.log("=== REGISTER BODY ===", req.body);
+  try {
+    const { prenom, nom, email, motDePasse, role } = req.body;
 
-        if (!prenom || !nom || !email || !motDePasse) {
-            return res.status(400).json({
-                error: "Tous les champs sont obligatoires",
-            });
-        }
-
-        // 3️ Vérifier si l’email existe déjà dans la base de données
-        const userExists = await pool.query(
-            "SELECT id FROM utilisateurs WHERE email = $1",
-            [email]
-        );
-        if (userExists.rows.length > 0) {
-            return res.status(409).json({
-                error: "Cet email est déjà utilisé",
-            });
-        }
-
-        // Hasher  le mot de passe avant de le stocker
-        const motDePasseHash = await bcrypt.hash(motDePasse, 10);
-
-        // Insertion du nouvel utilisateur dans la base
-        const result = await pool.query(
-            `
-      INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe_hash, role)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, prenom, nom, email, role, actif, cree_le
-      `,
-            [
-                prenom,
-                nom,
-                email,
-                motDePasseHash,
-                "PASSAGER", // rôle par défaut
-            ]
-        );
-        return res.status(201).json({
-            message: "Inscription réussie",
-            utilisateur: result.rows[0],
-        });
-
-    } catch (error) {
-        // 7 Gestion des erreurs serveur
-        console.error("Erreur register :", error);
-        return res.status(500).json({
-            error: "Erreur serveur lors de l'inscription",
-        });
+    if (!prenom || !nom || !email || !motDePasse) {
+      return res.status(400).json({
+        error: "Tous les champs sont obligatoires",
+      });
     }
+
+    // 3️ Vérifier si l’email existe déjà dans la base de données
+    const userExists = await pool.query(
+      "SELECT id FROM utilisateurs WHERE email = $1",
+      [email]
+    );
+    if (userExists.rows.length > 0) {
+      return res.status(409).json({
+        error: "Cet email est déjà utilisé",
+      });
+    }
+
+    // Hasher  le mot de passe avant de le stocker
+    // Hasher le mot de passe avant de le stocker
+    const motDePasseHash = await bcrypt.hash(motDePasse, 10);
+
+    // Construire nom_complet (ta DB l’exige NOT NULL)
+    const nom_complet = `${prenom} ${nom}`.trim();
+
+    // Insertion du nouvel utilisateur dans la base
+    const result = await pool.query(
+      `
+  INSERT INTO utilisateurs (prenom, nom, nom_complet, email, mot_de_passe_hash, role)
+  VALUES ($1, $2, $3, $4, $5, 'PASSAGER')
+  RETURNING id, prenom, nom, nom_complet, email, role, actif, cree_le;
+  `,
+      [prenom, nom, nom_complet, email, motDePasseHash]
+    );
+
+    return res.status(201).json({
+      message: "Inscription réussie",
+      utilisateur: result.rows[0],
+    });
+
+
+  } catch (error) {
+    // 7 Gestion des erreurs serveur
+    console.error("Erreur register :", error);
+    return res.status(500).json({
+      error: "Erreur serveur lors de l'inscription",
+    });
+  }
 });
 
 
