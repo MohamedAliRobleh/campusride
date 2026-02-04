@@ -25,19 +25,41 @@ export default function Login() {
   const [error, setError] = useState("");
 
   // ===== Submit (exemple) =====
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
+    if (!email || !motDePasse) {
+      setError("Email et mot de passe obligatoires.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      // TODO: ton appel API login ici
-      // await login(email, motDePasse);
+      const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, motDePasse }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setError(data?.error || "Connexion impossible. Vérifiez vos informations.");
+        setLoading(false);
+        return;
+      }
+
+      // data = { message, user, token }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       setLoading(false);
-      navigate("/"); // ou dashboard
+      navigate("/"); // ou "/dashboard"
     } catch (err) {
+      console.error("LOGIN FETCH ERROR:", err);
       setLoading(false);
-      setError("Connexion impossible. Vérifiez vos informations.");
+      setError("Erreur réseau/serveur. Vérifiez que le backend est lancé.");
     }
   };
 

@@ -12,9 +12,9 @@ const router = Router();
 router.post("/register", async (req, res) => {
   console.log("=== REGISTER BODY ===", req.body);
   try {
-    const { prenom, nom, email, motDePasse, role } = req.body;
+    const { prenom, nom, email, motDePasse } = req.body;
 
-    if (!prenom || !nom || !email || !motDePasse) {
+    if (!prenom || !nom || !email || !motDePasse ) {
       return res.status(400).json({
         error: "Tous les champs sont obligatoires",
       });
@@ -32,20 +32,19 @@ router.post("/register", async (req, res) => {
     }
 
     // Hasher  le mot de passe avant de le stocker
-    // Hasher le mot de passe avant de le stocker
     const motDePasseHash = await bcrypt.hash(motDePasse, 10);
 
     // Construire nom_complet (ta DB l’exige NOT NULL)
-    const nom_complet = `${prenom} ${nom}`.trim();
+    // const nom_complet = `${prenom} ${nom}`.trim();
 
     // Insertion du nouvel utilisateur dans la base
     const result = await pool.query(
       `
-  INSERT INTO utilisateurs (prenom, nom, nom_complet, email, mot_de_passe_hash, role)
-  VALUES ($1, $2, $3, $4, $5, 'PASSAGER')
-  RETURNING id, prenom, nom, nom_complet, email, role, actif, cree_le;
+  INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe_hash, role)
+  VALUES ($1, $2, $3, $4, 'PASSAGER')
+  RETURNING id, prenom, nom, email, role, actif, cree_le;
   `,
-      [prenom, nom, nom_complet, email, motDePasseHash]
+      [prenom, nom, email, motDePasseHash]
     );
 
     return res.status(201).json({

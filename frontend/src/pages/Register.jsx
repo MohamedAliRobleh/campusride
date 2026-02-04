@@ -31,21 +31,40 @@ export default function Register() {
   const [error, setError] = useState("");
 
   // ===== Submit (exemple) =====
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    // TODO: ta validation / API
-    setLoading(true);
-    try {
-      // await register(...)
-      setLoading(false);
-      navigate("/login");
-    } catch (err) {
-      setLoading(false);
-      setError("Inscription impossible. Vérifiez les informations.");
+  try {
+    const res = await fetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prenom,
+        nom,
+        email,
+        motDePasse,
+      }),
+    });
+
+    console.log("STATUS:", res.status);
+
+    const data = await res.json();
+    console.log("DATA:", data);
+
+    if (!res.ok) {
+      setError(data.error || "Inscription impossible");
+      return;
     }
-  };
+
+    navigate("/Login");
+  } catch (err) {
+    console.error("FETCH ERROR:", err);
+    setError("Erreur réseau");
+  }
+};
+
+
 
   return (
     <div className={isDark ? "bg-dark text-light" : "bg-light text-dark"} style={{ minHeight: "100vh" }}>
