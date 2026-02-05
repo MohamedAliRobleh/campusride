@@ -55,7 +55,7 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       setLoading(false);
-      navigate("/"); // ou "/dashboard"
+      navigate("/passager"); // ou "/dashboard"
     } catch (err) {
       console.error("LOGIN FETCH ERROR:", err);
       setLoading(false);
