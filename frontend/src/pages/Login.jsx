@@ -179,7 +179,7 @@ export default function Login() {
       {/* ================= FOOTER (réutilisable) ================= */}
       <Footer
         isDark={isDark}
-        style={{ backgroundColor: "#8ac55a" }}
+        style={{ backgroundColor: "#268249 " }}
       />
 
     </div>

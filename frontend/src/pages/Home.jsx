@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import heroImage from "../assets/collegelacite.jpg";
+import ImageHome from "../assets/collegelacite.jpg";
 import Header from "../components/Header.jsx"
 
 export default function Home() {
@@ -16,7 +16,7 @@ export default function Home() {
 
   const heroStyle = useMemo(
     () => ({
-      backgroundImage: `linear-gradient(to top, rgba(27, 26, 26, 0.6), rgba(0,0,0,0.10)), url(${heroImage})`,
+      backgroundImage: `linear-gradient(to top, rgba(27, 26, 26, 0.6), rgba(0,0,0,0.10)), url(${ImageHome})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
       minHeight: 280,
