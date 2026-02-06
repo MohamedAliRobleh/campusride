@@ -55,22 +55,21 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
 
             <div className="collapse navbar-collapse" id="privateNavbar">
               {/* LEFT */}
-              <ul className="navbar-nav me-auto align-items-lg-center gap-lg-4">
-                <li className="nav-item">
-                  <Link className="nav-link fw-semibold d-flex align-items-center gap-2" to="/passager/dashboard">
-                    <i className="bi bi-search fs-5 opacity-75" />
-                    rechercher
-                  </Link>
-                </li>
+              <ul className="navbar-nav me-auto gap-lg-3">
+              <li className="nav-item">
+                <Link className="nav-link" to="/search">
+                  <i className="bi bi-search me-1" />
+                  Rechercher
+                </Link>
+              </li>
 
-                <li className="nav-item">
-                  <Link className="nav-link fw-semibold d-flex align-items-center gap-2" to="/passager/annoncer">
-                    <i className="bi bi-plus-circle fs-5" />
-
-                    annoncer
-                  </Link>
-                </li>
-              </ul>
+              <li className="nav-item">
+                <Link className="nav-link" to="/post">
+                  <i className="bi bi-car-front me-1" />
+                  Publier
+                </Link>
+              </li>
+            </ul>
 
               {/* RIGHT */}
               <ul className="navbar-nav align-items-lg-center gap-lg-3 list-unstyled ps-0 mb-0">
