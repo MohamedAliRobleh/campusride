@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../DB/db.js";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
+import { sendResetPasswordEmail } from "../utils/mailer.js";
+import crypto from "crypto";
+
+
 const router = Router();
 
 /*
@@ -131,6 +135,117 @@ router.get("/me", requireAuth, async (req, res) => {
   // req.user vient du token
   return res.json({ message: "OK", user: req.user });
 });
+
+// router.get("/test-mail", async (req, res) => {
+//   try {
+//     await sendResetPasswordEmail(
+//       "test@gmail.com",
+//       "http://localhost:5173/reset-password?token=TEST"
+//     );
+//     res.json({ message: "Email envoyé (check Mailtrap inbox)" });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ error: "Erreur envoi mail" });
+//   }
+// });
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email obligatoire" });
+    }
+
+    const result = await pool.query(
+      "SELECT id FROM utilisateurs WHERE email = $1",
+      [email]
+    );
+
+    // Message générique (anti-enumeration)
+    if (result.rows.length === 0) {
+      return res.json({ message: "Si le compte existe, un email a été envoyé." });
+    }
+
+    const userId = result.rows[0].id;
+
+    // Générer token + hash
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiration = new Date(Date.now() + 60 * 60 * 1000); // 1h
+
+    await pool.query(
+      `
+      UPDATE utilisateurs
+      SET reset_password_token_hash = $1,
+          reset_password_expires_at = $2
+      WHERE id = $3
+      `,
+      [tokenHash, expiration, userId]
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    await sendResetPasswordEmail(email, resetLink);
+
+    return res.json({ message: "Si le compte existe, un email a été envoyé." });
+  } catch (err) {
+    console.error("Erreur forgot-password:", err);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: "Token et mot de passe obligatoires" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: "Mot de passe trop court (min 8 caractères)" });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const result = await pool.query(
+      `
+      SELECT id
+      FROM utilisateurs
+      WHERE reset_password_token_hash = $1
+        AND reset_password_expires_at > NOW()
+      `,
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Lien invalide ou expiré" });
+    }
+
+    const userId = result.rows[0].id;
+
+    const motDePasseHash = await bcrypt.hash(newPassword, 10);
+
+    await pool.query(
+      `
+      UPDATE utilisateurs
+      SET mot_de_passe_hash = $1,
+          reset_password_token_hash = NULL,
+          reset_password_expires_at = NULL
+      WHERE id = $2
+      `,
+      [motDePasseHash, userId]
+    );
+
+    return res.json({ message: "Mot de passe réinitialisé avec succès" });
+  } catch (err) {
+    console.error("Erreur reset-password:", err);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+
+
 
 export default router;
 

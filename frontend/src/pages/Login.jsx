@@ -25,7 +25,7 @@ export default function Login() {
   const [error, setError] = useState("");
 
   // ===== Submit (exemple) =====
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -111,7 +111,7 @@ export default function Login() {
             </div>
 
             {/* ✅ Formulaire identique */}
-            <form onSubmit={handleSubmit}  className="d-grid gap-3 p-4 rounded-4 shadow-sm border bg-dark bg-opacity-10 border-secondary">
+            <form onSubmit={handleSubmit} className="d-grid gap-3 p-4 rounded-4 shadow-sm border bg-dark bg-opacity-10 border-secondary">
               {error && (
                 <div className="alert alert-danger py-2 mb-0" role="alert">
                   {error}
@@ -154,9 +154,14 @@ export default function Login() {
               </div>
 
               <div className="text-end">
-                <button type="button" className="btn btn-link p-0">
+                <button
+                  type="button"
+                  className="btn btn-link p-0"
+                  onClick={() => navigate("/forgot-password")}
+                >
                   Mot de passe oublié ?
                 </button>
+
               </div>
 
               <button type="submit" className="btn btn-success btn-lg" disabled={loading}>
