@@ -2,10 +2,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
-
-
-
-
 export default function HeaderPrivate({ isDark, onToggleTheme }) {
   const navigate = useNavigate();
 
@@ -35,7 +31,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
         <nav className={`navbar navbar-expand-lg ${isDark ? "navbar-dark" : "navbar-light"}`}>
           <div className="container-fluid px-4">
             {/* Logo */}
-            <Link className="navbar-brand fw-bold d-flex align-items-center gap-2" to="/passager/dashboard">
+            <Link className="navbar-brand fw-bold d-flex align-items-center gap-2" to="/passager">
               <span style={{ fontSize: 20 }}>🚗</span>
               CampusRide
             </Link>
@@ -87,6 +83,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     type="button"
+                    
                   >
                     <span className="fw-semibold">aide</span>
                     <i className="bi bi-chevron-down small opacity-75" />
@@ -125,12 +122,13 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     type="button"
+                    
                   >
                     <span
                       className="rounded-circle border d-flex align-items-center justify-content-center"
                       style={{ width: 32, height: 32 }}
                     >
-                      <span className="fw-semibold">{userInitial}</span>
+                      <span className="fw-semibold" onClick={() => navigate("/profil")}>{userInitial}</span>
                     </span>
 
                     <span className="fw-semibold">{userName}</span>
@@ -143,7 +141,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                         className="mx-auto mb-1 rounded-circle border d-flex align-items-center justify-content-center"
                         style={{ width: 48, height: 48 }}
                       >
-                        <span className="fw-bold">{userInitial}</span>
+                        <span className="fw-bold" >{userInitial}</span>
                       </div>
                       <div className="fw-semibold">{userName}</div>
                       <div className="small text-muted">{user?.email || ""}</div>
@@ -154,9 +152,10 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                     </li>
 
                     <li>
-                      <button className="dropdown-item d-flex align-items-center gap-2" type="button">
+                      <button className="dropdown-item d-flex align-items-center gap-2" type="button" onClick={() => navigate("/profil")}>
                         <i className="bi bi-gear" />
-                        paramètres
+                        paramètres 
+                        
                       </button>
                     </li>
 
