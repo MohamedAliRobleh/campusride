@@ -7,12 +7,12 @@ export default defineConfig({
   server: {
     proxy: {
       "/auth": {
-        target: "http://localhost:5000", 
+        target: "http://localhost:8000", 
         changeOrigin: true,
         secure: false,
       },
       "/utilisateurs": {
-        target: "http://localhost:5000", 
+        target: "http://localhost:8000", 
         changeOrigin: true,
         secure: false,
       },
