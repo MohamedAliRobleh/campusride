@@ -2,10 +2,12 @@ import express from "express";
 import compression from "compression";
 import helmet from "helmet";
 import cors from "cors";
+import vehiculesRoutes from "./routes/vehicules.routes.js";
 
 // routes
 import authRoutes from "./routes/auth.routes.js";
 import utilisateursRoutes from "./routes/utilisateurs.routes.js";
+import trajetsRoutes from "./routes/trajets.routes.js";
 
 
 const app = express();
@@ -20,5 +22,7 @@ app.use(express.static("public"));
 // Brancher les routes
 app.use("/auth", authRoutes);
 app.use("/utilisateurs", utilisateursRoutes);
+app.use("/trajets", trajetsRoutes);
+app.use("/vehicules", vehiculesRoutes);
 
 export default app;

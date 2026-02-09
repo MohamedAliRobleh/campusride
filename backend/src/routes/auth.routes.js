@@ -136,18 +136,6 @@ router.get("/me", requireAuth, async (req, res) => {
   return res.json({ message: "OK", user: req.user });
 });
 
-// router.get("/test-mail", async (req, res) => {
-//   try {
-//     await sendResetPasswordEmail(
-//       "test@gmail.com",
-//       "http://localhost:5173/reset-password?token=TEST"
-//     );
-//     res.json({ message: "Email envoyé (check Mailtrap inbox)" });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({ error: "Erreur envoi mail" });
-//   }
-// });
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
