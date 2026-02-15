@@ -55,7 +55,15 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       setLoading(false);
-      navigate("/passager"); // ou "/dashboard"
+      //navigate("/passager"); // ou "/dashboard"
+      // Redirection selon role
+if (data?.user?.role === "ADMIN") {
+  navigate("/admin");
+// } else if (data?.user?.role === "CONDUCTEUR") {
+//   navigate("/conducteur"); // adapte si ta route s'appelle autrement
+} else {
+  navigate("/passager");
+}
     } catch (err) {
       console.error("LOGIN FETCH ERROR:", err);
       setLoading(false);

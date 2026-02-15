@@ -13,6 +13,9 @@ import ProfilInfos from "./pages/Profil/ProfilInfos.jsx";
 import ProfilVoitures from "./pages/Profil/ProfilVoitures.jsx";
 import ProfilParametres from "./pages/Profil/ProfilParametres.jsx";
 
+import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
+import AdminRoute from "./components/AdminRoute.jsx";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -37,7 +40,14 @@ export default function App() {
       <Route path="/passager" element={<Dashboard />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
 
       <Route path="/profil" element={<ProfilLayout />}>
         <Route index element={<ProfilInfos />} />
