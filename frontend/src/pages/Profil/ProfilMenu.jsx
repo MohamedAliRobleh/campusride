@@ -94,7 +94,11 @@ export default function ProfilMenu({ isDark, user }) {
           </div>
           <div className="col-6">
             <div className="small fw-semibold">Compte conducteur</div>
-            <div className={isDark ? "text-secondary small" : "text-muted small"}>Selon voiture</div>
+            
+<div className={isDark ? "text-secondary small" : "text-muted small"}>
+  {user?.role === "CONDUCTEUR" ? "Actif" : "Inactif"}
+</div>
+
           </div>
         </div>
 

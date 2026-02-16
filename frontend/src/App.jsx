@@ -7,11 +7,24 @@ import Dashboard from "./pages/Passager/Dashboard.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 
+// Passager 
+import Search from "./pages/Passager/Search.jsx";
+import Post from "./pages/Passager/Post.jsx";
+import Trajets from "./pages/Passager/Trajets.jsx";
+import Aide from "./pages/Passager/Aide.jsx";
+import MesReservations from "./pages/Passager/MesReservations.jsx";
+
+
+//Conducteur
+import MesTrajets from "./pages/Conducteur/MesTrajets.jsx";
+import ReservationsRecues from "./pages/Conducteur/ReservationsRecues.jsx";
+
 
 import ProfilLayout from "./pages/Profil/ProfilLayout.jsx";
 import ProfilInfos from "./pages/Profil/ProfilInfos.jsx";
 import ProfilVoitures from "./pages/Profil/ProfilVoitures.jsx";
 import ProfilParametres from "./pages/Profil/ProfilParametres.jsx";
+
 
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
@@ -38,6 +51,18 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/passager" element={<Dashboard />} />
+      <Route path="/passager/search" element={<Search />} />
+      <Route path="/passager/post" element={<Post />} />
+      <Route path="/passager/trajets" element={<Trajets />} />
+      <Route path="/passager/aide" element={<Aide />} />
+      <Route path="/passager/mes-reservations" element={<MesReservations />} />
+
+    
+      <Route path="/conducteur/mes-trajets" element={<MesTrajets />} />
+      <Route path="/conducteur/reservations-recues" element={<ReservationsRecues />}
+/>
+
+
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route
