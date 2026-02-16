@@ -26,61 +26,49 @@ export default function Dashboard() {
     }
   }, []);
 
+  const role = user?.role;
+  const isConducteur = role === "CONDUCTEUR";
+
   // ===== Hero image (URL conservée) =====
   const heroImg =
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCNs7aTIYts1akY-gqVVZ6yGYVoda9yXu4T66Wg06pJCv5__XmCD2KKqTV4fGxBl1PrUOLoIS7rQOnnte_RerZfo2sW5nE1pvY-q-tPHqPLjxItMOyuXXDqfSMW3IAEc0HfmhyqzBh6-0CoU9Z57CT-NaQ_WdrjyWAnrinRJo9PMVSfJcBCpVCCwZW-sFZN6EeK9BYoLywO_vajRmyUcq024B5BvhuQO1WtoSHTyTKY-ozBgkm5Q7Kunolc-OGL8J_jPvdS-LCITf4";
+    "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1600&auto=format&fit=crop";
 
   // ===== Form recherche =====
   const [depart, setDepart] = useState("");
   const [destination, setDestination] = useState("");
-  const [dateLabel, setDateLabel] = useState("Aujourd'hui");
+  const [date, setDate] = useState("");
+
 
   const handleSearch = (e) => {
     e.preventDefault();
-    navigate("/passager/rechercher", { state: { depart, destination, dateLabel } });
+
+    // 🔎 Validation simple
+    if (!depart.trim() || !destination.trim() || !date) {
+      return; // on ne fait rien
+    }
+
+    navigate("/passager/search", {
+      state: { depart, destination, date }
+    });
   };
 
-  const trips = useMemo(
-    () => [
-      {
-        id: "t1",
-        depart: "Orléans",
-        destination: "Campus",
-        heureDepart: "08:30",
-        heureArrivee: "09:05",
-        badge: { text: "Disponible", variant: "success" },
-        conducteur: "Marc Lemieux",
-        note: "4.8",
-        avatar:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuA0ygwXPN_m-JdTjdmg-zi-uUYHLuYIvuIAHvAU9xao5Vut28im2Wpho3t_mBl81tzGtPjeKTzHrTQHX5aEnA4-DPgmPhhvE5wuQy4beEp6D_bkvSMdDIkZeH4mznwBFKT1wGqWSzMNFWTh2jho3FVRbQGh9JLqHyWEkR5OKe_CpXmEhvQZqes9Vj24_qXE64hibJR34s6VJl8pnV6u8HSsAwE_tIS6JKlcZEbt0woKLCx-3GIWUTdigwI7WexkL2KJ7JooTUTBd4c",
-      },
-      {
-        id: "t2",
-        depart: "Gatineau",
-        destination: "Pavillon",
-        heureDepart: "10:15",
-        heureArrivee: "10:45",
-        badge: { text: "3 places", variant: "warning" },
-        conducteur: "Sarah Tremblay",
-        note: "5.0",
-        avatar:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCNs7aTIYts1akY-gqVVZ6yGYVoda9yXu4T66Wg06pJCv5__XmCD2KKqTV4fGxBl1PrUOLoIS7rQOnnte_RerZfo2sW5nE1pvY-q-tPHqPLjxItMOyuXXDqfSMW3IAEc0HfmhyqzBh6-0CoU9Z57CT-NaQ_WdrjyWAnrinRJo9PMVSfJcBCpVCCwZW-sFZN6EeK9BYoLywO_vajRmyUcq024B5BvhuQO1WtoSHTyTKY-ozBgkm5Q7Kunolc-OGL8J_jPvdS-LCITf4",
-      },
-      {
-        id: "t3",
-        depart: "Kanata",
-        destination: "Campus",
-        heureDepart: "12:30",
-        heureArrivee: "13:10",
-        badge: { text: "2 places", variant: "warning" },
-        conducteur: "Kevin Martin",
-        note: "4.5",
-        avatar:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuB3tvhXJYK2MDDELct9S7lL_2lN5luhGb8rTxp2lsVOcU3VPRa2xLOnTfoqutY7BXQmwSs9pqtOt9g7z61EhOjIgJ8zSotHuK0S0wXQiMWrK3gWVrxA0wbET9gH8Gf4vW60zCCokSb6X7d9GtiLQDAoGyZroNdzqN5rT5GjTOUFN_lzI6YqGDvF7sUzAhjRRoyOYLOhgXWFUFE7Hm12_au9KiItgIRSW8u4bjU3GOMRwc1NRBvgwFgP1u2HvHrry64HbLcPM4YbEbk",
-      },
-    ],
-    []
-  );
+
+  const [trips, setTrips] = useState([]);
+
+  useEffect(() => {
+    const fetchPopulaires = async () => {
+      try {
+        const response = await fetch("/trajets/populaires");
+        const data = await response.json();
+        setTrips(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchPopulaires();
+  }, []);
+
 
   const badgeClass = (variant) => {
     if (variant === "warning") return "text-bg-warning";
@@ -123,93 +111,195 @@ export default function Dashboard() {
 
           {/* ✅ Layout WEB responsive :
               - Mobile: 1 colonne
-              - LG+: 2 colonnes (Hero/Search à gauche, Promo + Trips à droite)
+              - LG+: 2 colonnes (Hero/Search à gauche, Espace Conducteur + Trips à droite)
           */}
           <div className="row g-4">
-            {/* LEFT (Hero + Search) */}
+            {/* LEFT (Hero + Search Premium) */}
             <div className="col-12 col-lg-6">
-              <section
-                className="position-relative overflow-hidden rounded-4 border shadow-sm"
-                style={{ minHeight: 420 }}
-              >
-                <img
-                  src={heroImg}
-                  alt="Winter road"
-                  className="w-100 h-100 position-absolute top-0 start-0"
-                  style={{ objectFit: "cover" }}
-                />
+
+              <section className="position-relative overflow-hidden rounded-4 shadow-sm">
+
+                {/* IMAGE BACKGROUND */}
                 <div
-                  className="position-absolute top-0 start-0 w-100 h-100"
                   style={{
-                    background:
-                      "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.60) 100%)",
+                    height: "630px",
+                    backgroundImage: `url(${heroImg})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    borderRadius: "16px"
                   }}
-                />
-
-                <div className="position-relative p-3 p-md-4 d-flex flex-column justify-content-end h-100">
-                  <h1 className="text-white fw-bold mb-3" style={{ letterSpacing: "-0.3px" }}>
-                    Voyagez ensemble au Collège
-                  </h1>
-
-                  <form
-                    onSubmit={handleSearch}
-                    className={`p-3 rounded-4 shadow-sm border ${isDark ? "bg-dark bg-opacity-75 border-secondary" : "bg-white border-light"
-                      }`}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      borderRadius: "16px",
+                      background: "linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45))"
+                    }}
+                    className="d-flex flex-column justify-content-start"
                   >
-                    <div className="row g-2">
-                      <div className="col-12">
-                        <div className="input-group input-group-lg">
-                          <span className={`input-group-text ${inputGroupTextClass}`}>
-                            <i className="bi bi-geo-alt" />
-                          </span>
-                          <input
-                            className={`form-control ${inputClass}`}
-                            placeholder="Départ"
-                            value={depart}
-                            onChange={(e) => setDepart(e.target.value)}
-                          />
-                        </div>
-                      </div>
 
-                      <div className="col-12">
-                        <div className="input-group input-group-lg">
-                          <span className={`input-group-text ${inputGroupTextClass}`}>
-                            <i className="bi bi-pin-map" />
-                          </span>
-                          <input
-                            className={`form-control ${inputClass}`}
-                            placeholder="Destination"
-                            value={destination}
-                            onChange={(e) => setDestination(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="col-12 col-md-7">
-                        <div className="input-group input-group-lg">
-                          <span className={`input-group-text ${inputGroupTextClass}`}>
-                            <i className="bi bi-calendar-event" />
-                          </span>
-                          <input
-                            className={`form-control ${inputClass}`}
-                            placeholder="Aujourd'hui"
-                            value={dateLabel}
-                            onChange={(e) => setDateLabel(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="col-12 col-md-5 d-grid">
-                        <button type="submit" className="btn btn-success btn-lg">
-                          <i className="bi bi-search me-2" />
-                          Rechercher
-                        </button>
-                      </div>
+                    {/* TEXTE PLUS HAUT */}
+                    <div className="text-white px-4 pt-5 mt-3">
+                      <h1 className="fw-bold mb-2" style={{ fontSize: "2.2rem" }}>
+                        Voyagez ensemble au Collège
+                      </h1>
+                      <p className="lead mb-0">
+                        Covoiturage étudiant simple, rapide et sécurisé
+                      </p>
                     </div>
-                  </form>
+
+                    {/* FORM ORIGINAL RESTAURÉ */}
+                    <div className="mt-auto px-4 pb-4">
+                      <form
+                        onSubmit={handleSearch}
+                        className={`p-4 rounded-4 shadow-lg border ${isDark ? "bg-dark bg-opacity-75 border-secondary" : "bg-white border-light"
+                          }`}
+                      >
+                        <div className="row g-3">
+
+                          {/* ================= DÉPART ================= */}
+                          <div className="col-12 position-relative">
+                            <label className="small fw-semibold mb-1">Départ</label>
+
+                            <div className="input-group input-group-lg">
+
+                              <span className={`input-group-text ${inputGroupTextClass}`}>
+                                <i className="bi bi-geo-alt-fill text-success" />
+                              </span>
+
+                              <input
+                                className={`form-control ${inputClass}`}
+                                placeholder="Ma position, Collège La Cité, 1485 Caldwell..."
+                                value={depart}
+                                onChange={(e) => setDepart(e.target.value)}
+                              />
+
+                              {/* 📍 GPS */}
+                              <button
+                                type="button"
+                                className="btn btn-outline-success"
+                                onClick={() => {
+                                  if (navigator.geolocation) {
+                                    navigator.geolocation.getCurrentPosition(() => {
+                                      setDepart("Ma position actuelle");
+                                    });
+                                  }
+                                }}
+                              >
+                                <i className="bi bi-crosshair"></i>
+                              </button>
+                            </div>
+
+                            {/* Shortcut La Cité */}
+                            <div className="mt-2 d-flex gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-success-subtle text-success rounded-pill"
+                                onClick={() => setDepart("Collège La Cité")}
+                              >
+                                📍 Collège La Cité
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* ================= INVERSION ================= */}
+                          <div className="col-12 text-center">
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary rounded-circle"
+                              onClick={() => {
+                                const temp = depart;
+                                setDepart(destination);
+                                setDestination(temp);
+                              }}
+                            >
+                              <i className="bi bi-arrow-down-up"></i>
+                            </button>
+                          </div>
+
+                          {/* ================= DESTINATION ================= */}
+                          <div className="col-12 position-relative">
+                            <label className="small fw-semibold mb-1">Destination</label>
+
+                            <div className="input-group input-group-lg">
+
+                              <span className={`input-group-text ${inputGroupTextClass}`}>
+                                <i className="bi bi-pin-map-fill text-success" />
+                              </span>
+
+                              <input
+                                className={`form-control ${inputClass}`}
+                                placeholder="Où allez-vous ?"
+                                value={destination}
+                                onChange={(e) => setDestination(e.target.value)}
+                              />
+
+                              <button
+                                type="button"
+                                className="btn btn-outline-success"
+                                onClick={() => {
+                                  if (navigator.geolocation) {
+                                    navigator.geolocation.getCurrentPosition(() => {
+                                      setDestination("Ma position actuelle");
+                                    });
+                                  }
+                                }}
+                              >
+                                <i className="bi bi-crosshair"></i>
+                              </button>
+                            </div>
+
+                            <div className="mt-2 d-flex gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-success-subtle text-success rounded-pill"
+                                onClick={() => setDestination("Collège La Cité")}
+                              >
+                                📍 Collège La Cité
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* ================= DATE ================= */}
+                          <div className="col-12 col-md-7">
+                            <label className="small fw-semibold mb-1">Date</label>
+                            <div className="input-group input-group-lg">
+                              <span className={`input-group-text ${inputGroupTextClass}`}>
+                                <i className="bi bi-calendar-event" />
+                              </span>
+                              <input
+                                type="date"
+                                className={`form-control ${inputClass}`}
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          {/* ================= BOUTON ================= */}
+                          <div className="col-12 col-md-5 d-grid">
+                            <button
+                              type="submit"
+                              className="btn btn-success btn-lg fw-semibold rounded-4 shadow-sm"
+                            >
+                              <i className="bi bi-search me-2" />
+                              Rechercher
+                            </button>
+                          </div>
+
+                        </div>
+                      </form>
+
+                    </div>
+
+                  </div>
                 </div>
+
               </section>
+
+
             </div>
+
 
             {/* RIGHT (Promo + Trips) */}
             <div className="col-12 col-lg-6">
@@ -227,19 +317,38 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex-grow-1">
-                    <h3 className="h5 fw-bold mb-1">Devenir Conducteur</h3>
-                    <p className={isDark ? "text-secondary mb-3" : "text-muted mb-3"} style={{ lineHeight: 1.35 }}>
-                      Partagez vos trajets en quelques clics et contribuez à une mobilité plus accessible pour la communauté étudiante de La Cité.
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn-outline-success fw-semibold"
-                      onClick={() => navigate("/passager/aide")}
-                    >
-                      En savoir plus <i className="bi bi-arrow-right ms-1" />
-                    </button>
+                    {isConducteur ? (
+                      <>
+                        <h3 className="h5 fw-bold mb-1">Mes Trajets</h3>
+                        <p className={isDark ? "text-secondary mb-3" : "text-muted mb-3"} style={{ lineHeight: 1.35 }}>
+                          Gérez les trajets que vous avez publiés.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-outline-success fw-semibold"
+                          onClick={() => navigate("/conducteur/mes-trajets")}
+                        >
+                          Voir mes trajets <i className="bi bi-arrow-right ms-1" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="h5 fw-bold mb-1">Devenir Conducteur</h3>
+                        <p className={isDark ? "text-secondary mb-3" : "text-muted mb-3"} style={{ lineHeight: 1.35 }}>
+                          Partagez vos trajets en quelques clics et contribuez à une mobilité plus accessible pour la communauté étudiante de La Cité.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-outline-success fw-semibold"
+                          onClick={() => navigate("/passager/aide")}
+                        >
+                          En savoir plus <i className="bi bi-arrow-right ms-1" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
+
               </section>
 
               {/* Trips */}
@@ -262,69 +371,79 @@ export default function Dashboard() {
                 </div>
 
                 <div className="d-grid gap-3 mt-3">
-                  {trips.map((t) => (
-                    <div
-                      key={t.id}
-                      className={`card border shadow-sm rounded-4 ${isDark ? "bg-dark bg-opacity-25 border-secondary" : ""
-                        }`}
-                    >
-                      <div className="card-body p-3 p-md-4">
-                        <div className="d-flex justify-content-between align-items-start">
-                          <div>
-                            <div className="d-flex align-items-center gap-2 flex-wrap">
-                              <span className="fw-bold fs-5">{t.heureDepart}</span>
-                              <i className="bi bi-arrow-right text-success" />
-                              <span className="fw-bold fs-5">{t.heureArrivee}</span>
-                            </div>
+                  {trips.map((trajet) => {
+                    const dateObj = new Date(trajet.dateheure_depart);
 
-                            <div className={isDark ? "text-secondary mt-1" : "text-muted mt-1"}>
-                              <i className="bi bi-geo-alt me-1" />
-                              {t.depart} → {t.destination}
-                            </div>
-                          </div>
+                    return (
+                      <div
+                        key={trajet.id}
+                        className={`card border shadow-sm rounded-4 ${isDark ? "bg-dark bg-opacity-25 border-secondary" : ""
+                          }`}
+                      >
+                        <div className="card-body p-3 p-md-4">
 
-                          {t.badge?.text ? (
-                            <span className={`badge rounded-pill ${badgeClass(t.badge.variant)}`}>
-                              {t.badge.text}
-                            </span>
-                          ) : null}
-                        </div>
+                          {/* TOP SECTION */}
+                          <div className="d-flex justify-content-between align-items-start">
 
-                        <hr className={isDark ? "border-secondary my-3" : "my-3"} />
+                            <div className="flex-grow-1">
 
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="d-flex align-items-center gap-2">
-                            <div
-                              className="rounded-circle border"
-                              style={{
-                                width: 48,
-                                height: 48,
-                                backgroundImage: `url("${t.avatar}")`,
-                                backgroundSize: "cover",
-                                backgroundPosition: "center",
-                              }}
-                            />
-                            <div>
-                              <div className="fw-semibold">{t.conducteur}</div>
-                              <div className={isDark ? "text-secondary small" : "text-muted small"}>
-                                <i className="bi bi-star-fill text-warning me-1" />
-                                {t.note}
+                              {/* Heure */}
+                              <div className="fw-bold fs-4 mb-1">
+                                {dateObj.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
                               </div>
+
+                              {/* Itinéraire */}
+                              <div className={`small ${isDark ? "text-secondary" : "text-muted"}`}>
+                                <i className="bi bi-geo-alt-fill text-success me-1"></i>
+                                {trajet.lieu_depart}
+                                <span className="mx-2 text-success fw-bold">→</span>
+                                {trajet.destination}
+                              </div>
+
                             </div>
+
+                            {/* Badge places */}
+                            <div className="text-end">
+                              <span className="badge rounded-pill bg-success-subtle text-success px-3 py-2">
+                                <i className="bi bi-people-fill me-1"></i>
+                                {trajet.places_dispo} dispo
+                              </span>
+                            </div>
+
                           </div>
 
-                          <button
-                            type="button"
-                            className="btn btn-success fw-semibold"
-                            onClick={() => navigate(`/passager/trajets/${t.id}`)}
-                          >
-                            Réserver
-                          </button>
+                          {/* Séparateur */}
+                          <hr className={isDark ? "border-secondary my-3" : "my-3"} />
+
+                          {/* Bottom section */}
+                          <div className="d-flex justify-content-between align-items-center">
+
+                            {/* Indication disponibilité */}
+                            <div className="small text-muted">
+                              Départ aujourd’hui
+                            </div>
+
+                            {/* Bouton */}
+                            <button
+                              type="button"
+                              className="btn btn-success fw-semibold px-4 rounded-pill"
+                              onClick={() => navigate("/passager/search")}
+                            >
+                              Réserver
+                            </button>
+
+                          </div>
+
                         </div>
+
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+
               </section>
             </div>
           </div>
