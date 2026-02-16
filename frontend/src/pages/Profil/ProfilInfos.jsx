@@ -1,65 +1,154 @@
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 
 export default function ProfilInfos() {
-  const { isDark, user } = useOutletContext();
 
-  const cardClass = `border rounded-4 shadow-sm ${
-    isDark ? "bg-dark bg-opacity-10 border-secondary text-light" : "bg-white"
-  }`;
+  const { isDark, user, reloadUser } = useOutletContext();
 
-  const sectionLabelClass = isDark ? "text-secondary" : "text-muted";
+  // Mode édition
+  const [editMode, setEditMode] = useState(false);
 
-  const Row = ({ label, value }) => (
-    <div className="d-flex align-items-center justify-content-between py-3 px-3 border-bottom">
-      <div className="fw-semibold">{label}</div>
-      <div className="d-flex align-items-center gap-2">
-        {value ? <span className={isDark ? "text-secondary fw-semibold" : "text-muted fw-semibold"}>{value}</span> : null}
-        <i className="bi bi-chevron-right text-muted" />
-      </div>
-    </div>
-  );
+  // Etats modifiables
+  const [telephone, setTelephone] = useState("");
+  const [zones, setZones] = useState("");
 
-  const RowLast = ({ label, value }) => (
-    <div className="d-flex align-items-center justify-content-between py-3 px-3">
-      <div className="fw-semibold">{label}</div>
-      <div className="d-flex align-items-center gap-2">
-        {value ? <span className={isDark ? "text-secondary fw-semibold" : "text-muted fw-semibold"}>{value}</span> : null}
-        <i className="bi bi-chevron-right text-muted" />
-      </div>
-    </div>
-  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  /**
+   * Charger valeurs initiales quand user change
+   */
+  useEffect(() => {
+    if (user) {
+      setTelephone(user.telephone || "");
+      setZones(user.zones_depart_preferees?.join(", ") || "");
+    }
+  }, [user]);
+
+  /**
+   * Sauvegarde des modifications
+   */
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("http://localhost:8000/utilisateurs/me", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          telephone,
+          zones_depart_preferees: zones
+            .split(",")
+            .map(z => z.trim())
+            .filter(z => z !== "")
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Erreur serveur");
+        return;
+      }
+
+      setEditMode(false);
+      reloadUser(); // 🔥 recharge globalement le user
+
+    } catch (err) {
+      setError("Erreur réseau");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) return <div>Chargement...</div>;
 
   return (
-    <div>
-      <h2 className="m-0 fw-bold" style={{ letterSpacing: "-0.2px", fontSize: 26 }}>
-        Mes informations
-      </h2>
+    <div className={`rounded-4 border shadow-sm p-4 ${isDark ? "bg-dark bg-opacity-25 border-secondary" : "bg-white"}`}>
 
-      <div className={`mt-3 small fw-bold ${sectionLabelClass}`} style={{ letterSpacing: 0.8 }}>
-        VOS IDENTIFIANTS
+      <h4 className="fw-bold mb-3">Informations personnelles</h4>
+
+      <div className="mb-3">
+        <strong>Nom:</strong> {user.prenom} {user.nom}
       </div>
 
-      <div className={`${cardClass} mt-2 overflow-hidden`}>
-        <Row label="Courriels" value={user?.email || ""} />
-        <Row label="Courriel alternatif" value="" />
-        <Row label="Nom d'usager" value={user?.email || ""} />
-        <RowLast label="Mot de passe" value="" />
+      <div className="mb-3">
+        <strong>Email:</strong> {user.email}
       </div>
 
-      <p className={`mt-3 small ${sectionLabelClass}`} style={{ lineHeight: 1.4 }}>
-        Spécifier une adresse courriel alternative est un bon moyen de s'assurer que vous recevez toutes nos communications.
-      </p>
-
-      <div className={`mt-4 small fw-bold ${sectionLabelClass}`} style={{ letterSpacing: 0.8 }}>
-        VOS INFOS PRIVÉES
+      <div className="mb-3">
+        <strong>Rôle:</strong> 
+        <span className={`badge ms-2 ${user.role === "CONDUCTEUR" ? "bg-success" : "bg-secondary"}`}>
+          {user.role}
+        </span>
       </div>
 
-      <div className={`${cardClass} mt-2 overflow-hidden`}>
-        <Row label="Ville" value="Ottawa" />
-        <Row label="Numéros de téléphone" value="" />
-        <Row label="Quelques mots sur moi" value="" />
-        <RowLast label="Témoignage" value="" />
+      {/* TELEPHONE */}
+      <div className="mb-3">
+        <label className="form-label fw-semibold">Téléphone</label>
+        {editMode ? (
+          <input
+            className="form-control"
+            value={telephone}
+            onChange={(e) => setTelephone(e.target.value)}
+          />
+        ) : (
+          <div>{user.telephone || "Non renseigné"}</div>
+        )}
       </div>
+
+      {/* ZONES */}
+      <div className="mb-3">
+        <label className="form-label fw-semibold">Zones préférées (séparées par virgule)</label>
+        {editMode ? (
+          <input
+            className="form-control"
+            value={zones}
+            onChange={(e) => setZones(e.target.value)}
+          />
+        ) : (
+          <div>{user.zones_depart_preferees?.join(", ") || "Aucune zone"}</div>
+        )}
+      </div>
+
+      {error && <div className="text-danger mb-3">{error}</div>}
+
+      <div className="d-flex gap-2">
+
+        {editMode ? (
+          <>
+            <button
+              className="btn btn-success"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? "Enregistrement..." : "Enregistrer"}
+            </button>
+
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => setEditMode(false)}
+            >
+              Annuler
+            </button>
+          </>
+        ) : (
+          <button
+            className="btn btn-outline-primary"
+            onClick={() => setEditMode(true)}
+          >
+            Modifier
+          </button>
+        )}
+
+      </div>
+
     </div>
   );
 }
