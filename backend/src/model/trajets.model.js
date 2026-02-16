@@ -1,6 +1,5 @@
 import { pool } from "../DB/db.js";
 
-//fonction pour creer un trajet
 export async function insertTrajet({
   conducteurId,
   lieuDepart,
@@ -47,6 +46,15 @@ export async function insertTrajet({
 
 
 export async function searchTrajets({ depart, destination, date, userId }) {
+
+  
+  await pool.query(`
+    UPDATE trajets
+    SET statut = 'EN_COURS'
+    WHERE statut = 'PLANIFIE'
+    AND dateheure_depart <= NOW()
+  `);
+
   const q = `
     SELECT
       id,
@@ -74,10 +82,11 @@ export async function searchTrajets({ depart, destination, date, userId }) {
   const values = [
     depart && depart.trim() ? depart.trim() : null,
     destination && destination.trim() ? destination.trim() : null,
-    date && date.trim() ? date.trim() : null, // "YYYY-MM-DD"
+    date && date.trim() ? date.trim() : null,
     userId
   ];
 
   const { rows } = await pool.query(q, values);
+
   return rows;
 }
