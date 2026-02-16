@@ -1,20 +1,16 @@
-import {pool} from "../DB/db.js";
+import { pool } from "../DB/db.js";
 
-/**
- * Crée un véhicule pour un user et le passe en CONDUCTEUR
- * (transaction: si une étape échoue => rollback)
- */
-
-// Fonction pour Ajouter un Vehicule
 export async function ajouterVehiculeEtMajConducteur({
-  userId, marque,modele,annee,plaque,couleur,nb_places
+  userId, marque, modele, annee, plaque, couleur, nb_places
 }) {
+
   const client = await pool.connect();
 
   try {
+
     await client.query("BEGIN");
 
-    // 1) Insérer véhicule
+    // 1️⃣ Insérer véhicule
     const insertVehiculeQuery = `
       INSERT INTO vehicules (
         utilisateur_id,
@@ -23,7 +19,7 @@ export async function ajouterVehiculeEtMajConducteur({
         annee,
         plaque,
         couleur,
-        nb_places ,
+        nb_places,
         maj_le
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
@@ -40,7 +36,7 @@ export async function ajouterVehiculeEtMajConducteur({
       nb_places
     ]);
 
-    // 2) Mettre à jour rôle
+    // 2️⃣ Mettre à jour rôle
     const updateRoleQuery = `
       UPDATE utilisateurs
       SET role = 'CONDUCTEUR'
@@ -56,9 +52,134 @@ export async function ajouterVehiculeEtMajConducteur({
       vehicule: vehiculeRes.rows[0],
       user: userRes.rows[0]
     };
+
   } catch (err) {
+
     await client.query("ROLLBACK");
     throw err;
+
+  } finally {
+
+    client.release();
+  }
+}
+
+export async function hasVehicule(userId) {
+
+  const { rows } = await pool.query(
+    "SELECT 1 FROM vehicules WHERE utilisateur_id = $1",
+    [userId]
+  );
+
+  return rows.length > 0;
+}
+
+export async function getVehiculeByUserId(userId) {
+
+  const { rows } = await pool.query(
+    `
+    SELECT
+      id,
+      utilisateur_id,
+      marque,
+      modele,
+      annee,
+      couleur,
+      plaque,
+      nb_places,
+      maj_le
+    FROM vehicules
+    WHERE utilisateur_id = $1
+    `,
+    [userId]
+  );
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return rows[0];
+}
+
+export async function updateVehiculeByUserId(userId, data) {
+
+  const {
+    marque,
+    modele,
+    annee,
+    plaque,
+    couleur,
+    nb_places
+  } = data;
+
+  const { rows } = await pool.query(
+    `
+    UPDATE vehicules
+    SET
+      marque = $1,
+      modele = $2,
+      annee = $3,
+      plaque = $4,
+      couleur = $5,
+      nb_places = $6,
+      maj_le = NOW()
+    WHERE utilisateur_id = $7
+    RETURNING *;
+    `,
+    [
+      marque,
+      modele,
+      annee,
+      plaque,
+      couleur,
+      nb_places,
+      userId
+    ]
+  );
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return rows[0];
+}
+
+export async function supprimerVehiculeEtRevertRole(userId) {
+
+  // On ouvre une connexion dédiée
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // 1️⃣ Supprimer le véhicule
+    await client.query(
+      `
+      DELETE FROM vehicules
+      WHERE utilisateur_id = $1
+      `,
+      [userId]
+    );
+
+    // 2️⃣ Remettre le rôle PASSAGER
+    await client.query(
+      `
+      UPDATE utilisateurs
+      SET role = 'PASSAGER'
+      WHERE id = $1
+      `,
+      [userId]
+    );
+
+    await client.query("COMMIT");
+
+    return { success: true };
+
+  } catch (err) {
+
+    await client.query("ROLLBACK");
+    throw err;
+
   } finally {
     client.release();
   }
