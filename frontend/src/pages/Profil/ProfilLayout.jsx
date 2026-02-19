@@ -51,7 +51,7 @@ export default function ProfilLayout() {
         return;
       }
 
-      const res = await fetch("http://localhost:8000/utilisateurs/me", {
+      const res = await fetch("http://localhost:5000/utilisateurs/me", {
         headers: {
           Authorization: `Bearer ${token}`
         }

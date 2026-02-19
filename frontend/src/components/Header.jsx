@@ -1,5 +1,7 @@
 // src/components/Header.jsx
 import { Link, useNavigate } from "react-router-dom";
+import { logout } from "../utils/auth.js";
+
 import { useMemo } from "react";
 
 export default function Header({ isDark, onToggleTheme }) {
@@ -41,10 +43,8 @@ export default function Header({ isDark, onToggleTheme }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/");
-  };
+  logout(navigate);
+};
 
   return (
     <header className={`sticky-top border-bottom ${isDark ? "bg-dark" : "bg-light"}`}>

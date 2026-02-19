@@ -1,4 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { logout } from "../../utils/auth.js";
+
 
 export default function ProfilMenu({ isDark, user }) {
   const navigate = useNavigate();
@@ -8,11 +10,10 @@ export default function ProfilMenu({ isDark, user }) {
   const email = user?.email || "";
   const initial = (userName?.charAt(0) || "U").toUpperCase();
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
+  const handleLogout = () => {
+  logout(navigate);
+};
+
 
   const isActive = (to) => {
     // ✅ gère /profil (index), /profil/infos, et la route exacte
@@ -94,11 +95,7 @@ export default function ProfilMenu({ isDark, user }) {
           </div>
           <div className="col-6">
             <div className="small fw-semibold">Compte conducteur</div>
-            
-<div className={isDark ? "text-secondary small" : "text-muted small"}>
-  {user?.role === "CONDUCTEUR" ? "Actif" : "Inactif"}
-</div>
-
+            <div className={isDark ? "text-secondary small" : "text-muted small"}>Selon voiture</div>
           </div>
         </div>
 
@@ -115,7 +112,7 @@ export default function ProfilMenu({ isDark, user }) {
       <button
         type="button"
         className={`btn w-100 fw-semibold ${isDark ? "btn-outline-light" : "btn-outline-danger"}`}
-        onClick={logout}
+        onClick={handleLogout}
       >
         <i className="bi bi-box-arrow-right me-2" />
         Déconnexion

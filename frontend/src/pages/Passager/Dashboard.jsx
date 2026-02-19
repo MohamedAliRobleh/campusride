@@ -122,7 +122,7 @@ export default function Dashboard() {
                 {/* IMAGE BACKGROUND */}
                 <div
                   style={{
-                    height: "630px",
+                    height: "75vh",
                     backgroundImage: `url(${heroImg})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
