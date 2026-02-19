@@ -35,7 +35,7 @@ export default function ProfilInfos() {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:8000/utilisateurs/me", {
+      const res = await fetch("http://localhost:5000/utilisateurs/me", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

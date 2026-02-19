@@ -1,4 +1,5 @@
 // src/components/HeaderPrivate.jsx
+import { logout } from "../utils/auth.js";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -18,11 +19,9 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
   const userName = user?.prenom || user?.nom || "Utilisateur";
   const userInitial = (userName?.charAt(0) || "U").toUpperCase();
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/");
-  };
+  const handleLogout = () => {
+  logout(navigate);
+};
 
 
   const [notifications, setNotifications] = useState([]);
