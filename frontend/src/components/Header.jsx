@@ -1,4 +1,3 @@
-// src/components/Header.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth.js";
 
@@ -7,7 +6,6 @@ import { useMemo } from "react";
 export default function Header({ isDark, onToggleTheme }) {
   const navigate = useNavigate();
 
-  // ===== Récupération utilisateur =====
   const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
@@ -16,7 +14,6 @@ export default function Header({ isDark, onToggleTheme }) {
     }
   }, []);
 
-  // ===== Navigation intelligente =====
   const handleSearch = () => {
     if (!user) {
       navigate("/login");
@@ -57,7 +54,6 @@ export default function Header({ isDark, onToggleTheme }) {
             CampusRide
           </Link>
 
-          {/* ===== Mobile Toggle ===== */}
           <button
             className="navbar-toggler"
             type="button"
@@ -68,8 +64,6 @@ export default function Header({ isDark, onToggleTheme }) {
           </button>
 
           <div className="collapse navbar-collapse" id="mainNavbar">
-
-            {/* ===== LEFT MENU ===== */}
             <ul className="navbar-nav me-auto gap-lg-3">
 
               <li className="nav-item">
@@ -115,15 +109,7 @@ export default function Header({ isDark, onToggleTheme }) {
                 </>
               ) : (
                 <>
-                  <li className="nav-item">
-                    <button
-                      className="nav-link btn btn-link p-0"
-                      onClick={handleDashboard}
-                    >
-                      <i className="bi bi-speedometer2 me-1" />
-                      Dashboard
-                    </button>
-                  </li>
+                  
 
                   <li className="nav-item">
                     <button
@@ -136,8 +122,6 @@ export default function Header({ isDark, onToggleTheme }) {
                   </li>
                 </>
               )}
-
-              {/* ===== Theme Toggle ===== */}
               <li className="nav-item">
                 <button
                   type="button"

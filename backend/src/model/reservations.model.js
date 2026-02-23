@@ -1,38 +1,15 @@
-// src/model/reservations.model.js
+
 import { pool } from "../DB/db.js";
 
-/**
- * Fonction: createReservation
- * ---------------------------
- * Permet à un utilisateur (passager) de réserver un trajet.
- *
- * Règles métier vérifiées :
- * - Le trajet existe
- * - L'utilisateur ne réserve pas son propre trajet
- * - Le trajet est PLANIFIE
- * - La date du trajet est dans le futur (DOUBLE SÉCURITÉ)
- * - Il reste des places disponibles
- * - L'utilisateur n'a pas déjà réservé ce trajet
- *
- * Utilise une transaction pour garantir la cohérence des données.
- */
+
 export async function createReservation(passagerId, trajetId) {
 
-  // Connexion client PostgreSQL (transaction manuelle)
   const client = await pool.connect();
 
   try {
 
-    // ===============================
-    // Démarrer la transaction
-    // ===============================
     await client.query("BEGIN");
 
-    // ===============================
-    // 1️⃣ Charger le trajet
-    // ===============================
-    // FOR UPDATE verrouille la ligne du trajet
-    // Cela empêche les conflits en cas de réservations simultanées
     const trajetRes = await client.query(
   `
   SELECT 
@@ -50,17 +27,13 @@ export async function createReservation(passagerId, trajetId) {
   [trajetId]
 );
 
-
-    // Si le trajet n'existe pas
     if (trajetRes.rows.length === 0) {
       await client.query("ROLLBACK");
       return { error: "TRAJET_NOT_FOUND" };
     }
 
     const trajet = trajetRes.rows[0];
-    // ===============================
-// Récupérer le prénom du passager
-// ===============================
+ 
 const userRes = await client.query(
   `SELECT prenom FROM utilisateurs WHERE id = $1`,
   [passagerId]
@@ -69,31 +42,21 @@ const userRes = await client.query(
 const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
 
 
-    // ===============================
-    // 2️⃣ Interdire réservation de son propre trajet
-    // ===============================
+ 
     if (trajet.conducteur_id === passagerId) {
       await client.query("ROLLBACK");
       return { error: "CANNOT_RESERVE_OWN_TRAJET" };
     }
 
-    // ===============================
-    // 3️⃣ Vérifier statut du trajet
-    // ===============================
-    // Seuls les trajets PLANIFIE peuvent être réservés
+ 
+    // Vérifier statut du trajet
     if (trajet.statut !== "PLANIFIE") {
       await client.query("ROLLBACK");
       return { error: "TRAJET_NOT_PLANIFIE" };
     }
 
-    // ===============================
-    // 4️⃣ DOUBLE SÉCURITÉ DATE PASSÉE
-    // ===============================
-    // On compare la date du trajet avec la date actuelle serveur.
-    // Cela protège contre :
-    // - Manipulation manuelle API
-    // - Latence entre recherche et réservation
-    // - Utilisateur malveillant
+    
+    //DOUBLE SÉCURITÉ DATE PASSÉE
     const maintenant = new Date();
 
     if (new Date(trajet.dateheure_depart) <= maintenant) {
@@ -101,17 +64,13 @@ const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
       return { error: "TRAJET_PAST" };
     }
 
-    // ===============================
-    // 5️⃣ Vérifier disponibilité des places
-    // ===============================
+    // Vérifier disponibilité des places
     if (trajet.places_dispo <= 0) {
       await client.query("ROLLBACK");
       return { error: "NO_PLACES_AVAILABLE" };
     }
 
-    // ===============================
     // Insérer réservation
-    // ===============================
     const reservationRes = await client.query(
       `
   INSERT INTO reservations (
@@ -210,35 +169,17 @@ LIMIT 200;
   return rows;
 }
 
-
-/**
- * Fonction: acceptReservation
- * ---------------------------
- * Permet au conducteur d'accepter une réservation.
- *
- * Logique métier :
- * - Vérifie que la réservation existe
- * - Vérifie que le conducteur est propriétaire du trajet
- * - Vérifie que la réservation est EN_ATTENTE
- * - Vérifie qu'il reste des places
- * - Met la réservation en ACCEPTEE
- * - Décrémente places_dispo
- * - Si places_dispo devient 0 → clôture automatique du trajet
- */
 export async function acceptReservation(conducteurId, reservationId) {
 
   const client = await pool.connect();
 
   try {
 
-    // ===============================
+   
     // Démarrer transaction
-    // ===============================
     await client.query("BEGIN");
 
-    // ===============================
-    // 1️⃣ Charger réservation + trajet
-    // ===============================
+    // Charger réservation + trajet
     const { rows } = await client.query(
       `
       SELECT
@@ -263,33 +204,29 @@ export async function acceptReservation(conducteurId, reservationId) {
 
     const row = rows[0];
 
-    // ===============================
-    // 2️⃣ Vérifier propriétaire
-    // ===============================
+    
+    // Vérifier propriétaire
+   
     if (row.conducteur_id !== conducteurId) {
       await client.query("ROLLBACK");
       return { error: "NOT_OWNER" };
     }
 
-    // ===============================
-    // 3️⃣ Vérifier statut EN_ATTENTE
-    // ===============================
+    
+    // Vérifier statut EN_ATTENTE
     if (row.reservation_statut !== "EN_ATTENTE") {
       await client.query("ROLLBACK");
       return { error: "NOT_PENDING" };
     }
 
-    // ===============================
-    // 4️⃣ Vérifier places disponibles
-    // ===============================
+        // Vérifier places disponibles
     if (row.places_dispo <= 0) {
       await client.query("ROLLBACK");
       return { error: "NO_PLACES_AVAILABLE" };
     }
 
-    // ===============================
-    // 5️⃣ Mettre réservation ACCEPTÉE
-    // ===============================
+  
+    // Mettre réservation ACCEPTÉE
     const reservationRes = await client.query(
       `
       UPDATE reservations
@@ -300,9 +237,8 @@ export async function acceptReservation(conducteurId, reservationId) {
       [reservationId]
     );
 
-    // ===============================
-    // 6️⃣ Décrémenter places_dispo
-    // ===============================
+    
+    // Décrémenter places_dispo
     const trajetRes = await client.query(
       `
       UPDATE trajets
@@ -315,11 +251,7 @@ export async function acceptReservation(conducteurId, reservationId) {
 
     const newPlaces = trajetRes.rows[0].places_dispo;
 
-    // ===============================
-    // 7️⃣ CLÔTURE AUTOMATIQUE SI COMPLET
-    // ===============================
-    // Si après décrémentation il reste 0 place,
-    // on passe automatiquement le trajet en TERMINE
+   // CLÔTURE AUTOMATIQUE SI COMPLET
     if (newPlaces === 0) {
       await client.query(
         `
@@ -331,9 +263,7 @@ export async function acceptReservation(conducteurId, reservationId) {
       );
     }
 
-    // ===============================
     // Valider transaction
-    // ===============================
     await client.query("COMMIT");
 
     return {
@@ -357,18 +287,6 @@ export async function acceptReservation(conducteurId, reservationId) {
 }
 
 
-/**
- * Fonction: refuseReservation
- * --------------------------
- * Refuse une réservation (statut REFUSEE) si :
- * - la réservation existe
- * - le trajet appartient bien au conducteur connecté
- * - la réservation est encore EN_ATTENTE
- *
- * @param {string} conducteurId - UUID du conducteur connecté
- * @param {string} reservationId - UUID de la réservation
- * @returns {object} - réservation mise à jour ou { error: ... }
- */
 export async function refuseReservation(conducteurId, reservationId) {
   const client = await pool.connect();
 

@@ -5,19 +5,14 @@ export default function ProfilInfos() {
 
   const { isDark, user, reloadUser } = useOutletContext();
 
-  // Mode édition
   const [editMode, setEditMode] = useState(false);
 
-  // Etats modifiables
   const [telephone, setTelephone] = useState("");
   const [zones, setZones] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /**
-   * Charger valeurs initiales quand user change
-   */
   useEffect(() => {
     if (user) {
       setTelephone(user.telephone || "");
@@ -25,9 +20,6 @@ export default function ProfilInfos() {
     }
   }, [user]);
 
-  /**
-   * Sauvegarde des modifications
-   */
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -58,7 +50,7 @@ export default function ProfilInfos() {
       }
 
       setEditMode(false);
-      reloadUser(); // 🔥 recharge globalement le user
+      reloadUser(); 
 
     } catch (err) {
       setError("Erreur réseau");
@@ -103,7 +95,6 @@ export default function ProfilInfos() {
         )}
       </div>
 
-      {/* ZONES */}
       <div className="mb-3">
         <label className="form-label fw-semibold">Zones préférées (séparées par virgule)</label>
         {editMode ? (

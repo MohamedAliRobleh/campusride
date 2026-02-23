@@ -6,11 +6,6 @@ import ProfilMenu from "./ProfilMenu.jsx";
 
 export default function ProfilLayout() {
 
-  /**
-   * ===============================
-   * Gestion du thème (Dark / Light)
-   * ===============================
-   */
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "light"
   );
@@ -18,34 +13,20 @@ export default function ProfilLayout() {
   const isDark = theme === "dark";
 
   useEffect(() => {
-    // Sauvegarde dans localStorage
+    
     localStorage.setItem("theme", theme);
-
-    // Applique thème Bootstrap
     document.body.dataset.bsTheme = theme;
   }, [theme]);
 
-  /**
-   * ===============================
-   * Etat utilisateur
-   * ===============================
-   */
   const [user, setUser] = useState(null);
 
-  // Etat de chargement pour éviter flash vide
   const [loadingUser, setLoadingUser] = useState(true);
 
-  /**
-   * Charge l'utilisateur connecté depuis le backend
-   * Route: GET /utilisateurs/me
-   */
   const loadUser = async () => {
     try {
       setLoadingUser(true);
 
       const token = localStorage.getItem("token");
-
-      // Si pas de token → pas connecté
       if (!token) {
         setUser(null);
         return;
@@ -56,8 +37,6 @@ export default function ProfilLayout() {
           Authorization: `Bearer ${token}`
         }
       });
-
-      // Si token expiré ou invalide → déconnexion auto
       if (res.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -68,11 +47,7 @@ export default function ProfilLayout() {
       if (!res.ok) return;
 
       const data = await res.json();
-
-      // Mise à jour state React
       setUser(data.user);
-
-      // Synchronisation globale
       localStorage.setItem("user", JSON.stringify(data.user));
 
     } catch (err) {
@@ -81,31 +56,18 @@ export default function ProfilLayout() {
       setLoadingUser(false);
     }
   };
-
-  // Chargement initial au montage
   useEffect(() => {
     loadUser();
   }, []);
 
-  /**
-   * ===============================
-   * Styles dynamiques panels
-   * ===============================
-   */
   const panelClass =
     "p-4 rounded-4 shadow-sm border " +
     (isDark
       ? "bg-dark bg-opacity-10 border-secondary"
       : "bg-white border-light");
 
-  // Hauteur constante visuelle
   const panelMinHeight = 560;
 
-  /**
-   * ===============================
-   * RENDER
-   * ===============================
-   */
   return (
     <div
       className={isDark ? "bg-dark text-light" : "bg-light text-dark"}
@@ -115,7 +77,6 @@ export default function ProfilLayout() {
         flexDirection: "column"
       }}
     >
-      {/* Header privé */}
       <HeaderPrivate
         isDark={isDark}
         onToggleTheme={() =>
@@ -123,7 +84,6 @@ export default function ProfilLayout() {
         }
       />
 
-      {/* Contenu principal */}
       <main className="py-4" style={{ flexGrow: 1 }}>
         <div className="d-flex justify-content-center">
           <div className="w-100 px-3" style={{ maxWidth: 980 }}>

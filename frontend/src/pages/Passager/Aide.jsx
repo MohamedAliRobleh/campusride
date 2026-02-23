@@ -76,8 +76,6 @@ export default function Aide() {
                         </div>
 
                     </div>
-
-                    {/* ================= COMMENT CA MARCHE ================= */}
                     <div className="mb-5">
                         <h3 className="fw-bold mb-4 text-center">Comment ça fonctionne ?</h3>
 
@@ -115,9 +113,6 @@ export default function Aide() {
 
                         </div>
                     </div>
-
-                    {/* ================= CTA ================= */}
-                    {/* ================= ETAPES POUR DEVENIR CONDUCTEUR ================= */}
                     <div className="mb-5">
                         <h3 className="fw-bold mb-4 text-center">
                             Comment devenir conducteur ?
@@ -157,8 +152,7 @@ export default function Aide() {
 
                         </div>
                     </div>
-
-                    {/* ================= CTA PRINCIPAL ================= */}
+                    
                     <div className="text-center mt-4">
                         <button
                             className="btn btn-success btn-lg rounded-pill px-5 fw-bold"

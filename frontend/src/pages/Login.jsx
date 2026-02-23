@@ -1,4 +1,4 @@
-// src/pages/Login.jsx
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header.jsx";
@@ -6,8 +6,6 @@ import Footer from "../components/Footer.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
-
-  // ===== Theme (comme avant) =====
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
 
@@ -15,8 +13,6 @@ export default function Login() {
     localStorage.setItem("theme", theme);
     document.body.dataset.bsTheme = theme;
   }, [theme]);
-
-  // ===== Form states (garde ta logique) =====
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +20,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ===== Submit (exemple) =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -50,17 +45,13 @@ export default function Login() {
         return;
       }
 
-      // data = { message, user, token }
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       setLoading(false);
-      //navigate("/passager"); // ou "/dashboard"
-      // Redirection selon role
 if (data?.user?.role === "ADMIN") {
   navigate("/admin");
-// } else if (data?.user?.role === "CONDUCTEUR") {
-//   navigate("/conducteur"); // adapte si ta route s'appelle autrement
+
 } else {
   navigate("/passager");
 }
@@ -73,6 +64,7 @@ if (data?.user?.role === "ADMIN") {
 
   return (
     <div className={isDark ? "bg-dark text-light" : "bg-light text-dark"} style={{ minHeight: "100vh" }}>
+      
       {/* ================= HEADER (réutilisable) ================= */}
       <Header
         isDark={isDark}
@@ -103,7 +95,6 @@ if (data?.user?.role === "ADMIN") {
               <span style={{ width: 34 }} />
             </div>
 
-            {/* ✅ Ton bloc logo/intro identique */}
             <div className="text-center mb-4">
               <div
                 className="mx-auto rounded-4 d-flex align-items-center justify-content-center border"
@@ -117,8 +108,6 @@ if (data?.user?.role === "ADMIN") {
                 Le covoiturage pour La Cité
               </p>
             </div>
-
-            {/* ✅ Formulaire identique */}
             <form onSubmit={handleSubmit} className="d-grid gap-3 p-4 rounded-4 shadow-sm border bg-dark bg-opacity-10 border-secondary">
               {error && (
                 <div className="alert alert-danger py-2 mb-0" role="alert">

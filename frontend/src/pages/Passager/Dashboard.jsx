@@ -1,4 +1,3 @@
-// src/pages/Passager/Dashboard.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer.jsx";
@@ -8,7 +7,7 @@ import HeaderPrivate from "../../components/HeaderPrivate.jsx";
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // ===== Theme (identique à Login.jsx) =====
+ 
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
 
@@ -17,7 +16,7 @@ export default function Dashboard() {
     document.body.dataset.bsTheme = theme;
   }, [theme]);
 
-  // ===== user (optionnel) =====
+  
   const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
@@ -29,7 +28,7 @@ export default function Dashboard() {
   const role = user?.role;
   const isConducteur = role === "CONDUCTEUR";
 
-  // ===== Hero image (URL conservée) =====
+  
   const heroImg =
     "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1600&auto=format&fit=crop";
 
@@ -42,7 +41,7 @@ export default function Dashboard() {
   const handleSearch = (e) => {
     e.preventDefault();
 
-    // 🔎 Validation simple
+    
     if (!depart.trim() || !destination.trim() || !date) {
       return; // on ne fait rien
     }
@@ -81,6 +80,7 @@ export default function Dashboard() {
 
   return (
     <div className={isDark ? "bg-dark text-light" : "bg-light text-dark"} style={{ minHeight: "100vh" }}>
+
       {/* ================= HEADER ================= */}
       <HeaderPrivate
         isDark={isDark}
@@ -104,15 +104,10 @@ export default function Dashboard() {
             </h2>
           </div>
 
-          {/* Texte utilisateur aligné à gauche */}
           <p className={isDark ? "text-secondary mb-4" : "text-muted mb-4"}>
             {user?.prenom ? `Bonjour, ${user.prenom} 👋` : "Bienvenue sur CampusRide"}
           </p>
 
-          {/* ✅ Layout WEB responsive :
-              - Mobile: 1 colonne
-              - LG+: 2 colonnes (Hero/Search à gauche, Espace Conducteur + Trips à droite)
-          */}
           <div className="row g-4">
             {/* LEFT (Hero + Search Premium) */}
             <div className="col-12 col-lg-6">
@@ -148,7 +143,6 @@ export default function Dashboard() {
                       </p>
                     </div>
 
-                    {/* FORM ORIGINAL RESTAURÉ */}
                     <div className="mt-auto px-4 pb-4">
                       <form
                         onSubmit={handleSearch}
@@ -157,7 +151,6 @@ export default function Dashboard() {
                       >
                         <div className="row g-3">
 
-                          {/* ================= DÉPART ================= */}
                           <div className="col-12 position-relative">
                             <label className="small fw-semibold mb-1">Départ</label>
 
@@ -190,7 +183,6 @@ export default function Dashboard() {
                               </button>
                             </div>
 
-                            {/* Shortcut La Cité */}
                             <div className="mt-2 d-flex gap-2 flex-wrap">
                               <button
                                 type="button"
@@ -202,7 +194,6 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          {/* ================= INVERSION ================= */}
                           <div className="col-12 text-center">
                             <button
                               type="button"
@@ -217,7 +208,6 @@ export default function Dashboard() {
                             </button>
                           </div>
 
-                          {/* ================= DESTINATION ================= */}
                           <div className="col-12 position-relative">
                             <label className="small fw-semibold mb-1">Destination</label>
 
@@ -260,7 +250,6 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          {/* ================= DATE ================= */}
                           <div className="col-12 col-md-7">
                             <label className="small fw-semibold mb-1">Date</label>
                             <div className="input-group input-group-lg">
@@ -276,7 +265,6 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          {/* ================= BOUTON ================= */}
                           <div className="col-12 col-md-5 d-grid">
                             <button
                               type="submit"
@@ -301,9 +289,7 @@ export default function Dashboard() {
             </div>
 
 
-            {/* RIGHT (Promo + Trips) */}
             <div className="col-12 col-lg-6">
-              {/* Promo */}
               <section
                 className={`p-3 p-md-4 rounded-4 border shadow-sm ${isDark ? "bg-dark bg-opacity-25 border-secondary" : "bg-white"
                   }`}
@@ -382,12 +368,10 @@ export default function Dashboard() {
                       >
                         <div className="card-body p-3 p-md-4">
 
-                          {/* TOP SECTION */}
                           <div className="d-flex justify-content-between align-items-start">
 
                             <div className="flex-grow-1">
 
-                              {/* Heure */}
                               <div className="fw-bold fs-4 mb-1">
                                 {dateObj.toLocaleTimeString([], {
                                   hour: "2-digit",
@@ -395,7 +379,6 @@ export default function Dashboard() {
                                 })}
                               </div>
 
-                              {/* Itinéraire */}
                               <div className={`small ${isDark ? "text-secondary" : "text-muted"}`}>
                                 <i className="bi bi-geo-alt-fill text-success me-1"></i>
                                 {trajet.lieu_depart}
@@ -405,7 +388,6 @@ export default function Dashboard() {
 
                             </div>
 
-                            {/* Badge places */}
                             <div className="text-end">
                               <span className="badge rounded-pill bg-success-subtle text-success px-3 py-2">
                                 <i className="bi bi-people-fill me-1"></i>
@@ -415,13 +397,10 @@ export default function Dashboard() {
 
                           </div>
 
-                          {/* Séparateur */}
                           <hr className={isDark ? "border-secondary my-3" : "my-3"} />
 
-                          {/* Bottom section */}
                           <div className="d-flex justify-content-between align-items-center">
 
-                            {/* Indication disponibilité */}
                             <div className="small text-muted">
                               Départ aujourd’hui
                             </div>
@@ -452,7 +431,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* ================= FOOTER ================= */}
       <Footer isDark={isDark} style={{ backgroundColor: "#8ac55a" }} />
     </div>
   );

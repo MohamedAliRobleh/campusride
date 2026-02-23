@@ -72,9 +72,6 @@ export default function MesTrajets() {
         }
     };
 
-    // ===============================
-    // Composant carte trajet
-    // ===============================
     const renderCard = (trajet) => {
 
         const dateObj = new Date(trajet.dateheure_depart);

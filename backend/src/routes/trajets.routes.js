@@ -12,32 +12,19 @@ const router = Router();
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-
-    // 🔐 Récupérer l'ID utilisateur depuis le token validé
     const conducteurId = req.user.id;
-
-    // 🔍 Vérifier le rôle ACTUEL dans la base de données
     const role = await getUserRole(conducteurId);
-
-    // 🚫 Si le rôle en DB n’est pas CONDUCTEUR → accès refusé
     if (role !== "CONDUCTEUR") {
       return res.status(403).json({
         message: "Accès refusé : ajoutez un véhicule pour devenir conducteur et publier un trajet."
       });
     }
-
-    // 🚗 Vérifier que l'utilisateur a réellement un véhicule enregistré
     const okVehicule = await hasVehicule(conducteurId);
-
-    // Si aucun véhicule n'existe, on refuse la publication
     if (!okVehicule) {
       return res.status(400).json({
         message: "Vous devez enregistrer un véhicule avant de publier un trajet."
       });
     }
-
-
-    // 📦 Récupération des données envoyées dans le body
     const {
       lieu_depart,
       destination,
@@ -45,11 +32,7 @@ router.post("/", requireAuth, async (req, res) => {
       places_total
     } = req.body;
 
-    // =========================
     // Validation des champs
-    // =========================
-
-    // Nettoyage des champs texte (évite espaces / valeurs bizarres)
     const lieuDepart = String(lieu_depart ?? "").trim();
     const dest = String(destination ?? "").trim();
 
@@ -86,19 +69,19 @@ router.post("/", requireAuth, async (req, res) => {
     }
 
 
-    // 🚀 Création du trajet
+    // Création du trajet
     const trajet = await insertTrajet({
       conducteurId,
-      lieuDepart,                 // valeur nettoyée
-      destination: dest,          // valeur nettoyée
-      dateHeureDepart: d.toISOString(), // date normalisée
-      placesTotal: placesTotalNum // nombre validé
+      lieuDepart,                 
+      destination: dest,          
+      dateHeureDepart: d.toISOString(), 
+      placesTotal: placesTotalNum 
     });
 
 
 
 
-    // 📤 Réponse succès
+    // Réponse succès
     return res.status(201).json({ trajet });
 
   } catch (err) {
@@ -163,7 +146,7 @@ router.patch("/:id/terminer", requireAuth, async (req, res) => {
 
     const trajet = updateRes.rows[0];
 
-    // 2️⃣ Récupérer tous les passagers ACCEPTÉS
+    //Récupérer tous les passagers ACCEPTÉS
     const passagersRes = await client.query(
       `
       SELECT passager_id
@@ -174,7 +157,7 @@ router.patch("/:id/terminer", requireAuth, async (req, res) => {
       [trajetId]
     );
 
-    // 3️⃣ Créer notification pour chaque passager
+    //Créer notification pour chaque passager
     for (const row of passagersRes.rows) {
       await client.query(
         `
@@ -216,7 +199,7 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
     const conducteurId = req.user.id;
     const trajetId = req.params.id;
 
-    // 1️⃣ Annuler le trajet
+    //Annuler le trajet
     const updateRes = await client.query(
       `
       UPDATE trajets
@@ -238,7 +221,7 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
 
     const trajet = updateRes.rows[0];
 
-    // 2️⃣ Récupérer passagers ACCEPTÉS
+    //Récupérer passagers ACCEPTÉS
     const passagersRes = await client.query(
       `
       SELECT passager_id
@@ -249,7 +232,7 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
       [trajetId]
     );
 
-    // 3️⃣ Créer notifications
+    //Créer notifications
     for (const row of passagersRes.rows) {
       await client.query(
         `

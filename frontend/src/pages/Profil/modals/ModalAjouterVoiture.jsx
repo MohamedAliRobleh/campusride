@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 export default function ModalAjouterVoiture({ show, onClose, isDark, vehicule }) {
 
-  // Etats contrôlés
   const [marque, setMarque] = useState("");
   const [modele, setModele] = useState("");
   const [annee, setAnnee] = useState("");
@@ -12,10 +11,6 @@ export default function ModalAjouterVoiture({ show, onClose, isDark, vehicule })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /**
- * Si un véhicule existe,
- * on pré-remplit les champs (mode modification)
- */
   useEffect(() => {
     if (vehicule) {
       setMarque(vehicule.marque || "");
@@ -24,7 +19,7 @@ export default function ModalAjouterVoiture({ show, onClose, isDark, vehicule })
       setPlaque(vehicule.plaque || "");
       setNbPlaces(vehicule.nb_places || "");
     } else {
-      // Mode création → vider les champs
+     
       setMarque("");
       setModele("");
       setAnnee("");
@@ -38,15 +33,6 @@ export default function ModalAjouterVoiture({ show, onClose, isDark, vehicule })
 
   const inputClass = `form-control ${isDark ? "bg-dark text-light border-secondary" : ""}`;
 
-  /**
-   * Envoi vers backend
-   */
-  /**
- * handleSubmit
- * ------------
- * Si vehicule existe → PATCH (modifier)
- * Sinon → POST (créer)
- */
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -84,7 +70,7 @@ export default function ModalAjouterVoiture({ show, onClose, isDark, vehicule })
         return;
       }
 
-      onClose(); // Ferme modal + reload parent
+      onClose(); 
 
     } catch (err) {
       setError("Erreur réseau");

@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header.jsx";
@@ -7,7 +6,6 @@ import Footer from "../components/Footer.jsx";
 export default function Register() {
   const navigate = useNavigate();
 
-  // ===== Theme (comme avant) =====
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
 
@@ -16,7 +14,6 @@ export default function Register() {
     document.body.dataset.bsTheme = theme;
   }, [theme]);
 
-  // ===== Form states (garde ta logique) =====
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
@@ -30,7 +27,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ===== Submit (exemple) =====
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
@@ -68,6 +65,7 @@ const handleSubmit = async (e) => {
 
   return (
     <div className={isDark ? "bg-dark text-light" : "bg-light text-dark"} style={{ minHeight: "100vh" }}>
+
       {/* ================= HEADER ================= */}
       <Header
         isDark={isDark}
@@ -92,11 +90,9 @@ const handleSubmit = async (e) => {
 
               <h2 className="m-0 fw-bold">Inscription</h2>
 
-              {/* espace pour garder le titre centré */}
               <span style={{ width: 34 }} />
             </div>
-
-            {/* Brand */}
+            
             <div className="text-center mb-4">
               <div
                 className="mx-auto rounded-4 d-flex align-items-center justify-content-center border"

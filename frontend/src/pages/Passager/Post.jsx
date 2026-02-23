@@ -1,4 +1,3 @@
-// src/pages/Passager/Post.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate.jsx";
@@ -12,7 +11,6 @@ export default function Post() {
   );
   const isDark = theme === "dark";
 
-  // ✅ Toast state (DOIT être en haut du composant)
   const [toastMessage, setToastMessage] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -28,7 +26,6 @@ export default function Post() {
     document.body.dataset.bsTheme = theme;
   }, [theme]);
 
-  // ✅ Auto hide toast après 3 secondes
   useEffect(() => {
     if (toastMessage) {
       const timer = setTimeout(() => {
@@ -133,7 +130,6 @@ export default function Post() {
               </div>
             </div>
 
-            {/* Destination */}
             <div className="mb-3">
               <label className="form-label fw-semibold">
                 Destination
@@ -153,7 +149,6 @@ export default function Post() {
               </div>
             </div>
 
-            {/* Date & Heure */}
             <div className="row">
               <div className="col-md-6 mb-3">
                 <label className="form-label fw-semibold">Date</label>
@@ -180,7 +175,6 @@ export default function Post() {
               </div>
             </div>
 
-            {/* Places */}
             <div className="mb-4">
               <label className="form-label fw-semibold">
                 Places disponibles
@@ -209,7 +203,6 @@ export default function Post() {
         </div>
       </main>
 
-      {/* ✅ TOAST PRO */}
       {toastMessage && (
   <div
     className="position-fixed top-0 start-50 translate-middle-x mt-4"

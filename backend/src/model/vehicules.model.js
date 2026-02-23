@@ -10,7 +10,7 @@ export async function ajouterVehiculeEtMajConducteur({
 
     await client.query("BEGIN");
 
-    // 1️⃣ Insérer véhicule
+    // Insérer véhicule
     const insertVehiculeQuery = `
       INSERT INTO vehicules (
         utilisateur_id,
@@ -36,7 +36,7 @@ export async function ajouterVehiculeEtMajConducteur({
       nb_places
     ]);
 
-    // 2️⃣ Mettre à jour rôle
+    // Mettre à jour rôle
     const updateRoleQuery = `
       UPDATE utilisateurs
       SET role = 'CONDUCTEUR'
@@ -152,7 +152,7 @@ export async function supprimerVehiculeEtRevertRole(userId) {
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Supprimer le véhicule
+    // Supprimer le véhicule
     await client.query(
       `
       DELETE FROM vehicules
@@ -161,7 +161,7 @@ export async function supprimerVehiculeEtRevertRole(userId) {
       [userId]
     );
 
-    // 2️⃣ Remettre le rôle PASSAGER
+    // Remettre le rôle PASSAGER
     await client.query(
       `
       UPDATE utilisateurs

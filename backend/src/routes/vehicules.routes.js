@@ -23,11 +23,8 @@ router.post("/", requireAuth, async (req, res) => {
       nb_places
     } = req.body;
 
-    // =========================
+    
     // Validation des champs
-    // =========================
-
-    // Nettoyage des champs texte
     const marqueClean = String(marque ?? "").trim();
     const modeleClean = String(modele ?? "").trim();
     const plaqueClean = String(plaque ?? "").trim().toUpperCase();

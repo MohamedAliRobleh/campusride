@@ -76,22 +76,17 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
     }
   };
 
-  // ===============================
-  // 🔢 Compteur non lues
-  // ===============================
+  //Compteur non lues
   const unreadCount = notifications.length;
 
 
   return (
     <div>
-      {/* Barre verte */}
       <div style={{ height: 36, backgroundColor: "#009E57" }} />
 
       <header className={`sticky-top border-bottom ${isDark ? "bg-dark" : "bg-light"}`}>
         <nav className={`navbar navbar-expand-lg ${isDark ? "navbar-dark" : "navbar-light"}`}>
           <div className="container-fluid px-4">
-
-            {/* Logo */}
             <Link
               className="navbar-brand fw-bold d-flex align-items-center gap-2"
               to="/passager"
@@ -99,8 +94,6 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
               <span style={{ fontSize: 20 }}>🚗</span>
               CampusRide
             </Link>
-
-            {/* Toggle mobile */}
             <button
               className="navbar-toggler"
               type="button"
@@ -150,7 +143,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
               {/* RIGHT MENU */}
               <ul className="navbar-nav align-items-lg-center gap-lg-3 list-unstyled ps-0 mb-0">
 
-                {/* 🔔 Notifications */}
+                {/* Notifications */}
                 <li className="nav-item dropdown">
                   <button
                     className="btn btn-link position-relative p-0 text-decoration-none"
@@ -200,7 +193,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                   </ul>
                 </li>
 
-                {/* 👤 User Dropdown */}
+                {/* User Dropdown */}
                 <li className="nav-item dropdown">
                   <button
                     className="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2"
@@ -251,7 +244,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                   </ul>
                 </li>
 
-                {/* 🌙 Theme toggle */}
+                {/* Theme toggle */}
                 <li className="nav-item">
                   <button
                     type="button"
