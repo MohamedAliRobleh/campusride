@@ -3,7 +3,7 @@ import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { insertTrajet } from "../model/trajets.model.js";
 import { searchTrajets } from "../model/trajets.model.js";
 import { hasVehicule } from "../model/vehicules.model.js"; 
-// import { getUserRole } from "../model/utilisateurs.model.js"; 
+import { getUserRole } from "../model/utilisateurs.model.js"; 
 import { pool } from "../DB/db.js";
 
 

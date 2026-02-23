@@ -56,7 +56,7 @@ export default function Post() {
         `${formData.date}T${formData.heure}`
       ).toISOString();
 
-      const response = await fetch("http://localhost:8000/trajets", {
+      const response = await fetch("/trajets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
