@@ -92,10 +92,6 @@ export default function MesReservations() {
         }
     };
 
-    // ===============================
-    // 🔥 FILTRAGE PROFESSIONNEL
-    // ===============================
-
     const actives = reservations.filter(r =>
         r.statut === "EN_ATTENTE" || r.statut === "ACCEPTEE"
     );
@@ -169,15 +165,12 @@ export default function MesReservations() {
                                         : "bg-white"
                                     }`}
                             >
-
-                                {/* ===== TRAJET ===== */}
                                 <h5 className="fw-bold mb-2">
                                     {reservation.lieu_depart}{" "}
                                     <span className="text-success">→</span>{" "}
                                     {reservation.destination}
                                 </h5>
 
-                                {/* ===== CONDUCTEUR PREMIUM ===== */}
                                 <div className="d-flex align-items-center gap-3 mb-3">
 
                                     {/* Avatar */}
@@ -188,7 +181,6 @@ export default function MesReservations() {
                                         <i className="bi bi-person-fill text-success"></i>
                                     </div>
 
-                                    {/* Infos */}
                                     <div>
                                         <div className="fw-semibold">
                                             {reservation.conducteur_prenom} {reservation.conducteur_nom}
@@ -226,8 +218,7 @@ export default function MesReservations() {
                                         minute: "2-digit",
                                     })}
                                 </div>
-
-                                {/* ===== STATUT + ACTION ===== */}
+                                
                                 <div className="d-flex justify-content-between align-items-center">
 
                                     <span className={`badge ${reservation.statut === "ACCEPTEE"

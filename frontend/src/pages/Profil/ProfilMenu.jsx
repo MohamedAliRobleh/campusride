@@ -16,7 +16,6 @@ export default function ProfilMenu({ isDark, user }) {
 
 
   const isActive = (to) => {
-    // ✅ gère /profil (index), /profil/infos, et la route exacte
     if (to === "/profil") return pathname === "/profil" || pathname === "/profil/infos";
     return pathname === to;
   };
@@ -53,7 +52,6 @@ export default function ProfilMenu({ isDark, user }) {
   };
 
   return (
-    // ✅ flex column pour pousser “Déconnexion” en bas
     <div className="d-flex flex-column h-100">
       {/* Haut (profil) */}
       <div>
@@ -105,8 +103,7 @@ export default function ProfilMenu({ isDark, user }) {
           <MenuItem to="/profil/parametres" icon="bi-gear" label="Paramètres" />
         </div>
       </div>
-
-      {/* ✅ Déconnexion collée en bas */}
+      
       <div className="mt-auto pt-3">
       <hr className={isDark ? "border-secondary" : ""} />
       <button

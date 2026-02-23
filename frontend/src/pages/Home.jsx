@@ -83,7 +83,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Why choose */}
           <section className="mt-5">
             <h3 className="text-center fw-bold mb-4">Pourquoi choisir CampusRide ?</h3>
 

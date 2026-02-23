@@ -1,5 +1,3 @@
-// src/pages/Conducteur/ReservationsRecues.jsx
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";

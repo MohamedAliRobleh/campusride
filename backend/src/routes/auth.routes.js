@@ -11,7 +11,6 @@ const router = Router();
 
 /*
   ROUTE : POST /auth/register
-  RÔLE  : Inscription d’un nouvel utilisateur
 */
 router.post("/register", async (req, res) => {
   console.log("=== REGISTER BODY ===", req.body);
@@ -24,7 +23,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // 3️ Vérifier si l’email existe déjà dans la base de données
+    // Vérifier si l’email existe déjà dans la base de données
     const userExists = await pool.query(
       "SELECT id FROM utilisateurs WHERE email = $1",
       [email]
@@ -37,9 +36,6 @@ router.post("/register", async (req, res) => {
 
     // Hasher  le mot de passe avant de le stocker
     const motDePasseHash = await bcrypt.hash(motDePasse, 10);
-
-    // Construire nom_complet (ta DB l’exige NOT NULL)
-    // const nom_complet = `${prenom} ${nom}`.trim();
 
     // Insertion du nouvel utilisateur dans la base
     const result = await pool.query(
@@ -58,7 +54,7 @@ router.post("/register", async (req, res) => {
 
 
   } catch (error) {
-    // 7 Gestion des erreurs serveur
+    // Gestion des erreurs serveur
     console.error("Erreur register :", error);
     return res.status(500).json({
       error: "Erreur serveur lors de l'inscription",
@@ -69,15 +65,15 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    // 1️ Récupérer les champs
+    // Récupérer les champs
     const { email, motDePasse } = req.body;
 
-    // 2️ Vérifier présence des champs
+    // Vérifier présence des champs
     if (!email || !motDePasse) {
       return res.status(400).json({ error: "Email et mot de passe obligatoires" });
     }
 
-    // 3️Chercher l'utilisateur par email
+    // Chercher l'utilisateur par email
     const result = await pool.query(
       `SELECT id, prenom, nom, email, mot_de_passe_hash, role, actif
        FROM utilisateurs
@@ -91,25 +87,25 @@ router.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
-    // 4️Vérifier si compte actif
+    // Vérifier si compte actif
     if (user.actif === false) {
       return res.status(403).json({ error: "Compte désactivé" });
     }
 
-    // 5️ Comparer mot de passe (plain vs hash)
+    //Comparer mot de passe (plain vs hash)
     const ok = await bcrypt.compare(motDePasse, user.mot_de_passe_hash);
     if (!ok) {
       return res.status(401).json({ error: "Email ou mot de passe incorrect" });
     }
 
-    // 6️ Générer un token
+    //Générer un token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // 7 Ne jamais renvoyer le hash au frontend
+    //Ne jamais renvoyer le hash au frontend
     const safeUser = {
       id: user.id,
       prenom: user.prenom,

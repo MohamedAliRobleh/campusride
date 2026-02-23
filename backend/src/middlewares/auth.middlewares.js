@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 // Vérifie le token "Bearer <token>"
 export function requireAuth(req, res, next) {
   try {
-    const header = req.headers.authorization; // "Bearer xxx"
+    const header = req.headers.authorization; 
     if (!header) return res.status(401).json({ error: "Token manquant" });
 
     const [type, token] = header.split(" ");
@@ -12,7 +12,7 @@ export function requireAuth(req, res, next) {
     }
 
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload; // ex: { id, role, iat, exp }
+    req.user = payload; 
     next();
   } catch (err) {
     return res.status(401).json({ error: "Token invalide ou expiré" });

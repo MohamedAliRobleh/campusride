@@ -33,20 +33,20 @@ router.get("/", async (req, res) => {
 router.get("/me", requireAuth, async (req, res) => {
   try {
 
-    // 1️⃣ Récupérer l’ID depuis le token
+    //Récupérer l’ID depuis le token
     const userId = req.user.id;
 
-    // 2️⃣ Appeler le modèle
+    //Appeler le modèle
     const user = await getUserById(userId);
 
-    // 3️⃣ Si utilisateur introuvable
+    //Si utilisateur introuvable
     if (!user) {
       return res.status(404).json({
         message: "Utilisateur introuvable."
       });
     }
 
-    // 4️⃣ Retourner les données
+    //Retourner les données
     return res.json({ user });
 
   } catch (err) {
@@ -65,17 +65,10 @@ router.patch("/me", requireAuth, async (req, res) => {
   try {
 
     const userId = req.user.id;
-
-    // ============================================================
-    // 1️⃣ Récupération des données du body
-    // ============================================================
+    //Récupération des données du body
     const { telephone, zones_depart_preferees } = req.body;
 
-    // ============================================================
-    // 2️⃣ Validation simple
-    // ============================================================
-
-    // telephone peut être null ou string
+    //Validation simple
     const telephoneClean =
       telephone !== undefined ? String(telephone).trim() : null;
 
@@ -95,10 +88,8 @@ router.patch("/me", requireAuth, async (req, res) => {
         .map(z => String(z).trim())
         .filter(z => z.length > 0);
     }
-
-    // ============================================================
-    // 3️⃣ Mise à jour via modèle
-    // ============================================================
+    
+    //Mise à jour via modèle
     const profil = await updateUserProfile(
       userId,
       telephoneClean,

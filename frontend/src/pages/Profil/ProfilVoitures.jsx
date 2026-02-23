@@ -3,27 +3,13 @@ import { useOutletContext } from "react-router-dom";
 import ModalAjouterVoiture from "./modals/ModalAjouterVoiture.jsx";
 
 export default function ProfilVoitures() {
-
-  // Récupération du thème depuis le layout parent
   const { isDark } = useOutletContext();
-
-  // Etat pour afficher la modal
   const [showAdd, setShowAdd] = useState(false);
-
-  // Etat pour stocker le véhicule récupéré du backend
   const [vehicule, setVehicule] = useState(null);
-
-  // Etat loading pour UX propre
   const [loading, setLoading] = useState(true);
 
-  // Classe bootstrap dynamique
   const cardClass = `rounded-4 border shadow-sm p-3 p-md-4 ${isDark ? "bg-dark bg-opacity-25 border-secondary" : "bg-white"
     }`;
-
-  /**
-   * Fonction pour charger le véhicule connecté
-   * Appelle GET /vehicules/me
-   */
   const loadVehicule = async () => {
     try {
       setLoading(true);
@@ -81,8 +67,6 @@ export default function ProfilVoitures() {
   }
 };
 
-
-  // Charger au premier rendu
   useEffect(() => {
     loadVehicule();
   }, []);
@@ -114,8 +98,6 @@ export default function ProfilVoitures() {
         )}
 
       </div>
-
-      {/* Affichage véhicule si existe */}
       {!loading && vehicule && (
         <div className="mt-4 border rounded-3 p-3">
 
@@ -129,15 +111,12 @@ export default function ProfilVoitures() {
 
           <div className="mt-3 d-flex gap-2">
 
-            {/* Bouton Modifier */}
             <button
               className="btn btn-outline-primary btn-sm"
               onClick={() => setShowAdd(true)}
             >
               Modifier
             </button>
-
-            {/* Bouton Supprimer */}
             <button
               className="btn btn-outline-danger btn-sm"
               onClick={handleDelete}
@@ -149,11 +128,9 @@ export default function ProfilVoitures() {
         </div>
       )}
 
-
-      {/* Modal */}
       <ModalAjouterVoiture
         show={showAdd}
-        vehicule={vehicule}  // 🔥 IMPORTANT
+        vehicule={vehicule}  
         onClose={() => {
           setShowAdd(false);
           loadVehicule();

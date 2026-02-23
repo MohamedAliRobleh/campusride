@@ -44,8 +44,7 @@ export default function ForgotPassword() {
                 setLoading(false);
                 return;
             }
-
-            // Message générique (même si email inexistant)
+            
             setInfo(data?.message || "Si le compte existe, un email a été envoyé.");
             setLoading(false);
         } catch (err) {

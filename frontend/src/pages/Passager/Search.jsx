@@ -139,7 +139,6 @@ export default function Search() {
                     </div>
                   </div>
 
-                  {/* Badge disponibilité */}
                   <span
                     className={`badge rounded-pill px-3 py-2 ${trajet.places_dispo <= 1
                         ? "bg-danger-subtle text-danger"
@@ -152,7 +151,6 @@ export default function Search() {
 
                 </div>
 
-                {/* ===== PROGRESS BAR ===== */}
                 <div className="mb-3">
                   <div className="progress rounded-pill" style={{ height: 6 }}>
                     <div
@@ -168,7 +166,6 @@ export default function Search() {
                   </div>
                 </div>
 
-                {/* ===== FOOTER ACTION ===== */}
                 <div className="d-flex justify-content-between align-items-center">
 
                   <div className="small text-muted">
@@ -204,7 +201,6 @@ export default function Search() {
         </div>
       </main>
 
-      {/* ✅ Toast moderne */}
       <div
         className="position-fixed bottom-0 end-0 p-3"
         style={{ zIndex: 9999 }}

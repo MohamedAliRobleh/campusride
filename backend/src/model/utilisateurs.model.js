@@ -2,30 +2,17 @@ import { pool } from "../DB/db.js";
 
 
 export async function getUserRole(userId) {
-
-  // Exécution de la requête SQL
-  // On sélectionne uniquement la colonne "role"
-  // On vérifie aussi que l'utilisateur est actif (actif = TRUE)
   const { rows } = await pool.query(
     "SELECT role FROM utilisateurs WHERE id = $1 AND actif = TRUE",
-    [userId] // $1 correspond à userId (protégé contre injection SQL)
+    [userId] // 
   );
 
-  // rows est un tableau de résultats.
-  // Si un utilisateur est trouvé, rows[0] contient la ligne.
-  // On utilise ?. pour éviter une erreur si rows[0] n’existe pas.
-  // Si aucun utilisateur n’est trouvé, on retourne null.
   return rows[0]?.role ?? null;
 }
 
 
 
 export async function getUserById(userId) {
-
-  // Requête SQL :
-  // - Sélection des informations principales depuis utilisateurs
-  // - Jointure avec profils si existant
-  // - Filtre uniquement les comptes actifs
   const { rows } = await pool.query(
     `
     SELECT
@@ -44,15 +31,11 @@ export async function getUserById(userId) {
     WHERE u.id = $1
     AND u.actif = TRUE
     `,
-    [userId] // Paramètre sécurisé
+    [userId] 
   );
-
-  // Si aucun utilisateur trouvé → retourne null
   if (rows.length === 0) {
     return null;
   }
-
-  // Retourne la première ligne trouvée
   return rows[0];
 }
 
