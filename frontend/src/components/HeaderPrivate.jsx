@@ -242,7 +242,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                     <li>
                       <button
                         className="dropdown-item text-danger"
-                        onClick={logout}
+                        onClick={handleLogout}
                       >
                         <i className="bi bi-box-arrow-right me-2" />
                         Déconnexion
