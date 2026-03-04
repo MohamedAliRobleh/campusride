@@ -110,10 +110,10 @@ export default function MesReservations() {
             <main className="flex-grow-1 py-4">
                 <div className="container" style={{ maxWidth: 720 }}>
 
-                    <h4 className="fw-bold mb-4">Mes Réservations</h4>
+                    <h4 className="fw-bold mb-3">Mes Réservations</h4>
 
                     {/* Toggle */}
-                    <div className="d-flex gap-2 mb-4">
+                    <div className="d-flex gap-2 mb-3">
                         <button
                             className={`btn btn-sm rounded-pill ${filter === "ACTIVES"
                                 ? "btn-success"
@@ -160,7 +160,7 @@ export default function MesReservations() {
                         return (
                             <div
                                 key={reservation.id}
-                                className={`rounded-4 shadow-sm p-4 mb-4 transition-card fade-in ${isDark
+                                className={`rounded-4 shadow-sm p-3 p-md-4 mb-3 transition-card fade-in ${isDark
                                         ? "bg-dark border border-secondary"
                                         : "bg-white"
                                     }`}
