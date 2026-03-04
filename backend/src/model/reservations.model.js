@@ -11,11 +11,12 @@ export async function createReservation(passagerId, trajetId) {
     await client.query("BEGIN");
 
     const trajetRes = await client.query(
-  `
+      `
   SELECT 
     id,
     conducteur_id,
     statut,
+    places_total,
     places_dispo,
     dateheure_depart,
     lieu_depart,
@@ -24,8 +25,8 @@ export async function createReservation(passagerId, trajetId) {
   WHERE id = $1
   FOR UPDATE
   `,
-  [trajetId]
-);
+      [trajetId]
+    );
 
     if (trajetRes.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -33,30 +34,27 @@ export async function createReservation(passagerId, trajetId) {
     }
 
     const trajet = trajetRes.rows[0];
- 
-const userRes = await client.query(
-  `SELECT prenom FROM utilisateurs WHERE id = $1`,
-  [passagerId]
-);
 
-const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
+    const userRes = await client.query(
+      `SELECT prenom FROM utilisateurs WHERE id = $1`,
+      [passagerId]
+    );
+
+    const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
 
 
- 
     if (trajet.conducteur_id === passagerId) {
       await client.query("ROLLBACK");
       return { error: "CANNOT_RESERVE_OWN_TRAJET" };
     }
 
- 
     // Vérifier statut du trajet
     if (trajet.statut !== "PLANIFIE") {
       await client.query("ROLLBACK");
       return { error: "TRAJET_NOT_PLANIFIE" };
     }
 
-    
-    //DOUBLE SÉCURITÉ DATE PASSÉE
+    // DOUBLE SÉCURITÉ DATE PASSÉE
     const maintenant = new Date();
 
     if (new Date(trajet.dateheure_depart) <= maintenant) {
@@ -64,7 +62,27 @@ const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
       return { error: "TRAJET_PAST" };
     }
 
-    // Vérifier disponibilité des places
+    // ======================================================
+    // Bloquer si (EN_ATTENTE + ACCEPTEE) >= places_total
+    // ======================================================
+    const countRes = await client.query(
+      `
+      SELECT COUNT(*)::int AS nb
+      FROM reservations
+      WHERE trajet_id = $1
+        AND statut IN ('EN_ATTENTE','ACCEPTEE')
+      `,
+      [trajetId]
+    );
+
+    const nbReservationsActives = countRes.rows[0].nb;
+
+    if (nbReservationsActives >= trajet.places_total) {
+      await client.query("ROLLBACK");
+      return { error: "NO_PLACES_AVAILABLE" };
+    }
+
+    // Vérifier disponibilité des places (ta condition existante)
     if (trajet.places_dispo <= 0) {
       await client.query("ROLLBACK");
       return { error: "NO_PLACES_AVAILABLE" };
@@ -79,13 +97,12 @@ const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
 )
 VALUES ($1, $2)
 RETURNING *;
-
   `,
       [trajetId, passagerId]
     );
 
     // ===============================
-    // 7️⃣ Créer notification pour le conducteur
+    // Créer notification pour le conducteur
     // ===============================
     await client.query(
       `
@@ -100,27 +117,18 @@ RETURNING *;
       [
         trajet.conducteur_id,
         `Nouvelle demande de ${prenom} pour votre trajet ${trajet.lieu_depart} → ${trajet.destination}`
-
       ]
     );
 
-    // ===============================
     // Valider la transaction
-    // ===============================
     await client.query("COMMIT");
-
 
     return { reservation: reservationRes.rows[0] };
 
   } catch (err) {
 
-    // ===============================
-    // Annuler transaction en cas d'erreur
-    // ===============================
     await client.query("ROLLBACK");
 
-    // 23505 = violation UNIQUE
-    // Cela signifie que le passager a déjà réservé ce trajet
     if (err.code === "23505") {
       return { error: "ALREADY_RESERVED" };
     }
@@ -129,16 +137,10 @@ RETURNING *;
 
   } finally {
 
-    // Toujours libérer la connexion
     client.release();
   }
 }
 
-
-
-/**
- * Liste les demandes de réservation reçues pour les trajets d'un conducteur.
- */
 export async function listReservationsForConducteur(conducteurId) {
   const { rows } = await pool.query(
     `
@@ -175,8 +177,6 @@ export async function acceptReservation(conducteurId, reservationId) {
 
   try {
 
-   
-    // Démarrer transaction
     await client.query("BEGIN");
 
     // Charger réservation + trajet
@@ -203,29 +203,27 @@ export async function acceptReservation(conducteurId, reservationId) {
     }
 
     const row = rows[0];
-
-    
     // Vérifier propriétaire
-   
+
     if (row.conducteur_id !== conducteurId) {
       await client.query("ROLLBACK");
       return { error: "NOT_OWNER" };
     }
 
-    
+
     // Vérifier statut EN_ATTENTE
     if (row.reservation_statut !== "EN_ATTENTE") {
       await client.query("ROLLBACK");
       return { error: "NOT_PENDING" };
     }
 
-        // Vérifier places disponibles
+    // Vérifier places disponibles
     if (row.places_dispo <= 0) {
       await client.query("ROLLBACK");
       return { error: "NO_PLACES_AVAILABLE" };
     }
 
-  
+
     // Mettre réservation ACCEPTÉE
     const reservationRes = await client.query(
       `
@@ -237,7 +235,7 @@ export async function acceptReservation(conducteurId, reservationId) {
       [reservationId]
     );
 
-    
+
     // Décrémenter places_dispo
     const trajetRes = await client.query(
       `
@@ -251,7 +249,7 @@ export async function acceptReservation(conducteurId, reservationId) {
 
     const newPlaces = trajetRes.rows[0].places_dispo;
 
-   // CLÔTURE AUTOMATIQUE SI COMPLET
+    // CLÔTURE AUTOMATIQUE SI COMPLET
     if (newPlaces === 0) {
       await client.query(
         `
@@ -262,6 +260,24 @@ export async function acceptReservation(conducteurId, reservationId) {
         [row.trajet_id]
       );
     }
+
+    // ===============================
+    // Notifier le passager : réservation acceptée
+    // ===============================
+    await client.query(
+      `
+  INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+  SELECT
+    r.passager_id,
+    'RESERVATION_ACCEPTEE',
+    'Votre demande a été acceptée pour le trajet ' || t.lieu_depart || ' → ' || t.destination,
+    NOW()
+  FROM reservations r
+  JOIN trajets t ON t.id = r.trajet_id
+  WHERE r.id = $1;
+  `,
+      [reservationId]
+    );
 
     // Valider transaction
     await client.query("COMMIT");
@@ -339,6 +355,21 @@ export async function refuseReservation(conducteurId, reservationId) {
       `,
       [reservationId]
     );
+    // notifier passager
+    await client.query(
+      `
+  INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+  SELECT
+    r.passager_id,
+    'RESERVATION_REFUSEE',
+    'Votre demande a été refusée pour le trajet ' || t.lieu_depart || ' → ' || t.destination,
+    NOW()
+  FROM reservations r
+  JOIN trajets t ON t.id = r.trajet_id
+  WHERE r.id = $1;
+  `,
+      [reservationId]
+    );
 
     await client.query("COMMIT");
 
@@ -353,7 +384,7 @@ export async function refuseReservation(conducteurId, reservationId) {
 
 
 export async function getReservationsByPassager(passagerId) {
- const { rows } = await pool.query(
+  const { rows } = await pool.query(
     `
     SELECT
   r.id,
@@ -402,7 +433,7 @@ export async function cancelReservation(passagerId, reservationId) {
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Charger reservation + trajet (verrou)
+    // 1️ Charger reservation + trajet (verrou)
     const { rows } = await client.query(
       `
       SELECT
@@ -427,25 +458,25 @@ export async function cancelReservation(passagerId, reservationId) {
 
     const row = rows[0];
 
-    // 2️⃣ Vérifier propriétaire
+    // 2️ Vérifier propriétaire
     if (row.passager_id !== passagerId) {
       await client.query("ROLLBACK");
       return { error: "NOT_OWNER" };
     }
 
-    // 3️⃣ Interdire annulation déjà REFUSEE ou ANNULEE
+    // 3️ Interdire annulation déjà REFUSEE ou ANNULEE
     if (row.statut === "REFUSEE" || row.statut === "ANNULEE") {
       await client.query("ROLLBACK");
       return { error: "ALREADY_CLOSED" };
     }
 
-    // 4️⃣ Interdire annulation si trajet passé
+    // 4️ Interdire annulation si trajet passé
     if (new Date(row.dateheure_depart) <= new Date()) {
       await client.query("ROLLBACK");
       return { error: "TRAJET_PAST" };
     }
 
-    // 5️⃣ Si ACCEPTÉE → remettre une place
+    // 5️ Si ACCEPTÉE → remettre une place
     if (row.statut === "ACCEPTEE") {
       await client.query(
         `
@@ -457,7 +488,7 @@ export async function cancelReservation(passagerId, reservationId) {
       );
     }
 
-    // 6️⃣ Mettre statut ANNULEE
+    // 6️ Mettre statut ANNULEE
     const reservationRes = await client.query(
       `
       UPDATE reservations
@@ -468,6 +499,22 @@ export async function cancelReservation(passagerId, reservationId) {
       [reservationId]
     );
 
+// Notification pour le passager
+// ===============================
+await client.query(
+  `
+  INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+  SELECT
+    r.passager_id,
+    'RESERVATION_REFUSEE',
+    'Votre demande a été refusée pour le trajet ' || t.lieu_depart || ' → ' || t.destination,
+    NOW()
+  FROM reservations r
+  JOIN trajets t ON t.id = r.trajet_id
+  WHERE r.id = $1;
+  `,
+  [reservationId]
+);
     await client.query("COMMIT");
 
     return {

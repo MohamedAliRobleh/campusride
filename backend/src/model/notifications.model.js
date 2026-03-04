@@ -19,3 +19,14 @@ export async function listNotificationsByUser(userId) {
 
   return rows;
 }
+
+
+export async function notifierConducteurReservationAnnulee({ client, conducteurId, trajet }) {
+  await client.query(
+    `
+    INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+    VALUES ($1, 'RESERVATION_ANNULEE', $2, NOW());
+    `,
+    [conducteurId, `Un passager a annulé sa réservation pour ${trajet.lieu_depart} → ${trajet.destination}.`]
+  );
+}
