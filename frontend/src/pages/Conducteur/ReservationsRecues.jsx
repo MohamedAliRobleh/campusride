@@ -121,7 +121,7 @@ export default function ReservationsRecues() {
               return (
                 <div
                   key={r.reservation_id}
-                  className={`rounded-4 shadow-sm p-4 mb-4 ${
+                  className={`rounded-4 shadow-sm p-3 p-md-4 mb-3 ${
                     isDark
                       ? "bg-dark border border-secondary"
                       : "bg-white"

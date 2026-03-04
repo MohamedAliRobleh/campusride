@@ -72,9 +72,9 @@ if (data?.user?.role === "ADMIN") {
       />
 
       {/* ================= MAIN ================= */}
-      <main className="py-4">
+      <main className="py-2 py-md-4">
         <div className="d-flex justify-content-center">
-          <div className="w-100 px-3" style={{ maxWidth: 520 }}>
+          <div className="w-100 px-3" style={{ maxWidth: 480 }}>
             {/* Header spécifique à la page Login (retour + titre) */}
             <div className="d-flex align-items-center justify-content-between mb-3">
               <button
@@ -95,15 +95,15 @@ if (data?.user?.role === "ADMIN") {
               <span style={{ width: 34 }} />
             </div>
 
-            <div className="text-center mb-4">
+            <div className="text-center mb-3">
               <div
                 className="mx-auto rounded-4 d-flex align-items-center justify-content-center border"
-                style={{ width: 96, height: 96, background: "rgba(25,135,84,0.12)" }}
+                style={{ width: 72, height: 72, background: "rgba(25,135,84,0.12)" }}
               >
-                <i className="bi bi-car-front-fill" style={{ color: "#198754", fontSize: 34 }} />
+                <i className="bi bi-car-front-fill" style={{ color: "#198754", fontSize: 28 }} />
               </div>
 
-              <h1 className="mt-3 mb-1 fw-bold">CampusRide</h1>
+              <h1 className="mt-2 mb-1 fw-bold fs-3">CampusRide</h1>
               <p className={isDark ? "text-secondary mb-0" : "text-muted mb-0"}>
                 Le covoiturage pour La Cité
               </p>
@@ -118,7 +118,7 @@ if (data?.user?.role === "ADMIN") {
               <div>
                 <label className="form-label fw-semibold">Courriel institutionnel</label>
                 <input
-                  className="form-control form-control-lg"
+                  className="form-control form-control"
                   type="email"
                   placeholder="nom@lacite.on.ca"
                   value={email}
@@ -129,7 +129,7 @@ if (data?.user?.role === "ADMIN") {
 
               <div>
                 <label className="form-label fw-semibold">Mot de passe</label>
-                <div className="input-group input-group-lg">
+                <div className="input-group">
                   <input
                     className="form-control"
                     type={showPassword ? "text" : "password"}
@@ -161,7 +161,7 @@ if (data?.user?.role === "ADMIN") {
 
               </div>
 
-              <button type="submit" className="btn btn-success btn-lg" disabled={loading}>
+              <button type="submit" className="btn btn-success w-100" disabled={loading}>
                 {loading ? "Connexion..." : "Se connecter"}
               </button>
             </form>

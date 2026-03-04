@@ -66,7 +66,7 @@ export default function ProfilLayout() {
       ? "bg-dark bg-opacity-10 border-secondary"
       : "bg-white border-light");
 
-  const panelMinHeight = 560;
+  const panelMinHeight = 280;
 
   return (
     <div
@@ -84,7 +84,7 @@ export default function ProfilLayout() {
         }
       />
 
-      <main className="py-4" style={{ flexGrow: 1 }}>
+      <main className="py-2 py-md-4" style={{ flexGrow: 1 }}>
         <div className="d-flex justify-content-center">
           <div className="w-100 px-3" style={{ maxWidth: 980 }}>
             <div className="row g-3 g-lg-4 align-items-stretch">

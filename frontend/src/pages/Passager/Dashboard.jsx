@@ -69,8 +69,8 @@ export default function Dashboard() {
   const inputClass = isDark ? "bg-dark text-light border-secondary" : "";
 
   const heroHeight = isSmallLaptop
-    ? "clamp(420px, 52vh, 540px)"
-    : "clamp(460px, 58vh, 620px)";
+    ? "clamp(300px, 42vh, 480px)"
+    : "clamp(360px, 52vh, 560px)";
 
   return (
     <div
@@ -86,30 +86,30 @@ export default function Dashboard() {
       {/* ================= MAIN ================= */}
       <main className="py-3 py-md-4">
         <div className="container">
-          <div className="text-center mb-3">
+          <div className="text-center mb-2">
             <h2
               className="m-0"
               style={{
                 fontWeight: 650,
                 letterSpacing: "-0.5px",
-                fontSize: "1.75rem",
+                fontSize: "clamp(1.2rem, 3vw, 1.75rem)",
               }}
             >
               Bienvenue sur CampusRide
             </h2>
           </div>
 
-          <p className={isDark ? "text-secondary mb-3" : "text-muted mb-3"}>
+          <p className={`small ${isDark ? "text-secondary mb-2" : "text-muted mb-2"}`}>
             {user?.prenom ? `Bonjour, ${user.prenom} 👋` : "Bienvenue sur CampusRide"}
           </p>
 
-          <div className="row g-4">
+          <div className="row g-3">
             <div className="col-12 col-lg-6">
               <section className="position-relative overflow-hidden rounded-4 shadow-sm">
                 {/* IMAGE BACKGROUND */}
                 <div
                   style={{
-                    height: heroHeight,
+                    minHeight: heroHeight,
                     backgroundImage: `url(${heroImg})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
@@ -288,9 +288,9 @@ export default function Dashboard() {
                 <div className="d-flex gap-3 align-items-center">
                   <div
                     className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                    style={{ width: 64, height: 64, background: "rgba(25,135,84,0.12)" }}
+                    style={{ width: 48, height: 48, background: "rgba(25,135,84,0.12)" }}
                   >
-                    <i className="bi bi-gift-fill" style={{ color: "#198754", fontSize: 24 }} />
+                    <i className="bi bi-gift-fill" style={{ color: "#198754", fontSize: 20 }} />
                   </div>
 
                   <div className="flex-grow-1">

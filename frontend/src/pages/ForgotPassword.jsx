@@ -58,9 +58,9 @@ export default function ForgotPassword() {
         <div className={isDark ? "bg-dark text-light" : "bg-light text-dark"} style={{ minHeight: "100vh" }}>
             <Header isDark={isDark} onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} />
 
-            <main className="py-4">
+            <main className="py-2 py-md-4">
                 <div className="d-flex justify-content-center">
-                    <div className="w-100 px-3" style={{ maxWidth: 520 }}>
+                    <div className="w-100 px-3" style={{ maxWidth: 480 }}>
                         <div className="d-flex align-items-center justify-content-between mb-3">
                             <button
                                 type="button"
@@ -98,7 +98,7 @@ export default function ForgotPassword() {
                             <div>
                                 <label className="form-label fw-semibold">Courriel</label>
                                 <input
-                                    className="form-control form-control-lg"
+                                    className="form-control form-control"
                                     type="email"
                                     placeholder="nom@lacite.on.ca"
                                     value={email}
@@ -110,7 +110,7 @@ export default function ForgotPassword() {
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-success btn-lg" disabled={loading}>
+                            <button type="submit" className="btn btn-success w-100" disabled={loading}>
                                 {loading ? "Envoi..." : "Envoyer le lien"}
                             </button>
 
