@@ -91,7 +91,7 @@ export default function ReservationsRecues() {
 
       <main className="flex-grow-1 py-4">
         <div className="container" style={{ maxWidth: 720 }}>
-          <h4 className="fw-bold mb-2">Réservations reçues</h4>
+          <h4 className="fw-bold mb-2">Mes passagers</h4>
           <p className="text-muted mb-4">
             Gérez les demandes envoyées par les passagers.
           </p>
