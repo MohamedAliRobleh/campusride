@@ -19,10 +19,11 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
   const userName = user?.prenom || user?.nom || "Utilisateur";
   const userInitial = (userName?.charAt(0) || "U").toUpperCase();
 
-  const handleLogout = () => {
-  logout(navigate);
-};
+  const isDriver = user?.role === "CONDUCTEUR";
 
+  const handleLogout = () => {
+    logout(navigate);
+  };
 
   const [notifications, setNotifications] = useState([]);
 
@@ -40,19 +41,17 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
         if (!response.ok) return;
 
         const data = await response.json();
-        const unreadOnly = (data.notifications || []).filter(n => !n.lu_le);
+        const unreadOnly = (data.notifications || []).filter(
+          (n) => !n.lu_le
+        );
         setNotifications(unreadOnly);
-
-
       } catch (err) {
         console.error("Erreur notifications:", err);
       }
     };
 
     fetchNotifications();
-
   }, [token]);
-
 
   const markAsReadAndRedirect = async (notif) => {
     try {
@@ -64,36 +63,38 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
       });
 
       setNotifications([]);
-      ;
 
-      // Redirection selon type
       if (notif.type === "DEMANDE_RESERVATION") {
         navigate("/conducteur/reservations-recues");
       }
-
     } catch (err) {
       console.error("Erreur markAsRead:", err);
     }
   };
 
-  //Compteur non lues
   const unreadCount = notifications.length;
-
 
   return (
     <div>
       <div style={{ height: 36, backgroundColor: "#009E57" }} />
 
-      <header className={`sticky-top border-bottom ${isDark ? "bg-dark" : "bg-light"}`}>
-        <nav className={`navbar navbar-expand-lg ${isDark ? "navbar-dark" : "navbar-light"}`}>
+      <header
+        className={`sticky-top border-bottom ${isDark ? "bg-dark" : "bg-light"
+          }`}
+      >
+        <nav
+          className={`navbar navbar-expand-lg ${isDark ? "navbar-dark" : "navbar-light"
+            }`}
+        >
           <div className="container-fluid px-4">
             <Link
               className="navbar-brand fw-bold d-flex align-items-center gap-2"
               to="/passager"
             >
               <span style={{ fontSize: 20 }}>🚗</span>
-              CampusRide
+              Tableau de Bord
             </Link>
+
             <button
               className="navbar-toggler"
               type="button"
@@ -111,32 +112,37 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                 <li className="nav-item">
                   <Link className="nav-link" to="/passager/search">
                     <i className="bi bi-search me-1" />
-                    Rechercher
+                    Trouver
                   </Link>
                 </li>
 
                 <li className="nav-item">
                   <Link className="nav-link" to="/passager/mes-reservations">
-                    <i className="bi bi-ticket-perforated me-1" />
+                    <span className="me-1">👤</span>
                     Mes réservations
                   </Link>
                 </li>
 
-                {user?.role === "CONDUCTEUR" && (
+                {isDriver && (
                   <li className="nav-item">
-                    <Link className="nav-link" to="/conducteur/reservations-recues">
-                      <i className="bi bi-inbox me-1" />
-                      Réservations reçues
+                    <Link
+                      className="nav-link"
+                      to="/conducteur/reservations-recues"
+                    >
+                      <span className="me-1">🚗</span>
+                      Mes passagers
                     </Link>
                   </li>
                 )}
 
-                <li className="nav-item">
-                  <Link className="nav-link" to="/passager/post">
-                    <i className="bi bi-car-front me-1" />
-                    Publier
-                  </Link>
-                </li>
+                {isDriver && (
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/passager/post">
+                      <span className="me-1">➕</span>
+                      Publier
+                    </Link>
+                  </li>
+                )}
 
               </ul>
 
@@ -148,7 +154,6 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                   <button
                     className="btn btn-link position-relative p-0 text-decoration-none"
                     data-bs-toggle="dropdown"
-                    aria-expanded="false"
                     type="button"
                   >
                     <i className="bi bi-bell fs-5"></i>
@@ -171,7 +176,9 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                       Notifications
                     </li>
 
-                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
 
                     {notifications.length === 0 ? (
                       <li className="px-3 py-2 text-muted small">
@@ -181,9 +188,12 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                       notifications.slice(0, 5).map((notif) => (
                         <li key={notif.id}>
                           <button
-                            className={`dropdown-item small ${!notif.lu_le ? "fw-bold" : ""}`}
+                            className={`dropdown-item small ${!notif.lu_le ? "fw-bold" : ""
+                              }`}
                             type="button"
-                            onClick={() => markAsReadAndRedirect(notif)}
+                            onClick={() =>
+                              markAsReadAndRedirect(notif)
+                            }
                           >
                             {notif.message}
                           </button>
@@ -193,7 +203,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                   </ul>
                 </li>
 
-                {/* User Dropdown */}
+                {/* User */}
                 <li className="nav-item dropdown">
                   <button
                     className="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2"
@@ -208,6 +218,11 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                     </span>
 
                     <span className="fw-semibold">{userName}</span>
+
+                    {isDriver && (
+                      <span className="badge bg-success">Conducteur</span>
+                    )}
+
                     <i className="bi bi-chevron-down small opacity-75" />
                   </button>
 
@@ -217,10 +232,14 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                   >
                     <li className="px-3 py-2 text-center">
                       <div className="fw-semibold">{userName}</div>
-                      <div className="small text-muted">{user?.email || ""}</div>
+                      <div className="small text-muted">
+                        {user?.email || ""}
+                      </div>
                     </li>
 
-                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
 
                     <li>
                       <button
@@ -244,11 +263,14 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                   </ul>
                 </li>
 
-                {/* Theme toggle */}
+                {/* Theme */}
                 <li className="nav-item">
                   <button
                     type="button"
-                    className={`btn btn-sm ${isDark ? "btn-outline-light" : "btn-outline-dark"}`}
+                    className={`btn btn-sm ${isDark
+                        ? "btn-outline-light"
+                        : "btn-outline-dark"
+                      }`}
                     onClick={onToggleTheme}
                   >
                     {isDark ? "☀️" : "🌙"}
