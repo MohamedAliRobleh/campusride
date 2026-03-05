@@ -37,11 +37,16 @@ router.post("/", requireAuth, async (req, res) => {
       });
     }
 
-    const { lieu_depart, destination, dateheure_depart, places_total } = req.body;
+    const { lieu_depart, destination, dateheure_depart, places_total,
+            depart_lat, depart_lng, dest_lat, dest_lng } = req.body;
 
     const lieuDepart = String(lieu_depart ?? "").trim();
     const dest = String(destination ?? "").trim();
     const placesTotalNum = Number(places_total);
+    const departLat = depart_lat != null ? parseFloat(depart_lat) : null;
+    const departLng = depart_lng != null ? parseFloat(depart_lng) : null;
+    const dstLat    = dest_lat   != null ? parseFloat(dest_lat)   : null;
+    const dstLng    = dest_lng   != null ? parseFloat(dest_lng)   : null;
 
     if (!lieuDepart || !dest) {
       return res.status(400).json({ message: "lieu_depart et destination sont requis." });
@@ -67,7 +72,11 @@ router.post("/", requireAuth, async (req, res) => {
       lieuDepart,
       destination: dest,
       dateHeureDepart: d.toISOString(),
-      placesTotal: placesTotalNum
+      placesTotal: placesTotalNum,
+      departLat,
+      departLng,
+      destLat: dstLat,
+      destLng: dstLng,
     });
 
     return res.status(201).json({ trajet });
@@ -84,11 +93,19 @@ router.get("/recherche", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const depart = req.query.depart ? String(req.query.depart) : null;
+    const depart      = req.query.depart      ? String(req.query.depart)      : null;
     const destination = req.query.destination ? String(req.query.destination) : null;
-    const date = req.query.date ? String(req.query.date) : null;
+    const date        = req.query.date        ? String(req.query.date)        : null;
+    const departLat   = req.query.depart_lat  ? parseFloat(req.query.depart_lat) : null;
+    const departLng   = req.query.depart_lng  ? parseFloat(req.query.depart_lng) : null;
+    const destLat     = req.query.dest_lat    ? parseFloat(req.query.dest_lat)   : null;
+    const destLng     = req.query.dest_lng    ? parseFloat(req.query.dest_lng)   : null;
+    const rayonKm     = req.query.rayon_km    ? parseFloat(req.query.rayon_km)   : 5;
 
-    const trajets = await searchTrajets({ depart, destination, date, userId });
+    const trajets = await searchTrajets({
+      depart, destination, date, userId,
+      departLat, departLng, destLat, destLng, rayonKm
+    });
 
     return res.json({
       filters: { depart, destination, date },

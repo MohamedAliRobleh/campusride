@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate.jsx";
 import Footer from "../../components/Footer.jsx";
+import PlacesInput from "../../components/PlacesInput.jsx";
 
 export default function Post() {
   const navigate = useNavigate();
@@ -20,6 +21,10 @@ export default function Post() {
     heure: "",
     places: 3,
   });
+
+  // Coordonnées GPS des points de départ et destination
+  const [departCoords, setDepartCoords] = useState(null);  // { lat, lng }
+  const [destCoords,   setDestCoords]   = useState(null);
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -64,6 +69,10 @@ export default function Post() {
           destination: formData.destination,
           dateheure_depart: dateHeure,
           places_total: Number(formData.places),
+          depart_lat: departCoords?.lat ?? null,
+          depart_lng: departCoords?.lng ?? null,
+          dest_lat:   destCoords?.lat   ?? null,
+          dest_lng:   destCoords?.lng   ?? null,
         }),
       });
 
@@ -77,13 +86,9 @@ export default function Post() {
       setToastMessage("Trajet publié avec succès 🚗");
 
       // Reset formulaire
-      setFormData({
-        depart: "",
-        destination: "",
-        date: "",
-        heure: "",
-        places: 3,
-      });
+      setFormData({ depart: "", destination: "", date: "", heure: "", places: 3 });
+      setDepartCoords(null);
+      setDestCoords(null);
 
     } catch (error) {
       setToastMessage(error.message);
@@ -103,103 +108,129 @@ export default function Post() {
       <main className="flex-grow-1 py-4">
         <div className="container" style={{ maxWidth: 720 }}>
 
-          <h4 className="fw-bold mb-3">Publier un trajet</h4>
-          <p className="text-muted">
-            Partagez votre route avec d'autres étudiants.
-          </p>
+          <div className="mb-4">
+            <h4 className="fw-bold mb-1">Publier un trajet</h4>
+            <p className={`small mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+              Partagez votre route avec d'autres étudiants du Collège La Cité.
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="mt-4">
+          <div className={`rounded-4 shadow-sm overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}>
+            <div style={{ height: 3, background: "linear-gradient(90deg, #198754, #20c374)" }} />
 
-            {/* Départ */}
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Lieu de départ
-              </label>
-              <div className="input-group">
-                <span className="input-group-text bg-white">
-                  <i className="bi bi-geo-alt text-success"></i>
-                </span>
-                <input
-                  type="text"
-                  name="depart"
-                  className="form-control"
-                  value={formData.depart}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
+            <form onSubmit={handleSubmit} className="p-3 p-md-4">
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Destination
-              </label>
-              <div className="input-group">
-                <span className="input-group-text bg-white">
-                  <i className="bi bi-geo-alt text-success"></i>
-                </span>
-                <input
-                  type="text"
-                  name="destination"
-                  className="form-control"
-                  value={formData.destination}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
+              {/* Itinéraire */}
+              <div className="mb-4">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style={{ width: 30, height: 30, background: "rgba(25,135,84,0.1)" }}>
+                    <i className="bi bi-map text-success" style={{ fontSize: "0.85rem" }} />
+                  </div>
+                  <span className="fw-bold" style={{ fontSize: "0.88rem" }}>Itinéraire</span>
+                </div>
 
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  className="form-control"
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="d-flex gap-3">
+                  <div className="d-flex flex-column align-items-center flex-shrink-0" style={{ paddingTop: "0.85rem" }}>
+                    <div className="rounded-circle bg-success" style={{ width: 9, height: 9 }} />
+                    <div style={{ width: 2, flexGrow: 1, background: "repeating-linear-gradient(to bottom, #198754 0, #198754 4px, transparent 4px, transparent 8px)", margin: "3px 0" }} />
+                    <i className="bi bi-geo-alt-fill text-success" style={{ fontSize: "0.85rem" }} />
+                  </div>
+
+                  <div className="flex-grow-1 d-flex flex-column gap-2">
+                    <div>
+                      <label className="form-label" style={{ color: "#198754", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Départ</label>
+                      <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
+                        <PlacesInput
+                          className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
+                          placeholder="Ex: 1485 Caldwell Ave, Ottawa"
+                          value={formData.depart}
+                          onChange={(val) => setFormData((prev) => ({ ...prev, depart: val }))}
+                          onPlaceSelect={(p) => { setFormData((prev) => ({ ...prev, depart: p.address })); setDepartCoords({ lat: p.lat, lng: p.lng }); }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="form-label" style={{ color: "#198754", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Destination</label>
+                      <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
+                        <PlacesInput
+                          className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
+                          placeholder="Ex: Place d'Orléans, Ottawa"
+                          value={formData.destination}
+                          onChange={(val) => setFormData((prev) => ({ ...prev, destination: val }))}
+                          onPlaceSelect={(p) => { setFormData((prev) => ({ ...prev, destination: p.address })); setDestCoords({ lat: p.lat, lng: p.lng }); }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">Heure</label>
-                <input
-                  type="time"
-                  name="heure"
-                  className="form-control"
-                  value={formData.heure}
-                  onChange={handleChange}
-                  required
-                />
+              <hr className={isDark ? "border-secondary" : ""} />
+
+              {/* Horaire */}
+              <div className="mb-4">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style={{ width: 30, height: 30, background: "rgba(25,135,84,0.1)" }}>
+                    <i className="bi bi-clock text-success" style={{ fontSize: "0.85rem" }} />
+                  </div>
+                  <span className="fw-bold" style={{ fontSize: "0.88rem" }}>Horaire de départ</span>
+                </div>
+
+                <div className="row g-3">
+                  <div className="col-6">
+                    <label className="form-label">Date</label>
+                    <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
+                      <i className="bi bi-calendar3 text-success me-2" style={{ fontSize: "0.85rem" }} />
+                      <input type="date" name="date" className={`border-0 bg-transparent form-control p-0 shadow-none ${isDark ? "text-light" : ""}`} value={formData.date} onChange={handleChange} required />
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <label className="form-label">Heure</label>
+                    <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
+                      <i className="bi bi-clock text-success me-2" style={{ fontSize: "0.85rem" }} />
+                      <input type="time" name="heure" className={`border-0 bg-transparent form-control p-0 shadow-none ${isDark ? "text-light" : ""}`} value={formData.heure} onChange={handleChange} required />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="mb-4">
-              <label className="form-label fw-semibold">
-                Places disponibles
-              </label>
-              <select
-                name="places"
-                className="form-select"
-                value={formData.places}
-                onChange={handleChange}
-              >
-                <option value="1">1 place</option>
-                <option value="2">2 places</option>
-                <option value="3">3 places</option>
-                <option value="4">4 places</option>
-              </select>
-            </div>
+              <hr className={isDark ? "border-secondary" : ""} />
 
-            <button
-              type="submit"
-              className="btn btn-success w-100 rounded-pill py-3 fw-bold"
-            >
-              Publier le trajet
-            </button>
+              {/* Places */}
+              <div className="mb-4">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style={{ width: 30, height: 30, background: "rgba(25,135,84,0.1)" }}>
+                    <i className="bi bi-people text-success" style={{ fontSize: "0.85rem" }} />
+                  </div>
+                  <span className="fw-bold" style={{ fontSize: "0.88rem" }}>Nombre de places</span>
+                </div>
 
-          </form>
+                <div className="d-flex gap-2">
+                  {[1, 2, 3, 4].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`btn flex-fill rounded-3 fw-semibold ${Number(formData.places) === n ? "btn-success" : "btn-outline-secondary"}`}
+                      style={{ fontSize: "0.9rem" }}
+                      onClick={() => setFormData((prev) => ({ ...prev, places: n }))}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <div className={`mt-2 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+                  <i className="bi bi-info-circle me-1" />
+                  {formData.places} place{formData.places > 1 ? "s" : ""} disponible{formData.places > 1 ? "s" : ""} pour les passagers
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-success w-100 rounded-3 py-2 fw-bold" style={{ fontSize: "0.95rem" }}>
+                <i className="bi bi-send-fill me-2" />
+                Publier le trajet
+              </button>
+
+            </form>
+          </div>
         </div>
       </main>
 
@@ -229,3 +260,4 @@ export default function Post() {
     </div>
   );
 }
+

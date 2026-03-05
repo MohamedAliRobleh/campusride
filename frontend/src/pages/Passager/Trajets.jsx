@@ -1,63 +1,196 @@
 // src/pages/Passager/Trajets.jsx
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 
 export default function Trajets() {
-
+  const navigate = useNavigate();
   const [trajets, setTrajets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
+  const [theme] = useState(() => localStorage.getItem("theme") || "light");
+  const isDark = theme === "dark";
 
   useEffect(() => {
-  const fetchTrajets = async () => {
-    try {
-      const response = await fetch("/trajets/recherche", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    document.body.dataset.bsTheme = theme;
+  }, [theme]);
 
-      const data = await response.json();
-      setTrajets(data.trajets);
+  useEffect(() => {
+    const fetchTrajets = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/trajets/recherche", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        setTrajets(data.trajets || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrajets();
+  }, [token]);
 
-    } catch (err) {
-      console.error(err);
-    }
+  const getInitiales = (prenom, nom) => {
+    const p = prenom?.[0]?.toUpperCase() ?? "";
+    const n = nom?.[0]?.toUpperCase() ?? "";
+    return p + n || "?";
   };
 
-  fetchTrajets();
-}, []);
-
-
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <HeaderPrivate />
+    <div className={`d-flex flex-column min-vh-100 ${isDark ? "bg-dark text-light" : "bg-light text-dark"}`}>
+      <HeaderPrivate isDark={isDark} />
 
       <main className="flex-grow-1 py-4">
         <div className="container" style={{ maxWidth: 720 }}>
-          <h4 className="fw-bold mb-4">Tous les trajets disponibles</h4>
 
-          {trajets.map((t) => (
-            <div key={t.id} className="card shadow-sm mb-3 rounded-4">
-              <div className="card-body">
-                <h5 className="fw-bold">
-                  {t.lieu_depart} → {t.destination}
-                </h5>
-                <p className="text-muted small mb-1">
-                  {new Date(t.dateheure_depart).toLocaleString()}
-                </p>
-                <span className="badge bg-success">
-                  {t.places_dispo} places disponibles
-                </span>
-              </div>
+          {/* Header */}
+          <div className="mb-4">
+            <h4 className="fw-bold mb-1">Tous les trajets disponibles</h4>
+            <p className={`small mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+              Trouvez un trajet et réservez votre place en quelques secondes.
+            </p>
+          </div>
+
+          {/* Loading */}
+          {loading && (
+            <div className="text-center py-5">
+              <div className="spinner-border text-success" />
             </div>
-          ))}
+          )}
+
+          {/* Empty */}
+          {!loading && trajets.length === 0 && (
+            <div className={`text-center py-5 rounded-4 ${isDark ? "bg-dark border border-secondary" : "bg-white"} shadow-sm`}>
+              <i className="bi bi-car-front text-success" style={{ fontSize: "2.5rem" }} />
+              <p className="mt-3 fw-semibold mb-1">Aucun trajet disponible</p>
+              <p className={`small ${isDark ? "text-secondary" : "text-muted"}`}>
+                Revenez plus tard ou modifiez vos critères de recherche.
+              </p>
+            </div>
+          )}
+
+          {/* Cards */}
+          {!loading && trajets.map((t) => {
+            const dateObj = new Date(t.dateheure_depart);
+            const conducteurNom = `${t.conducteur_prenom ?? ""} ${t.conducteur_nom ?? ""}`.trim();
+            const initiales = getInitiales(t.conducteur_prenom, t.conducteur_nom);
+            const hasVoiture = t.voiture_marque;
+            const voitureLabel = hasVoiture
+              ? `${t.voiture_marque} ${t.voiture_modele}${t.voiture_couleur ? ` · ${t.voiture_couleur}` : ""}${t.voiture_annee ? ` · ${t.voiture_annee}` : ""}`
+              : null;
+
+            return (
+              <div
+                key={t.id}
+                className={`rounded-4 shadow-sm mb-3 overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}
+              >
+                {/* Top accent */}
+                <div style={{ height: 3, background: "linear-gradient(90deg, #198754, #20c374)" }} />
+
+                <div className="p-3 p-md-4">
+                  {/* Route + heure */}
+                  <div className="d-flex align-items-start gap-3 mb-3">
+                    {/* Route line */}
+                    <div className="d-flex flex-column align-items-center flex-shrink-0" style={{ paddingTop: 4 }}>
+                      <div className="rounded-circle bg-success" style={{ width: 9, height: 9 }} />
+                      <div
+                        style={{
+                          width: 2,
+                          height: 28,
+                          background: "repeating-linear-gradient(to bottom, #198754 0, #198754 4px, transparent 4px, transparent 8px)",
+                          margin: "3px 0",
+                        }}
+                      />
+                      <i className="bi bi-geo-alt-fill text-success" style={{ fontSize: "0.85rem" }} />
+                    </div>
+
+                    {/* Lieux */}
+                    <div className="flex-grow-1">
+                      <div className="fw-bold" style={{ fontSize: "0.95rem", lineHeight: 1.2 }}>
+                        {t.lieu_depart}
+                      </div>
+                      <div className={`small mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ lineHeight: 1.2 }}>
+                        {t.destination}
+                      </div>
+                    </div>
+
+                    {/* Heure + date */}
+                    <div className="text-end flex-shrink-0">
+                      <div className="fw-bold text-success" style={{ fontSize: "1.1rem" }}>
+                        {dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                      <div className={`small ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
+                        {dateObj.toLocaleDateString("fr-CA", { day: "2-digit", month: "short" })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr className={`my-2 ${isDark ? "border-secondary" : ""}`} />
+
+                  {/* Conducteur + voiture + places */}
+                  <div className="d-flex align-items-center gap-3">
+                    {t.conducteur_photo_url ? (
+                      <img
+                        src={t.conducteur_photo_url}
+                        alt={conducteurNom}
+                        className="rounded-circle flex-shrink-0"
+                        style={{ width: 38, height: 38, objectFit: "cover" }}
+                      />
+                    ) : (
+                      <div
+                        className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                        style={{ width: 38, height: 38, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem" }}
+                      >
+                        {initiales}
+                      </div>
+                    )}
+
+                    {/* Infos conducteur */}
+                    <div className="flex-grow-1 min-w-0">
+                      <div className="fw-semibold" style={{ fontSize: "0.88rem" }}>
+                        {conducteurNom || "Conducteur"}
+                      </div>
+                      {voitureLabel && (
+                        <div className={`small d-flex align-items-center gap-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+                          <i className="bi bi-car-front" />
+                          {voitureLabel}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Places dispo */}
+                    <div className="flex-shrink-0 d-flex align-items-center gap-2">
+                      <span className="badge rounded-pill bg-success-subtle text-success px-3 py-2 fw-semibold">
+                        <i className="bi bi-people-fill me-1" />
+                        {t.places_dispo} place{t.places_dispo > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bouton Réserver */}
+                  <button
+                    type="button"
+                    className="btn btn-success w-100 rounded-3 fw-semibold mt-3 py-2"
+                    style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none" }}
+                    onClick={() => navigate("/passager/search", { state: { trajetId: t.id } })}
+                  >
+                    <i className="bi bi-check-circle me-2" />
+                    Réserver ce trajet
+                  </button>
+                </div>
+              </div>
+            );
+          })}
 
         </div>
       </main>
 
-      <Footer />
+      <Footer isDark={isDark} />
     </div>
   );
 }

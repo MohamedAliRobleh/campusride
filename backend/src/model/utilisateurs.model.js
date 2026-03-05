@@ -24,7 +24,8 @@ export async function getUserById(userId) {
       u.actif,
       u.cree_le,
       p.telephone,
-      p.zones_depart_preferees
+      p.zones_depart_preferees,
+      p.photo_url
     FROM utilisateurs u
     LEFT JOIN profils p
       ON p.utilisateur_id = u.id
@@ -39,6 +40,18 @@ export async function getUserById(userId) {
   return rows[0];
 }
 
+
+export async function updateUserPhoto(userId, photoUrl) {
+  const { rows } = await pool.query(
+    `INSERT INTO profils (utilisateur_id, photo_url, maj_le)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT (utilisateur_id)
+     DO UPDATE SET photo_url = EXCLUDED.photo_url, maj_le = NOW()
+     RETURNING photo_url;`,
+    [userId, photoUrl]
+  );
+  return rows[0];
+}
 
 export async function updateUserProfile(userId, telephone, zones) {
 

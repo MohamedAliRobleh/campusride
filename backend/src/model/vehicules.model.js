@@ -87,6 +87,7 @@ export async function getVehiculeByUserId(userId) {
       couleur,
       plaque,
       nb_places,
+      photo_url,
       maj_le
     FROM vehicules
     WHERE utilisateur_id = $1
@@ -142,6 +143,15 @@ export async function updateVehiculeByUserId(userId, data) {
   }
 
   return rows[0];
+}
+
+export async function updateVehiculePhoto(userId, photoUrl) {
+  const { rows } = await pool.query(
+    `UPDATE vehicules SET photo_url = $1, maj_le = NOW()
+     WHERE utilisateur_id = $2 RETURNING photo_url;`,
+    [photoUrl, userId]
+  );
+  return rows[0] ?? null;
 }
 
 export async function supprimerVehiculeEtRevertRole(userId) {

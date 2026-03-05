@@ -1,9 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
-import { ajouterVehiculeEtMajConducteur } from "../model/vehicules.model.js";
-import { getVehiculeByUserId } from "../model/vehicules.model.js";
-import { updateVehiculeByUserId } from "../model/vehicules.model.js";
-import { supprimerVehiculeEtRevertRole } from "../model/vehicules.model.js";
+import { ajouterVehiculeEtMajConducteur, getVehiculeByUserId, updateVehiculeByUserId, supprimerVehiculeEtRevertRole, updateVehiculePhoto } from "../model/vehicules.model.js";
+import { upload } from "../middlewares/upload.middleware.js";
 
 
 
@@ -216,5 +214,23 @@ router.delete("/me", requireAuth, async (req, res) => {
 });
 
 
+
+// =====================
+// POST /me/photo — Upload photo de voiture
+// =====================
+router.post("/me/photo", requireAuth, upload.single("photo"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Aucun fichier reçu." });
+    }
+    const photoUrl = `/uploads/${req.file.filename}`;
+    const result = await updateVehiculePhoto(req.user.id, photoUrl);
+    if (!result) return res.status(404).json({ message: "Aucun véhicule enregistré." });
+    return res.json({ photo_url: result.photo_url });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
 
 export default router;

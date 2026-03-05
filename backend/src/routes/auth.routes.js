@@ -23,6 +23,14 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    // Validation email institutionnel La Cité
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@(lacite\.on\.ca|collegelacite\.ca)$/i;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: "Seuls les courriels @lacite.on.ca ou @collegelacite.ca sont acceptés.",
+      });
+    }
+
     // Vérifier si l’email existe déjà dans la base de données
     const userExists = await pool.query(
       "SELECT id FROM utilisateurs WHERE email = $1",
@@ -73,11 +81,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Email et mot de passe obligatoires" });
     }
 
-    // Chercher l'utilisateur par email
+    // Chercher l'utilisateur par email (avec photo_url via profils)
     const result = await pool.query(
-      `SELECT id, prenom, nom, email, mot_de_passe_hash, role, actif
-       FROM utilisateurs
-       WHERE email = $1`,
+      `SELECT u.id, u.prenom, u.nom, u.email, u.mot_de_passe_hash, u.role, u.actif,
+              p.photo_url
+       FROM utilisateurs u
+       LEFT JOIN profils p ON p.utilisateur_id = u.id
+       WHERE u.email = $1`,
       [email]
     );
 
@@ -113,6 +123,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
       role: user.role,
       actif: user.actif,
+      photo_url: user.photo_url || null,
     };
 
     return res.status(200).json({

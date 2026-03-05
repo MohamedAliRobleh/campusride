@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer.jsx";
 import HeaderPrivate from "../../components/HeaderPrivate.jsx";
+import PlacesInput from "../../components/PlacesInput.jsx";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -40,13 +41,15 @@ export default function Dashboard() {
   const [depart, setDepart] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState("");
+  const [departCoords, setDepartCoords] = useState(null); // { lat, lng }
+  const [destCoords,   setDestCoords]   = useState(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (!depart.trim() || !destination.trim() || !date) return;
 
     navigate("/passager/search", {
-      state: { depart, destination, date },
+      state: { depart, destination, date, departCoords, destCoords },
     });
   };
 
@@ -64,9 +67,6 @@ export default function Dashboard() {
     };
     fetchPopulaires();
   }, []);
-
-  const inputGroupTextClass = isDark ? "bg-dark text-light border-secondary" : "";
-  const inputClass = isDark ? "bg-dark text-light border-secondary" : "";
 
   const heroHeight = isSmallLaptop
     ? "clamp(300px, 42vh, 480px)"
@@ -138,137 +138,210 @@ export default function Dashboard() {
                     <div className="mt-auto px-3 px-md-4 pb-3 pb-md-4">
                       <form
                         onSubmit={handleSearch}
-                        className={`p-3 rounded-4 shadow-lg border ${isDark
-                            ? "bg-dark bg-opacity-75 border-secondary"
-                            : "bg-white border-light"
-                          }`}
+                        className={`rounded-4 shadow-lg overflow-hidden ${isDark ? "bg-dark" : "bg-white"}`}
+                        style={{ backdropFilter: "blur(8px)" }}
                       >
-                        <div className="row g-3">
-                          {/* Départ */}
-                          <div className="col-12">
-                            <label className="small fw-semibold mb-1">Départ</label>
+                        {/* Green header bar */}
+                        <div
+                          className="px-3 py-2 d-flex align-items-center gap-2"
+                          style={{ background: "linear-gradient(90deg, #198754, #20c374)" }}
+                        >
+                          <i className="bi bi-car-front-fill text-white" style={{ fontSize: "0.95rem" }} />
+                          <span className="text-white fw-semibold" style={{ fontSize: "0.82rem", letterSpacing: "0.03em" }}>
+                            Trouver un trajet
+                          </span>
+                        </div>
 
-                            <div className="input-group">
-                              <span className={`input-group-text ${inputGroupTextClass}`}>
-                                <i className="bi bi-geo-alt-fill text-success" />
-                              </span>
-
-                              <input
-                                className={`form-control ${inputClass}`}
-                                placeholder="Ma position, Collège La Cité, 1485 Caldwell..."
-                                value={depart}
-                                onChange={(e) => setDepart(e.target.value)}
-                              />
-
-                              <button
-                                type="button"
-                                className="btn btn-outline-success"
-                                onClick={() => {
-                                  if (navigator.geolocation) {
-                                    navigator.geolocation.getCurrentPosition(() => {
-                                      setDepart("Ma position actuelle");
-                                    });
-                                  }
-                                }}
-                                aria-label="Utiliser GPS pour départ"
-                              >
-                                <i className="bi bi-crosshair"></i>
-                              </button>
-                            </div>
-
-                            <div className="mt-2 d-flex gap-2 flex-wrap">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-success-subtle text-success rounded-pill"
-                                onClick={() => setDepart("Collège La Cité")}
-                              >
-                                📍 Collège La Cité
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* swap */}
-                          <div className="col-12 text-center">
-                            <button
-                              type="button"
-                              className="btn btn-outline-secondary rounded-circle"
-                              style={{ width: 42, height: 42 }}
-                              onClick={() => {
-                                const temp = depart;
-                                setDepart(destination);
-                                setDestination(temp);
-                              }}
-                              aria-label="Inverser départ/destination"
+                        <div className="p-3">
+                          {/* Route fields row */}
+                          <div className="d-flex gap-2 align-items-stretch">
+                            {/* Route line visual */}
+                            <div
+                              className="d-flex flex-column align-items-center flex-shrink-0"
+                              style={{ paddingTop: "0.9rem", gap: 0 }}
                             >
-                              <i className="bi bi-arrow-down-up"></i>
-                            </button>
-                          </div>
-
-                          {/* Destination */}
-                          <div className="col-12">
-                            <label className="small fw-semibold mb-1">Destination</label>
-
-                            <div className="input-group">
-                              <span className={`input-group-text ${inputGroupTextClass}`}>
-                                <i className="bi bi-pin-map-fill text-success" />
-                              </span>
-
-                              <input
-                                className={`form-control ${inputClass}`}
-                                placeholder="Où allez-vous ?"
-                                value={destination}
-                                onChange={(e) => setDestination(e.target.value)}
+                              <div
+                                className="rounded-circle bg-success"
+                                style={{ width: 9, height: 9, flexShrink: 0 }}
                               />
-
-                              <button
-                                type="button"
-                                className="btn btn-outline-success"
-                                onClick={() => {
-                                  if (navigator.geolocation) {
-                                    navigator.geolocation.getCurrentPosition(() => {
-                                      setDestination("Ma position actuelle");
-                                    });
-                                  }
+                              <div
+                                style={{
+                                  width: 2,
+                                  flexGrow: 1,
+                                  background: "repeating-linear-gradient(to bottom, #198754 0, #198754 4px, transparent 4px, transparent 8px)",
+                                  margin: "3px 0",
                                 }}
-                                aria-label="Utiliser GPS pour destination"
-                              >
-                                <i className="bi bi-crosshair"></i>
-                              </button>
+                              />
+                              <i
+                                className="bi bi-geo-alt-fill text-success"
+                                style={{ fontSize: "0.9rem", marginBottom: 2 }}
+                              />
                             </div>
 
-                            <div className="mt-2 d-flex gap-2 flex-wrap">
+                            {/* Inputs */}
+                            <div className="flex-grow-1 d-flex flex-column gap-1">
+                              {/* Depart field */}
+                              <div>
+                                <div
+                                  className="text-uppercase fw-bold mb-1"
+                                  style={{
+                                    fontSize: "0.65rem",
+                                    letterSpacing: "0.06em",
+                                    color: "#198754",
+                                  }}
+                                >
+                                  Départ
+                                </div>
+                                <div
+                                  className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border border-0"}`}
+                                  style={{ padding: "0.35rem 0.65rem" }}
+                                >
+                                  <PlacesInput
+                                    className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
+                                    placeholder="Ex: 1485 Caldwell Ave, Ottawa"
+                                    value={depart}
+                                    onChange={(v) => { setDepart(v); setDepartCoords(null); }}
+                                    onPlaceSelect={(p) => { setDepart(p.address); setDepartCoords({ lat: p.lat, lng: p.lng }); }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn p-0 ms-1 text-success opacity-75"
+                                    style={{ lineHeight: 1 }}
+                                    onClick={() => {
+                                      if (navigator.geolocation) {
+                                        navigator.geolocation.getCurrentPosition((pos) => {
+                                          setDepart("Ma position actuelle");
+                                          setDepartCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                                        });
+                                      }
+                                    }}
+                                    aria-label="GPS départ"
+                                    title="Ma position"
+                                  >
+                                    <i className="bi bi-crosshair" style={{ fontSize: "0.85rem" }} />
+                                  </button>
+                                </div>
+                                <div className="mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setDepart("Collège La Cité")}
+                                    className="badge border-0 rounded-pill fw-normal"
+                                    style={{
+                                      background: "rgba(25,135,84,0.1)",
+                                      color: "#198754",
+                                      fontSize: "0.72rem",
+                                      padding: "3px 10px",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    📍 Collège La Cité
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Destination field */}
+                              <div className="mt-1">
+                                <div
+                                  className="text-uppercase fw-bold mb-1"
+                                  style={{
+                                    fontSize: "0.65rem",
+                                    letterSpacing: "0.06em",
+                                    color: "#198754",
+                                  }}
+                                >
+                                  Destination
+                                </div>
+                                <div
+                                  className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border border-0"}`}
+                                  style={{ padding: "0.35rem 0.65rem" }}
+                                >
+                                  <PlacesInput
+                                    className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
+                                    placeholder="Où allez-vous ?"
+                                    value={destination}
+                                    onChange={(v) => { setDestination(v); setDestCoords(null); }}
+                                    onPlaceSelect={(p) => { setDestination(p.address); setDestCoords({ lat: p.lat, lng: p.lng }); }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn p-0 ms-1 text-success opacity-75"
+                                    style={{ lineHeight: 1 }}
+                                    onClick={() => {
+                                      if (navigator.geolocation) {
+                                        navigator.geolocation.getCurrentPosition((pos) => {
+                                          setDestination("Ma position actuelle");
+                                          setDestCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                                        });
+                                      }
+                                    }}
+                                    aria-label="GPS destination"
+                                    title="Ma position"
+                                  >
+                                    <i className="bi bi-crosshair" style={{ fontSize: "0.85rem" }} />
+                                  </button>
+                                </div>
+                                <div className="mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setDestination("Collège La Cité")}
+                                    className="badge border-0 rounded-pill fw-normal"
+                                    style={{
+                                      background: "rgba(25,135,84,0.1)",
+                                      color: "#198754",
+                                      fontSize: "0.72rem",
+                                      padding: "3px 10px",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    📍 Collège La Cité
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Swap button — right side */}
+                            <div className="d-flex align-items-center flex-shrink-0">
                               <button
                                 type="button"
-                                className="btn btn-sm btn-success-subtle text-success rounded-pill"
-                                onClick={() => setDestination("Collège La Cité")}
+                                className={`btn rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm ${isDark ? "btn-outline-secondary" : "btn-outline-secondary"}`}
+                                style={{ width: 30, height: 30 }}
+                                onClick={() => {
+                                  const temp = depart;
+                                  setDepart(destination);
+                                  setDestination(temp);
+                                  const tempC = departCoords;
+                                  setDepartCoords(destCoords);
+                                  setDestCoords(tempC);
+                                }}
+                                aria-label="Inverser départ/destination"
+                                title="Inverser"
                               >
-                                📍 Collège La Cité
+                                <i className="bi bi-arrow-down-up" style={{ fontSize: "0.75rem" }} />
                               </button>
                             </div>
                           </div>
 
-                          <div className="col-12 col-md-7">
-                            <label className="small fw-semibold mb-1">Date</label>
-                            <div className="input-group">
-                              <span className={`input-group-text ${inputGroupTextClass}`}>
-                                <i className="bi bi-calendar-event" />
-                              </span>
+                          {/* Date + Rechercher */}
+                          <div className="d-flex gap-2 mt-3">
+                            <div
+                              className={`d-flex align-items-center rounded-3 flex-grow-1 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`}
+                              style={{ padding: "0.35rem 0.65rem" }}
+                            >
+                              <i className="bi bi-calendar-event text-success me-2" style={{ fontSize: "0.85rem" }} />
                               <input
                                 type="date"
-                                className={`form-control ${inputClass}`}
+                                className={`border-0 bg-transparent form-control p-0 shadow-none ${isDark ? "text-light" : ""}`}
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
                               />
                             </div>
-                          </div>
-
-                          <div className="col-12 col-md-5 d-grid">
                             <button
                               type="submit"
-                              className="btn btn-success fw-semibold rounded-4 shadow-sm py-2"
+                              className="btn btn-success fw-semibold rounded-3 px-3 shadow-sm d-flex align-items-center gap-2 flex-shrink-0"
+                              style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none" }}
                             >
-                              <i className="bi bi-search me-2" />
-                              Rechercher
+                              <i className="bi bi-search" />
+                              <span className="d-none d-sm-inline">Rechercher</span>
                             </button>
                           </div>
                         </div>
@@ -356,54 +429,82 @@ export default function Dashboard() {
                 <div className="d-grid gap-3 mt-3">
                   {trips.map((trajet) => {
                     const dateObj = new Date(trajet.dateheure_depart);
+                    const conducteurNom = `${trajet.conducteur_prenom ?? ""} ${trajet.conducteur_nom ?? ""}`.trim();
+                    const initiales = ((trajet.conducteur_prenom?.[0] ?? "") + (trajet.conducteur_nom?.[0] ?? "")).toUpperCase() || "?";
+                    const voitureLabel = trajet.voiture_marque
+                      ? `${trajet.voiture_marque} ${trajet.voiture_modele ?? ""}${trajet.voiture_couleur ? ` · ${trajet.voiture_couleur}` : ""}`
+                      : null;
 
                     return (
                       <div
                         key={trajet.id}
-                        className={`card border shadow-sm rounded-4 ${isDark ? "bg-dark bg-opacity-25 border-secondary" : ""
-                          }`}
+                        className={`rounded-4 shadow-sm overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white border"}`}
                       >
-                        <div className="card-body p-3 p-md-4">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="flex-grow-1">
-                              {/* ✅ un peu moins gros */}
-                              <div className="fw-bold fs-5 mb-1">
-                                {dateObj.toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </div>
-
-                              <div className={`small ${isDark ? "text-secondary" : "text-muted"}`}>
-                                <i className="bi bi-geo-alt-fill text-success me-1"></i>
-                                {trajet.lieu_depart}
-                                <span className="mx-2 text-success fw-bold">→</span>
-                                {trajet.destination}
-                              </div>
+                        <div style={{ height: 3, background: "linear-gradient(90deg, #198754, #20c374)" }} />
+                        <div className="p-3">
+                          {/* Route */}
+                          <div className="d-flex align-items-start gap-2 mb-2">
+                            <div className="d-flex flex-column align-items-center flex-shrink-0" style={{ paddingTop: 4 }}>
+                              <div className="rounded-circle bg-success" style={{ width: 8, height: 8 }} />
+                              <div style={{ width: 2, height: 20, background: "repeating-linear-gradient(to bottom, #198754 0, #198754 3px, transparent 3px, transparent 7px)", margin: "2px 0" }} />
+                              <i className="bi bi-geo-alt-fill text-success" style={{ fontSize: "0.75rem" }} />
                             </div>
-
-                            <div className="text-end">
-                              <span className="badge rounded-pill bg-success-subtle text-success px-3 py-2">
-                                <i className="bi bi-people-fill me-1"></i>
-                                {trajet.places_dispo} dispo
-                              </span>
+                            <div className="flex-grow-1">
+                              <div className="fw-semibold" style={{ fontSize: "0.88rem", lineHeight: 1.2 }}>{trajet.lieu_depart}</div>
+                              <div className={`small mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.8rem", lineHeight: 1.2 }}>{trajet.destination}</div>
+                            </div>
+                            <div className="text-end flex-shrink-0">
+                              <div className="fw-bold text-success" style={{ fontSize: "1rem" }}>
+                                {dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                              <div className={`${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.72rem" }}>
+                                {dateObj.toLocaleDateString("fr-CA", { day: "2-digit", month: "short" })}
+                              </div>
                             </div>
                           </div>
 
-                          <hr className={isDark ? "border-secondary my-3" : "my-3"} />
+                          <hr className={`my-2 ${isDark ? "border-secondary" : ""}`} />
 
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div className={`small ${isDark ? "text-secondary" : "text-muted"}`}>
-                              Départ aujourd’hui
+                          {/* Conducteur + places + bouton */}
+                          <div className="d-flex align-items-center gap-2">
+                            {trajet.conducteur_photo_url ? (
+                              <img
+                                src={trajet.conducteur_photo_url}
+                                alt={conducteurNom}
+                                className="rounded-circle flex-shrink-0"
+                                style={{ width: 30, height: 30, objectFit: "cover" }}
+                              />
+                            ) : (
+                              <div
+                                className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                                style={{ width: 30, height: 30, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.7rem" }}
+                              >
+                                {initiales}
+                              </div>
+                            )}
+                            <div className="flex-grow-1 min-w-0">
+                              <div className="fw-semibold" style={{ fontSize: "0.8rem" }}>{conducteurNom || "Conducteur"}</div>
+                              {voitureLabel && (
+                                <div className={`${isDark ? "text-secondary" : "text-muted"} d-flex align-items-center gap-1`} style={{ fontSize: "0.72rem" }}>
+                                  <i className="bi bi-car-front" />
+                                  {voitureLabel}
+                                </div>
+                              )}
                             </div>
-
-                            <button
-                              type="button"
-                              className="btn btn-success fw-semibold px-4 rounded-pill"
-                              onClick={() => navigate("/passager/search")}
-                            >
-                              Réserver
-                            </button>
+                            <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                              <span className="badge rounded-pill bg-success-subtle text-success px-2 py-1" style={{ fontSize: "0.72rem" }}>
+                                <i className="bi bi-people-fill me-1" />
+                                {trajet.places_dispo}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn btn-success btn-sm fw-semibold rounded-3 px-3"
+                                style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none", fontSize: "0.8rem" }}
+                                onClick={() => navigate("/passager/search")}
+                              >
+                                Réserver
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

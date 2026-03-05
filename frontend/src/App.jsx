@@ -13,6 +13,7 @@ import Post from "./pages/Passager/Post.jsx";
 import Trajets from "./pages/Passager/Trajets.jsx";
 import Aide from "./pages/Passager/Aide.jsx";
 import MesReservations from "./pages/Passager/MesReservations.jsx";
+import Messages from "./pages/Passager/Messages.jsx";
 
 
 //Conducteur
@@ -56,6 +57,7 @@ export default function App() {
       <Route path="/passager/trajets" element={<Trajets />} />
       <Route path="/passager/aide" element={<Aide />} />
       <Route path="/passager/mes-reservations" element={<MesReservations />} />
+      <Route path="/passager/messages" element={<Messages />} />
 
     
       <Route path="/conducteur/mes-trajets" element={<MesTrajets />} />

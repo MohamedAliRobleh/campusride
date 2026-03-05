@@ -1,13 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   DESIGN SYSTEM — CampusRide
+   ============================================================ */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   font-size: 16px;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --cr-green:          #198754;
+  --cr-green-mid:      #1aa066;
+  --cr-green-light:    #20c374;
+  --cr-green-gradient: linear-gradient(135deg, #198754, #20c374);
+  --cr-green-subtle:   rgba(25, 135, 84, 0.08);
+
+  --cr-shadow-xs: 0 1px 4px rgba(0,0,0,0.06);
+  --cr-shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --cr-shadow:    0 4px 16px rgba(0,0,0,0.10);
+  --cr-shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+
+  --cr-radius-sm: 8px;
+  --cr-radius:    12px;
+  --cr-radius-lg: 16px;
+  --cr-radius-xl: 20px;
+
+  --cr-transition: 0.2s ease;
 }
 
 body {
@@ -17,9 +40,7 @@ body {
 }
 
 @media (max-width: 576px) {
-  :root {
-    font-size: 14px;
-  }
+  :root { font-size: 14px; }
 }
 
 #root {
@@ -27,50 +48,197 @@ body {
   min-height: 100vh;
 }
 
+html { scroll-behavior: smooth; }
 
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
 
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(25, 135, 84, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(25, 135, 84, 0.55); }
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.3px;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.btn {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform var(--cr-transition), box-shadow var(--cr-transition), background var(--cr-transition);
+}
+
+.btn:active { transform: scale(0.97) !important; }
+
+.btn-success {
+  background: var(--cr-green-gradient);
+  border: none;
+  box-shadow: 0 2px 8px rgba(25,135,84,0.22);
+}
+.btn-success:hover, .btn-success:focus {
+  background: linear-gradient(135deg, #157347, #1aaa66);
+  box-shadow: 0 4px 14px rgba(25,135,84,0.32);
+  transform: translateY(-1px);
+  border: none;
+}
+
+.btn-outline-success {
+  border-color: var(--cr-green);
+  color: var(--cr-green);
+}
+.btn-outline-success:hover {
+  background: var(--cr-green-subtle);
+  color: var(--cr-green);
+  border-color: var(--cr-green);
+  transform: translateY(-1px);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-danger:hover,
+.btn-outline-dark:hover,
+.btn-outline-light:hover {
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+
+.form-control,
+.form-select {
+  border-radius: var(--cr-radius-sm);
+  font-size: 0.92rem;
+  transition: border-color var(--cr-transition), box-shadow var(--cr-transition);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--cr-green);
+  box-shadow: 0 0 0 3px rgba(25,135,84,0.12);
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.card,
 .transition-card {
-  transition: all 0.35s ease;
+  transition: transform var(--cr-transition), box-shadow var(--cr-transition);
 }
 
+.card:hover,
 .transition-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: var(--cr-shadow);
 }
 
-/* Animation apparition */
+/* ============================================================
+   DROPDOWNS
+   ============================================================ */
+
+.dropdown-menu {
+  border: none !important;
+  box-shadow: var(--cr-shadow-lg) !important;
+  border-radius: var(--cr-radius) !important;
+  padding: 0.4rem !important;
+  animation: fadeInDown 0.15s ease forwards;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+  border-radius: var(--cr-radius-sm);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.5rem 0.8rem;
+  transition: background var(--cr-transition), color var(--cr-transition);
+}
+
+.dropdown-item:hover {
+  background: var(--cr-green-subtle);
+  color: var(--cr-green);
+}
+
+.dropdown-item.text-danger:hover {
+  background: rgba(220,53,69,0.08);
+  color: #dc3545;
+}
+
+/* ============================================================
+   NAVBAR ACTIVE LINK
+   ============================================================ */
+
+.cr-nav-link {
+  position: relative;
+  font-weight: 500;
+  font-size: 0.88rem;
+  padding-bottom: 4px !important;
+}
+
+.cr-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--cr-green-gradient);
+  border-radius: 2px;
+  transition: width var(--cr-transition);
+}
+
+.cr-nav-link:hover::after { width: 100%; }
+.cr-nav-link.active::after { width: 100%; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
 .fade-in {
-  animation: fadeInUp 0.4s ease forwards;
+  animation: fadeInUp 0.35s ease both;
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+.fade-in:nth-child(1) { animation-delay: 0.00s; }
+.fade-in:nth-child(2) { animation-delay: 0.05s; }
+.fade-in:nth-child(3) { animation-delay: 0.10s; }
+.fade-in:nth-child(4) { animation-delay: 0.15s; }
+.fade-in:nth-child(5) { animation-delay: 0.20s; }
 
-.card {
-  transition: all 0.25s ease;
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+.min-w-0 { min-width: 0; }
+
+.text-gradient-green {
+  background: var(--cr-green-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 25px rgba(0,0,0,0.08);
-}
-
-.transition-card {
-  transition: all 0.25s ease;
-}
-
-.transition-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
-}
-
-
