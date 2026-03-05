@@ -1,6 +1,11 @@
 import "dotenv/config";
 import app from "./src/app.js";
+import { runMigrations } from "./src/DB/db.js";
+import { startCronJobs } from "./src/utils/cron.js";
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running under port ${process.env.PORT}`);
+runMigrations().then(() => {
+  startCronJobs();
+  app.listen(process.env.PORT, () => {
+    console.log(`Server running under port ${process.env.PORT}`);
+  });
 });

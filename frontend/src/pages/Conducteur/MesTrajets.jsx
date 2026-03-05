@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
+import PlacesInput from "../../components/PlacesInput";
 
 export default function MesTrajets() {
     const [trajets, setTrajets] = useState([]);
@@ -211,15 +212,17 @@ export default function MesTrajets() {
                             </h5>
                         ) : (
                             <div className="d-flex flex-column gap-2 mt-2">
-                                <input
+                                <PlacesInput
                                     className="form-control"
+                                    placeholder="Lieu de départ"
                                     value={draft.lieu_depart}
-                                    onChange={(e) => setDraft((p) => ({ ...p, lieu_depart: e.target.value }))}
+                                    onChange={(val) => setDraft((p) => ({ ...p, lieu_depart: val }))}
                                 />
-                                <input
+                                <PlacesInput
                                     className="form-control"
+                                    placeholder="Destination"
                                     value={draft.destination}
-                                    onChange={(e) => setDraft((p) => ({ ...p, destination: e.target.value }))}
+                                    onChange={(val) => setDraft((p) => ({ ...p, destination: val }))}
                                 />
                             </div>
                         )}

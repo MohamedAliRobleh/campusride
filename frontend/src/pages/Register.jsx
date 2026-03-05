@@ -32,22 +32,33 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
 
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@(lacite\.on\.ca|collegelacite\.ca)$/i;
+  if (!emailRegex.test(email)) {
+    setError("Seuls les courriels @lacite.on.ca ou @collegelacite.ca sont acceptés.");
+    return;
+  }
+  if (motDePasse.length < 8) {
+    setError("Le mot de passe doit contenir au moins 8 caractères.");
+    return;
+  }
+  if (motDePasse !== confirm) {
+    setError("Les mots de passe ne correspondent pas.");
+    return;
+  }
+  if (!terms) {
+    setError("Vous devez accepter les conditions d'utilisation.");
+    return;
+  }
+
   try {
+    setLoading(true);
     const res = await fetch("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prenom,
-        nom,
-        email,
-        motDePasse,
-      }),
+      body: JSON.stringify({ prenom, nom, email, motDePasse }),
     });
 
-    console.log("STATUS:", res.status);
-
     const data = await res.json();
-    console.log("DATA:", data);
 
     if (!res.ok) {
       setError(data.error || "Inscription impossible");
@@ -58,6 +69,8 @@ const handleSubmit = async (e) => {
   } catch (err) {
     console.error("FETCH ERROR:", err);
     setError("Erreur réseau");
+  } finally {
+    setLoading(false);
   }
 };
 

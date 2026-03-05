@@ -397,9 +397,11 @@ export async function getReservationsByPassager(passagerId) {
   t.destination,
   t.dateheure_depart,
 
+  u.id AS conducteur_id,
   u.prenom AS conducteur_prenom,
   u.nom AS conducteur_nom,
   u.email AS conducteur_email,
+  p.photo_url AS conducteur_photo_url,
 
   v.marque,
   v.modele,
@@ -410,6 +412,7 @@ export async function getReservationsByPassager(passagerId) {
 FROM reservations r
 JOIN trajets t ON t.id = r.trajet_id
 JOIN utilisateurs u ON u.id = t.conducteur_id
+LEFT JOIN profils p ON p.utilisateur_id = u.id
 LEFT JOIN vehicules v ON v.utilisateur_id = u.id
 
 WHERE r.passager_id = $1
@@ -499,15 +502,14 @@ export async function cancelReservation(passagerId, reservationId) {
       [reservationId]
     );
 
-// Notification pour le passager
-// ===============================
+// Notification pour le passager (annulation volontaire)
 await client.query(
   `
   INSERT INTO notifications (utilisateur_id, type, message, cree_le)
   SELECT
     r.passager_id,
-    'RESERVATION_REFUSEE',
-    'Votre demande a été refusée pour le trajet ' || t.lieu_depart || ' → ' || t.destination,
+    'RESERVATION_ANNULEE',
+    'Vous avez annulé votre réservation pour le trajet ' || t.lieu_depart || ' → ' || t.destination,
     NOW()
   FROM reservations r
   JOIN trajets t ON t.id = r.trajet_id

@@ -32,7 +32,7 @@ export default function ProfilLayout() {
         return;
       }
 
-      const res = await fetch("http://localhost:5000/utilisateurs/me", {
+      const res = await fetch("/utilisateurs/me", {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -99,7 +99,7 @@ export default function ProfilLayout() {
                   {loadingUser ? (
                     <div>Chargement...</div>
                   ) : (
-                    <ProfilMenu isDark={isDark} user={user} />
+                    <ProfilMenu isDark={isDark} user={user} onPhotoUpdated={loadUser} />
                   )}
                 </div>
               </div>
@@ -115,6 +115,7 @@ export default function ProfilLayout() {
                     context={{
                       isDark,
                       user,
+                      loadingUser,
                       reloadUser: loadUser
                     }}
                   />
