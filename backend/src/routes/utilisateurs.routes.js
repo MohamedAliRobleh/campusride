@@ -231,4 +231,54 @@ router.post("/me/photo", requireAuth, upload.single("photo"), async (req, res) =
   }
 });
 
+// =====================
+// GET /:id/public — Profil public d'un utilisateur (pour la modal)
+// =====================
+router.get("/:id/public", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT u.id, u.prenom, u.nom, u.role, u.cree_le,
+              p.photo_url,
+              (SELECT COUNT(*) FROM trajets WHERE conducteur_id = u.id AND statut = 'TERMINE') AS trajets_conduits,
+              (SELECT ROUND(AVG(note)::numeric, 1) FROM evaluations WHERE evalue_id = u.id) AS note_moyenne,
+              (SELECT COUNT(*) FROM evaluations WHERE evalue_id = u.id) AS nb_evaluations
+       FROM utilisateurs u
+       LEFT JOIN profils p ON p.utilisateur_id = u.id
+       WHERE u.id = $1 AND u.actif = TRUE`,
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
+    return res.json({ user: rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
+// PATCH /me/mode-conducteur — Basculer entre PASSAGER et CONDUCTEUR
+// =====================
+router.patch("/me/mode-conducteur", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { rows: current } = await pool.query(
+      "SELECT role FROM utilisateurs WHERE id = $1",
+      [userId]
+    );
+    if (current.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
+    if (current[0].role === "ADMIN") {
+      return res.status(403).json({ message: "Les administrateurs ne peuvent pas changer de mode." });
+    }
+    const newRole = current[0].role === "CONDUCTEUR" ? "PASSAGER" : "CONDUCTEUR";
+    const { rows } = await pool.query(
+      "UPDATE utilisateurs SET role = $1 WHERE id = $2 RETURNING id, role",
+      [newRole, userId]
+    );
+    return res.json({ role: rows[0].role });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
 export default router;

@@ -153,14 +153,17 @@ export async function listReservationsForConducteur(conducteurId) {
   u.prenom,
   u.nom,
   u.email,
+  p.photo_url AS passager_photo_url,
   t.id AS trajet_id,
   t.lieu_depart,
   t.destination,
   t.dateheure_depart,
-  t.places_dispo
+  t.places_dispo,
+  t.statut AS trajet_statut
 FROM reservations r
 JOIN trajets t ON t.id = r.trajet_id
 JOIN utilisateurs u ON u.id = r.passager_id
+LEFT JOIN profils p ON p.utilisateur_id = r.passager_id
 WHERE t.conducteur_id = $1
 ORDER BY r.demande_le DESC
 LIMIT 200;

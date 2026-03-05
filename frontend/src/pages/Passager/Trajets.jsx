@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
+import UserProfileModal from "../../components/UserProfileModal";
 
 export default function Trajets() {
   const navigate = useNavigate();
   const [trajets, setTrajets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [profileUserId, setProfileUserId] = useState(null);
   const token = localStorage.getItem("token");
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -134,27 +136,37 @@ export default function Trajets() {
 
                   {/* Conducteur + voiture + places */}
                   <div className="d-flex align-items-center gap-3">
-                    {t.conducteur_photo_url ? (
-                      <img
-                        src={t.conducteur_photo_url}
-                        alt={conducteurNom}
-                        className="rounded-circle flex-shrink-0"
-                        style={{ width: 38, height: 38, objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                        style={{ width: 38, height: 38, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem" }}
-                      >
-                        {initiales}
-                      </div>
-                    )}
+                    <button
+                      className="btn p-0 border-0 bg-transparent flex-shrink-0"
+                      title="Voir le profil"
+                      onClick={() => t.conducteur_id && setProfileUserId(t.conducteur_id)}
+                    >
+                      {t.conducteur_photo_url ? (
+                        <img
+                          src={t.conducteur_photo_url}
+                          alt={conducteurNom}
+                          className="rounded-circle"
+                          style={{ width: 38, height: 38, objectFit: "cover", border: "2px solid #198754" }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                          style={{ width: 38, height: 38, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem", border: "2px solid #198754" }}
+                        >
+                          {initiales}
+                        </div>
+                      )}
+                    </button>
 
                     {/* Infos conducteur */}
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold" style={{ fontSize: "0.88rem" }}>
+                      <button
+                        className="btn p-0 border-0 bg-transparent fw-semibold text-start"
+                        style={{ fontSize: "0.88rem", color: "inherit" }}
+                        onClick={() => t.conducteur_id && setProfileUserId(t.conducteur_id)}
+                      >
                         {conducteurNom || "Conducteur"}
-                      </div>
+                      </button>
                       {voitureLabel && (
                         <div className={`small d-flex align-items-center gap-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
                           <i className="bi bi-car-front" />
@@ -191,6 +203,14 @@ export default function Trajets() {
       </main>
 
       <Footer isDark={isDark} />
+
+      {profileUserId && (
+        <UserProfileModal
+          userId={profileUserId}
+          isDark={isDark}
+          onClose={() => setProfileUserId(null)}
+        />
+      )}
     </div>
   );
 }
