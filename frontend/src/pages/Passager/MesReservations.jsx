@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
+import UserProfileModal from "../../components/UserProfileModal";
 
 
 function EvaluationModal({ trajetId, token, onClose, isDark }) {
@@ -88,6 +89,7 @@ export default function MesReservations() {
   const [filter, setFilter] = useState("ACTIVES");
   const [evalModal, setEvalModal] = useState(null); // { trajetId }
   const [dejasEvalues, setDejaEvalues] = useState(new Set());
+  const [profileUserId, setProfileUserId] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -276,26 +278,36 @@ export default function MesReservations() {
 
                   {/* Conducteur + voiture */}
                   <div className="d-flex align-items-center gap-3 mb-3">
-                    {r.conducteur_photo_url ? (
-                      <img
-                        src={r.conducteur_photo_url}
-                        alt={`${r.conducteur_prenom} ${r.conducteur_nom}`}
-                        className="rounded-circle flex-shrink-0"
-                        style={{ width: 40, height: 40, objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                        style={{ width: 40, height: 40, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.85rem" }}
-                      >
-                        {initiales}
-                      </div>
-                    )}
+                    <button
+                      className="btn p-0 border-0 bg-transparent flex-shrink-0"
+                      title="Voir le profil du conducteur"
+                      onClick={() => r.conducteur_id && setProfileUserId(r.conducteur_id)}
+                    >
+                      {r.conducteur_photo_url ? (
+                        <img
+                          src={r.conducteur_photo_url}
+                          alt={`${r.conducteur_prenom} ${r.conducteur_nom}`}
+                          className="rounded-circle"
+                          style={{ width: 40, height: 40, objectFit: "cover", border: "2px solid #198754" }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                          style={{ width: 40, height: 40, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.85rem", border: "2px solid #198754" }}
+                        >
+                          {initiales}
+                        </div>
+                      )}
+                    </button>
 
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold" style={{ fontSize: "0.9rem" }}>
+                      <button
+                        className="btn p-0 border-0 bg-transparent fw-semibold text-start"
+                        style={{ fontSize: "0.9rem", color: "inherit" }}
+                        onClick={() => r.conducteur_id && setProfileUserId(r.conducteur_id)}
+                      >
                         {r.conducteur_prenom} {r.conducteur_nom}
-                      </div>
+                      </button>
                       {voitureLabel && (
                         <div className={`d-flex align-items-center gap-1 small ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.8rem" }}>
                           <i className="bi bi-car-front" />
@@ -391,6 +403,14 @@ export default function MesReservations() {
             if (submitted) setDejaEvalues((prev) => new Set([...prev, evalModal.trajetId]));
             setEvalModal(null);
           }}
+        />
+      )}
+
+      {profileUserId && (
+        <UserProfileModal
+          userId={profileUserId}
+          isDark={isDark}
+          onClose={() => setProfileUserId(null)}
         />
       )}
     </div>

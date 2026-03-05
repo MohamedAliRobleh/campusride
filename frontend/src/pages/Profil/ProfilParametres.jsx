@@ -119,6 +119,41 @@ export default function ProfilParametres() {
     }
   };
 
+  // === Mode conducteur ===
+  const [currentRole, setCurrentRole] = useState(user?.role || "PASSAGER");
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleToast, setRoleToast] = useState(null);
+
+  const handleToggleRole = async () => {
+    if (currentRole === "ADMIN") return;
+    try {
+      setRoleLoading(true);
+      const res = await fetch("/utilisateurs/me/mode-conducteur", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRoleToast({ type: "danger", text: data.message || "Erreur." });
+        return;
+      }
+      setCurrentRole(data.role);
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...stored, role: data.role }));
+      setRoleToast({
+        type: "success",
+        text: data.role === "CONDUCTEUR"
+          ? "Mode conducteur activé ! Vous pouvez maintenant publier des trajets."
+          : "Mode passager activé.",
+      });
+      setTimeout(() => { setRoleToast(null); window.location.reload(); }, 2000);
+    } catch {
+      setRoleToast({ type: "danger", text: "Erreur serveur." });
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
   // === Supprimer le compte ===
   const [deleteModal, setDeleteModal] = useState(false);
   const [deletePw, setDeletePw] = useState("");
@@ -277,7 +312,64 @@ export default function ProfilParametres() {
         </form>
       </Section>
 
-      {/* ── 4. COMPTE ────────────────────────────────────────────── */}
+      {/* ── 4. MODE CONDUCTEUR ───────────────────────────────────── */}
+      {currentRole !== "ADMIN" && (
+        <Section
+          icon="bi-car-front-fill"
+          title="Mode conducteur"
+          subtitle="Activez ou désactivez votre rôle de conducteur"
+          isDark={isDark}
+        >
+          {roleToast && (
+            <div className={`alert alert-${roleToast.type} py-2 rounded-3 mb-3`} style={{ fontSize: "0.85rem" }}>
+              <i className={`bi ${roleToast.type === "success" ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill"} me-2`} />
+              {roleToast.text}
+            </div>
+          )}
+
+          <div className={`rounded-3 p-3 d-flex align-items-center justify-content-between gap-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}>
+            <div>
+              <div className="fw-semibold d-flex align-items-center gap-2" style={{ fontSize: "0.92rem" }}>
+                {currentRole === "CONDUCTEUR" ? (
+                  <>
+                    <span className="badge rounded-pill px-2 py-1" style={{ background: "rgba(25,135,84,0.15)", color: "#198754", fontSize: "0.7rem" }}>
+                      <i className="bi bi-car-front-fill me-1" />Conducteur actif
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="badge rounded-pill px-2 py-1 bg-secondary bg-opacity-10 text-secondary" style={{ fontSize: "0.7rem" }}>
+                      <i className="bi bi-person-fill me-1" />Mode passager
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className={`small mb-0 mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+                {currentRole === "CONDUCTEUR"
+                  ? "Vous pouvez publier des trajets et accepter des passagers."
+                  : "Activez le mode conducteur pour proposer des trajets."}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className={`btn rounded-3 fw-semibold flex-shrink-0 ${currentRole === "CONDUCTEUR" ? "btn-outline-secondary" : "btn-success"}`}
+              onClick={handleToggleRole}
+              disabled={roleLoading}
+              style={{ fontSize: "0.85rem", minWidth: 130 }}
+            >
+              {roleLoading
+                ? <><span className="spinner-border spinner-border-sm me-2" />Mise à jour...</>
+                : currentRole === "CONDUCTEUR"
+                  ? <><i className="bi bi-person me-2" />Passer passager</>
+                  : <><i className="bi bi-car-front-fill me-2" />Devenir conducteur</>
+              }
+            </button>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 5. COMPTE ────────────────────────────────────────────── */}
       <Section icon="bi-person-x" title="Compte" subtitle="Actions irréversibles concernant votre compte" isDark={isDark}>
         <div className={`rounded-3 p-3 mb-3 ${isDark ? "bg-danger bg-opacity-10 border border-danger" : "bg-danger bg-opacity-10 border border-danger border-opacity-25"}`}>
           <div className="d-flex align-items-start gap-3">

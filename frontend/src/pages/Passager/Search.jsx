@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
+import UserProfileModal from "../../components/UserProfileModal";
 
 export default function Search() {
   const location = useLocation();
@@ -14,6 +15,7 @@ export default function Search() {
   const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState(null);
   const [toast, setToast] = useState({ show: false, text: "", type: "success" });
+  const [profileUserId, setProfileUserId] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -232,23 +234,36 @@ export default function Search() {
 
                   {/* Conducteur + bouton */}
                   <div className="d-flex align-items-center gap-3">
-                    {trajet.conducteur_photo_url ? (
-                      <img
-                        src={trajet.conducteur_photo_url}
-                        alt={conducteurNom}
-                        className="rounded-circle flex-shrink-0"
-                        style={{ width: 38, height: 38, objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                        style={{ width: 38, height: 38, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem" }}
-                      >
-                        {initiales}
-                      </div>
-                    )}
+                    <button
+                      className="btn p-0 border-0 bg-transparent flex-shrink-0"
+                      title="Voir le profil"
+                      onClick={() => trajet.conducteur_id && setProfileUserId(trajet.conducteur_id)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {trajet.conducteur_photo_url ? (
+                        <img
+                          src={trajet.conducteur_photo_url}
+                          alt={conducteurNom}
+                          className="rounded-circle"
+                          style={{ width: 38, height: 38, objectFit: "cover", border: "2px solid #198754" }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                          style={{ width: 38, height: 38, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem", border: "2px solid #198754" }}
+                        >
+                          {initiales}
+                        </div>
+                      )}
+                    </button>
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold" style={{ fontSize: "0.88rem" }}>{conducteurNom || "Conducteur"}</div>
+                      <button
+                        className="btn p-0 border-0 bg-transparent fw-semibold text-start"
+                        style={{ fontSize: "0.88rem", color: "inherit" }}
+                        onClick={() => trajet.conducteur_id && setProfileUserId(trajet.conducteur_id)}
+                      >
+                        {conducteurNom || "Conducteur"}
+                      </button>
                       {voitureLabel && (
                         <div className={`d-flex align-items-center gap-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
                           <i className="bi bi-car-front" />{voitureLabel}
@@ -305,6 +320,15 @@ export default function Search() {
       </div>
 
       <Footer isDark={isDark} />
+
+      {/* Modal profil conducteur */}
+      {profileUserId && (
+        <UserProfileModal
+          userId={profileUserId}
+          isDark={isDark}
+          onClose={() => setProfileUserId(null)}
+        />
+      )}
     </div>
   );
 }

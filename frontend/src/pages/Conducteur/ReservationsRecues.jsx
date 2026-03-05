@@ -2,6 +2,77 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
+import UserProfileModal from "../../components/UserProfileModal";
+
+// ── Modal évaluation passager ─────────────────────────────────────────────────
+function EvalPassagerModal({ trajetId, passagerId, passagerPrenom, token, isDark, onClose }) {
+  const [note, setNote] = useState(0);
+  const [commentaire, setCommentaire] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    if (!note) { setError("Choisissez une note."); return; }
+    try {
+      setLoading(true);
+      const res = await fetch("/evaluations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ trajet_id: trajetId, note, commentaire, passager_id: passagerId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.message || "Erreur."); return; }
+      onClose(true);
+    } catch { setError("Erreur serveur."); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", inset: 0, zIndex: 9999 }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className={`modal-content rounded-4 border-0 ${isDark ? "bg-dark text-light" : ""}`}>
+          <div style={{ height: 3, background: "linear-gradient(90deg,#198754,#20c374)" }} />
+          <div className="modal-header border-0 pb-0">
+            <h5 className="modal-title fw-bold">
+              <i className="bi bi-star-fill text-warning me-2" />
+              Évaluer {passagerPrenom}
+            </h5>
+            <button type="button" className="btn-close" onClick={() => onClose(false)} />
+          </div>
+          <div className="modal-body">
+            {error && <div className="alert alert-danger py-2 rounded-3">{error}</div>}
+            <p className={`small mb-3 ${isDark ? "text-secondary" : "text-muted"}`}>
+              Comment s'est comporté ce passager durant le trajet ?
+            </p>
+            <div className="d-flex gap-2 justify-content-center mb-3">
+              {[1,2,3,4,5].map((n) => (
+                <button
+                  key={n} type="button" className="btn p-1"
+                  style={{ fontSize: "2rem", color: n <= note ? "#ffc107" : "#dee2e6", lineHeight: 1 }}
+                  onClick={() => setNote(n)}
+                >★</button>
+              ))}
+            </div>
+            <textarea
+              className={`form-control rounded-3 ${isDark ? "bg-dark text-light border-secondary" : ""}`}
+              rows={3}
+              placeholder="Commentaire optionnel..."
+              value={commentaire}
+              onChange={(e) => setCommentaire(e.target.value)}
+            />
+          </div>
+          <div className="modal-footer border-0 pt-0">
+            <button className="btn btn-outline-secondary rounded-3" onClick={() => onClose(false)}>Annuler</button>
+            <button className="btn btn-success rounded-3 fw-semibold" onClick={handleSubmit} disabled={loading}>
+              {loading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-check-lg me-1" />}
+              Envoyer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const STATUT_CONFIG = {
   EN_ATTENTE: { label: "En attente", cls: "bg-warning-subtle text-warning", icon: "bi-hourglass-split" },
@@ -17,6 +88,9 @@ export default function ReservationsRecues() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("EN_ATTENTE");
   const [toast, setToast] = useState({ show: false, text: "", type: "success" });
+  const [profileUserId, setProfileUserId] = useState(null);
+  const [evalModal, setEvalModal] = useState(null); // { trajetId, passagerId, passagerPrenom }
+  const [dejasEvalues, setDejaEvalues] = useState(new Set());
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -155,16 +229,35 @@ export default function ReservationsRecues() {
                 <div className="p-3 p-md-4">
                   {/* Passager info */}
                   <div className="d-flex align-items-center gap-3 mb-3">
-                    <div
-                      className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                      style={{ width: 44, height: 44, background: "linear-gradient(135deg, #0d6efd, #6ea8fe)", fontSize: "0.85rem" }}
+                    <button
+                      className="btn p-0 border-0 bg-transparent flex-shrink-0"
+                      title="Voir le profil du passager"
+                      onClick={() => r.passager_id && setProfileUserId(r.passager_id)}
                     >
-                      {initiales}
-                    </div>
+                      {r.passager_photo_url ? (
+                        <img
+                          src={r.passager_photo_url}
+                          alt={`${r.prenom} ${r.nom}`}
+                          className="rounded-circle"
+                          style={{ width: 44, height: 44, objectFit: "cover", border: "2px solid #0d6efd" }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                          style={{ width: 44, height: 44, background: "linear-gradient(135deg, #0d6efd, #6ea8fe)", fontSize: "0.85rem", border: "2px solid #0d6efd" }}
+                        >
+                          {initiales}
+                        </div>
+                      )}
+                    </button>
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-bold" style={{ fontSize: "0.95rem" }}>
+                      <button
+                        className="btn p-0 border-0 bg-transparent fw-bold text-start"
+                        style={{ fontSize: "0.95rem", color: "inherit" }}
+                        onClick={() => r.passager_id && setProfileUserId(r.passager_id)}
+                      >
                         {r.prenom} {r.nom}
-                      </div>
+                      </button>
                       <div className={`small ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.8rem" }}>
                         {r.email}
                       </div>
@@ -209,24 +302,40 @@ export default function ReservationsRecues() {
                       Message
                     </button>
 
-                    {r.statut === "EN_ATTENTE" && (
-                      <div className="d-flex gap-2">
+                    <div className="d-flex gap-2 flex-wrap">
+                      {/* Bouton Évaluer passager si trajet terminé */}
+                      {r.trajet_statut === "TERMINE" && r.statut === "ACCEPTEE" && !dejasEvalues.has(r.reservation_id) && (
                         <button
-                          className="btn btn-success btn-sm rounded-3 fw-semibold"
-                          onClick={() => handleAction(r.reservation_id, "accepter")}
+                          className="btn btn-outline-warning btn-sm rounded-3 fw-semibold"
+                          onClick={() => setEvalModal({ trajetId: r.trajet_id, passagerId: r.passager_id, passagerPrenom: r.prenom })}
                         >
-                          <i className="bi bi-check-lg me-1" />
-                          Accepter
+                          <i className="bi bi-star-fill me-1" />
+                          Évaluer
                         </button>
-                        <button
-                          className="btn btn-outline-danger btn-sm rounded-3 fw-semibold"
-                          onClick={() => handleAction(r.reservation_id, "refuser")}
-                        >
-                          <i className="bi bi-x-lg me-1" />
-                          Refuser
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      {dejasEvalues.has(r.reservation_id) && (
+                        <span className="badge bg-warning-subtle text-warning px-2 py-2" style={{ fontSize: "0.72rem" }}>
+                          <i className="bi bi-star-fill me-1" />Évalué
+                        </span>
+                      )}
+
+                      {r.statut === "EN_ATTENTE" && (
+                        <>
+                          <button
+                            className="btn btn-success btn-sm rounded-3 fw-semibold"
+                            onClick={() => handleAction(r.reservation_id, "accepter")}
+                          >
+                            <i className="bi bi-check-lg me-1" />Accepter
+                          </button>
+                          <button
+                            className="btn btn-outline-danger btn-sm rounded-3 fw-semibold"
+                            onClick={() => handleAction(r.reservation_id, "refuser")}
+                          >
+                            <i className="bi bi-x-lg me-1" />Refuser
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -253,6 +362,28 @@ export default function ReservationsRecues() {
       </div>
 
       <Footer isDark={isDark} />
+
+      {profileUserId && (
+        <UserProfileModal
+          userId={profileUserId}
+          isDark={isDark}
+          onClose={() => setProfileUserId(null)}
+        />
+      )}
+
+      {evalModal && (
+        <EvalPassagerModal
+          trajetId={evalModal.trajetId}
+          passagerId={evalModal.passagerId}
+          passagerPrenom={evalModal.passagerPrenom}
+          token={token}
+          isDark={isDark}
+          onClose={(submitted) => {
+            if (submitted) setDejaEvalues((prev) => new Set([...prev, evalModal.reservation_id]));
+            setEvalModal(null);
+          }}
+        />
+      )}
     </div>
   );
 }
