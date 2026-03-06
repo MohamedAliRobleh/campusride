@@ -37,13 +37,6 @@ export async function searchTrajets({
 }) {
 
   
-  await pool.query(`
-    UPDATE trajets
-    SET statut = 'EN_COURS'
-    WHERE statut = 'PLANIFIE'
-    AND dateheure_depart <= NOW()
-  `);
-
   /*
    * Algorithme de matching conducteur / passager
    * ─────────────────────────────────────────────
@@ -61,6 +54,7 @@ export async function searchTrajets({
         t.lieu_depart, t.destination,
         t.dateheure_depart, t.places_total, t.places_dispo,
         t.statut, t.cree_le, t.maj_le,
+        t.depart_lat, t.depart_lng, t.dest_lat, t.dest_lng,
         u.prenom  AS conducteur_prenom,
         u.nom     AS conducteur_nom,
         p.photo_url AS conducteur_photo_url,
@@ -288,24 +282,17 @@ export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
     [trajetId]
   );
 
-  // Notif batch (évite boucle)
-  await client.query(
-    `
-    INSERT INTO notifications (utilisateur_id, type, message, cree_le)
-    SELECT
-      x.passager_id,
-      'TRAJET_ANNULE',
-      $2,
-      NOW()
-    FROM (
-      SELECT DISTINCT passager_id
-      FROM reservations
-      WHERE trajet_id = $1
-        AND statut = 'ANNULEE'
-    ) x;
-    `,
-    [trajetId, `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} a été annulé par le conducteur.`]
-  );
+  // Notif batch — utilise uniquement les passagers des réservations qu'on vient d'annuler
+  if (annuleResa.rows.length > 0) {
+    const passagerIds = [...new Set(annuleResa.rows.map(r => r.passager_id))];
+    await client.query(
+      `
+      INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+      SELECT unnest($1::text[]), 'TRAJET_ANNULE', $2, NOW()
+      `,
+      [passagerIds, `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} a été annulé par le conducteur.`]
+    );
+  }
 
   return {
     trajet,

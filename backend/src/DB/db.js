@@ -30,7 +30,7 @@ export async function runMigrations() {
     const enumValues = [
       'TRAJET_PUBLIE', 'DEMANDE_RESERVATION', 'RESERVATION_ACCEPTEE',
       'RESERVATION_REFUSEE', 'RAPPEL_TRAJET', 'TRAJET_MODIFIE',
-      'TRAJET_TERMINE', 'TRAJET_ANNULE', 'RESERVATION_ANNULEE'
+      'TRAJET_TERMINE', 'TRAJET_ANNULE', 'RESERVATION_ANNULEE', 'MESSAGE_RECU'
     ];
     for (const val of enumValues) {
       try {
@@ -77,11 +77,47 @@ export async function runMigrations() {
           note          SMALLINT NOT NULL CHECK (note BETWEEN 1 AND 5),
           commentaire   TEXT,
           cree_le       TIMESTAMPTZ DEFAULT NOW(),
-          UNIQUE (evaluateur_id, trajet_id)
+          UNIQUE (evaluateur_id, evalue_id, trajet_id)
         );
       `);
       console.log("Migration evaluations OK");
     } catch (err) { console.error("Migration evaluations:", err.message); }
+
+    // Migration: recalculer places_dispo pour les trajets PLANIFIE
+    // (places_dispo = places_total - nombre de réservations actives)
+    // Nécessaire car l'ancien code ne décrémentait qu'à l'acceptation
+    try {
+      await pool.query(`
+        UPDATE trajets t
+        SET places_dispo = GREATEST(0,
+          t.places_total - (
+            SELECT COUNT(*) FROM reservations r
+            WHERE r.trajet_id = t.id
+              AND r.statut IN ('EN_ATTENTE', 'ACCEPTEE')
+          )
+        )
+        WHERE t.statut = 'PLANIFIE';
+      `);
+      console.log("Migration recalcul places_dispo OK");
+    } catch (err) { console.error("Migration recalcul places_dispo:", err.message); }
+
+    // Migration: remplacer l'ancienne contrainte UNIQUE(evaluateur_id, trajet_id)
+    // par UNIQUE(evaluateur_id, evalue_id, trajet_id) pour permettre d'évaluer
+    // plusieurs passagers par trajet
+    // On utilise CREATE UNIQUE INDEX IF NOT EXISTS (compatible toutes versions PG)
+    try {
+      await pool.query(`
+        ALTER TABLE evaluations
+          DROP CONSTRAINT IF EXISTS evaluations_evaluateur_id_trajet_id_key;
+      `);
+    } catch (err) { console.error("Migration drop contrainte evaluations:", err.message); }
+    try {
+      await pool.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS evaluations_evaluateur_evalue_trajet_key
+        ON evaluations (evaluateur_id, evalue_id, trajet_id);
+      `);
+      console.log("Migration contrainte evaluations OK");
+    } catch (err) { console.error("Migration contrainte evaluations:", err.message); }
 
     // Vérifier si conversations/messages ont le bon type de colonnes
     // Si type mismatch (ex. UUID créé avant mais user IDs sont INTEGER), on recrée
