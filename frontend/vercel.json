@@ -7,6 +7,7 @@
     { "source": "/notifications/:path*", "destination": "https://campusride-api.onrender.com/notifications/:path*" },
     { "source": "/vehicules/:path*",     "destination": "https://campusride-api.onrender.com/vehicules/:path*" },
     { "source": "/uploads/:path*",       "destination": "https://campusride-api.onrender.com/uploads/:path*" },
+    { "source": "/admin",                "destination": "/index.html" },
     { "source": "/admin/:path*",         "destination": "https://campusride-api.onrender.com/admin/:path*" },
     { "source": "/evaluations/:path*",   "destination": "https://campusride-api.onrender.com/evaluations/:path*" },
     { "source": "/messages/:path*",      "destination": "https://campusride-api.onrender.com/messages/:path*" },

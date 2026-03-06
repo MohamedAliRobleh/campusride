@@ -215,7 +215,9 @@ function SectionUtilisateurs({ token, showToast }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("TOUS");
-  const [confirmDeact, setConfirmDeact] = useState(null); // { id, prenom, nom, actif }
+  const [confirmDeact, setConfirmDeact] = useState(null);
+  const [pendingRoles, setPendingRoles] = useState({}); // { [userId]: newRole }
+  const [savingRole, setSavingRole] = useState(null);
 
   const fetchUsers = useCallback(async (s = "") => {
     try {
@@ -242,8 +244,11 @@ function SectionUtilisateurs({ token, showToast }) {
     finally { setConfirmDeact(null); }
   };
 
-  const handleChangeRole = async (userId, role) => {
+  const handleSaveRole = async (userId) => {
+    const role = pendingRoles[userId];
+    if (!role) return;
     try {
+      setSavingRole(userId);
       const res = await fetch(`/admin/users/${userId}/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -251,8 +256,10 @@ function SectionUtilisateurs({ token, showToast }) {
       });
       if (!res.ok) throw new Error();
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role } : u));
+      setPendingRoles((p) => { const n = { ...p }; delete n[userId]; return n; });
       showToast("Rôle mis à jour.");
     } catch { showToast("Erreur.", "danger"); }
+    finally { setSavingRole(null); }
   };
 
   const filtered = roleFilter === "TOUS" ? users : users.filter((u) => u.role === roleFilter);
@@ -330,16 +337,31 @@ function SectionUtilisateurs({ token, showToast }) {
                       <span className="text-muted">{u.email}</span>
                     </td>
                     <td className="py-3">
-                      <select
-                        className="form-select form-select-sm rounded-3 border fw-semibold py-1"
-                        value={u.role}
-                        onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                        style={{ color: ROLE_COLORS[u.role], width: "auto", minWidth: 120, fontSize: "0.78rem", borderColor: `${ROLE_COLORS[u.role]}44` }}
-                      >
-                        <option value="PASSAGER">Passager</option>
-                        <option value="CONDUCTEUR">Conducteur</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
+                      <div className="d-flex align-items-center gap-2">
+                        <select
+                          className="form-select form-select-sm rounded-3 border fw-semibold py-1"
+                          value={pendingRoles[u.id] ?? u.role}
+                          onChange={(e) => setPendingRoles((p) => ({ ...p, [u.id]: e.target.value }))}
+                          style={{ color: ROLE_COLORS[pendingRoles[u.id] ?? u.role], width: "auto", minWidth: 120, fontSize: "0.78rem", borderColor: `${ROLE_COLORS[pendingRoles[u.id] ?? u.role]}44` }}
+                        >
+                          <option value="PASSAGER">Passager</option>
+                          <option value="CONDUCTEUR">Conducteur</option>
+                          <option value="ADMIN">Admin</option>
+                        </select>
+                        {pendingRoles[u.id] && pendingRoles[u.id] !== u.role && (
+                          <button
+                            className="btn btn-success btn-sm rounded-3 fw-semibold px-2 py-1"
+                            style={{ fontSize: "0.72rem", whiteSpace: "nowrap" }}
+                            onClick={() => handleSaveRole(u.id)}
+                            disabled={savingRole === u.id}
+                          >
+                            {savingRole === u.id
+                              ? <span className="spinner-border spinner-border-sm" />
+                              : <><i className="bi bi-check-lg me-1" />Enregistrer</>
+                            }
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="text-center py-3 fw-semibold">{u.nb_trajets}</td>
                     <td className="text-center py-3 fw-semibold">{u.nb_reservations}</td>
