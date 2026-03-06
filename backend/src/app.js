@@ -29,6 +29,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 
+// Health check public (pour maintenir le serveur Render actif)
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
 // Brancher les routes
 app.use("/auth", authRoutes);
 app.use("/utilisateurs", utilisateursRoutes);
