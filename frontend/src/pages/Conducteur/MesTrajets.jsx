@@ -26,6 +26,11 @@ export default function MesTrajets() {
         variant: "success",
     });
 
+    // ===== Confirmation modal =====
+    const [confirmModal, setConfirmModal] = useState(null); // { message, icon, btnLabel, btnClass, onConfirm }
+    const askConfirm = (opts) => setConfirmModal(opts);
+    const closeConfirm = () => setConfirmModal(null);
+
     const showToast = (text, variant = "success") => {
         setToast({ show: true, text, variant });
         window.clearTimeout(showToast._t);
@@ -75,7 +80,6 @@ export default function MesTrajets() {
 
     // Démarrer
     const handleDemarrer = async (id) => {
-        if (!window.confirm("Confirmer le démarrage du trajet ?")) return;
         try {
             const response = await fetch(`/trajets/${id}/demarrer`, {
                 method: "PATCH",
@@ -322,7 +326,13 @@ export default function MesTrajets() {
                             <button
                                 className="btn btn-success fw-semibold rounded-3 py-2"
                                 style={{ background: "linear-gradient(135deg,#198754,#20c374)", border: "none" }}
-                                onClick={() => handleDemarrer(trajet.id)}
+                                onClick={() => askConfirm({
+                                    message: "Confirmer le démarrage du trajet ?",
+                                    icon: "bi-play-circle-fill",
+                                    btnLabel: "Démarrer",
+                                    btnClass: "btn-success",
+                                    onConfirm: () => handleDemarrer(trajet.id),
+                                })}
                             >
                                 <i className="bi bi-play-circle-fill me-2" />
                                 Démarrer le trajet
@@ -333,11 +343,13 @@ export default function MesTrajets() {
                         {trajet.statut === "EN_COURS" && (
                             <button
                                 className="btn btn-primary fw-semibold rounded-3 py-2"
-                                onClick={() => {
-                                    if (window.confirm("Confirmer la fin du trajet ? Les passagers pourront ensuite laisser un avis.")) {
-                                        handleTerminer(trajet.id);
-                                    }
-                                }}
+                                onClick={() => askConfirm({
+                                    message: "Confirmer la fin du trajet ? Les passagers pourront ensuite laisser un avis.",
+                                    icon: "bi-stop-circle-fill",
+                                    btnLabel: "Terminer",
+                                    btnClass: "btn-primary",
+                                    onConfirm: () => handleTerminer(trajet.id),
+                                })}
                             >
                                 <i className="bi bi-stop-circle-fill me-2" />
                                 Terminer le trajet
@@ -355,11 +367,13 @@ export default function MesTrajets() {
                                 </button>
                                 <button
                                     className="btn btn-outline-danger btn-sm flex-fill rounded-3 fw-semibold"
-                                    onClick={() => {
-                                        if (window.confirm("Confirmer l'annulation de ce trajet ?")) {
-                                            handleAnnuler(trajet.id);
-                                        }
-                                    }}
+                                    onClick={() => askConfirm({
+                                        message: "Confirmer l'annulation de ce trajet ? Les passagers acceptés seront notifiés.",
+                                        icon: "bi-x-circle-fill",
+                                        btnLabel: "Annuler le trajet",
+                                        btnClass: "btn-danger",
+                                        onConfirm: () => handleAnnuler(trajet.id),
+                                    })}
                                 >
                                     <i className="bi bi-x-lg me-1" />Annuler
                                 </button>
@@ -456,6 +470,43 @@ export default function MesTrajets() {
                     </div>
                 </div>
             </main>
+
+            {/* Modal de confirmation custom */}
+            {confirmModal && (
+                <>
+                    <div
+                        className="position-fixed top-0 start-0 w-100 h-100"
+                        style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050, backdropFilter: "blur(2px)" }}
+                        onClick={closeConfirm}
+                    />
+                    <div
+                        className="position-fixed top-50 start-50 translate-middle"
+                        style={{ zIndex: 1055, width: "min(92vw, 400px)" }}
+                    >
+                        <div className={`rounded-4 shadow-lg overflow-hidden ${isDark ? "bg-dark text-light border border-secondary" : "bg-white"}`}>
+                            <div style={{ height: 4, background: "linear-gradient(90deg, #198754, #20c374)" }} />
+                            <div className="p-4 text-center">
+                                <i className={`bi ${confirmModal.icon} d-block mb-3`} style={{ fontSize: "2.2rem", color: "#198754" }} />
+                                <p className="fw-semibold mb-4" style={{ fontSize: "1rem" }}>{confirmModal.message}</p>
+                                <div className="d-flex gap-2 justify-content-center">
+                                    <button
+                                        className={`btn ${confirmModal.btnClass} rounded-3 fw-semibold px-4`}
+                                        onClick={() => { confirmModal.onConfirm(); closeConfirm(); }}
+                                    >
+                                        {confirmModal.btnLabel}
+                                    </button>
+                                    <button
+                                        className="btn btn-outline-secondary rounded-3 fw-semibold px-4"
+                                        onClick={closeConfirm}
+                                    >
+                                        Annuler
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <Footer />
         </div>
