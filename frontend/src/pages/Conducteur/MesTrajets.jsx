@@ -73,6 +73,25 @@ export default function MesTrajets() {
     const trajetsTermines = trajets.filter((t) => t.statut === "TERMINE");
     const trajetsAnnules = trajets.filter((t) => t.statut === "ANNULE");
 
+    // Démarrer
+    const handleDemarrer = async (id) => {
+        if (!window.confirm("Confirmer le démarrage du trajet ?")) return;
+        try {
+            const response = await fetch(`/trajets/${id}/demarrer`, {
+                method: "PATCH",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data?.message || "Impossible de démarrer.");
+            setTrajets((prev) =>
+                prev.map((t) => (t.id === id ? { ...t, statut: "EN_COURS" } : t))
+            );
+            showToast("Trajet démarré ! Bonne route 🚗", "success");
+        } catch (err) {
+            showToast(err.message || "Impossible de démarrer ce trajet.", "danger");
+        }
+    };
+
     // Terminer
     const handleTerminer = async (id) => {
         try {
@@ -174,11 +193,12 @@ export default function MesTrajets() {
     };
 
     // Badge UI
-
-    const getBadge = (statut) => {
-        if (statut === "TERMINE") return { cls: "bg-secondary-subtle text-secondary", label: "Terminé" };
-        if (statut === "ANNULE") return { cls: "bg-danger-subtle text-danger", label: "Annulé" };
-        return { cls: "bg-success-subtle text-success", label: "Actif" };
+    const getBadge = (statut, placesDispo) => {
+        if (statut === "TERMINE") return { cls: "bg-secondary-subtle text-secondary", label: "Terminé", icon: "bi-flag-fill" };
+        if (statut === "ANNULE")  return { cls: "bg-danger-subtle text-danger",       label: "Annulé",  icon: "bi-x-circle-fill" };
+        if (statut === "EN_COURS") return { cls: "bg-primary-subtle text-primary",    label: "En cours", icon: "bi-car-front-fill" };
+        if (placesDispo === 0)    return { cls: "bg-warning-subtle text-warning",     label: "Complet",  icon: "bi-people-fill" };
+        return { cls: "bg-success-subtle text-success", label: "Actif", icon: "bi-check-circle-fill" };
     };
 
     // Card
@@ -192,7 +212,7 @@ export default function MesTrajets() {
                 ? (trajet.places_reservees / trajet.places_total) * 100
                 : 0;
 
-        const badge = getBadge(trajet.statut);
+        const badge = getBadge(trajet.statut, trajet.places_dispo);
 
         const showActionsRow = !isEditing && isActif && trajet.statut !== "ANNULE" && trajet.statut !== "TERMINE";
 
@@ -229,6 +249,7 @@ export default function MesTrajets() {
                     </div>
 
                     <span className={`badge rounded-pill px-3 py-2 fw-semibold transition-card ${badge.cls}`}>
+                        <i className={`bi ${badge.icon} me-1`} />
                         {badge.label}
                     </span>
                 </div>
@@ -295,33 +316,55 @@ export default function MesTrajets() {
                 )}
 
                 {showActionsRow && (
-                    <div className="d-flex gap-2 mb-2">
-                        <button
-                            className="btn btn-outline-success btn-sm flex-fill rounded-3 fw-semibold"
-                            disabled={trajet.statut !== "PLANIFIE"}
-                            onClick={() => startEdit(trajet)}
-                            title={trajet.statut !== "PLANIFIE" ? "Modification possible فقط قبل départ" : ""}
-                        >
-                            Modifier
-                        </button>
+                    <div className="d-flex flex-column gap-2 mb-2">
+                        {/* Bouton Démarrer — visible uniquement si PLANIFIE */}
+                        {trajet.statut === "PLANIFIE" && (
+                            <button
+                                className="btn btn-success fw-semibold rounded-3 py-2"
+                                style={{ background: "linear-gradient(135deg,#198754,#20c374)", border: "none" }}
+                                onClick={() => handleDemarrer(trajet.id)}
+                            >
+                                <i className="bi bi-play-circle-fill me-2" />
+                                Démarrer le trajet
+                            </button>
+                        )}
 
-                        <button
-                            className="btn btn-outline-danger btn-sm flex-fill rounded-3 fw-semibold"
-                            onClick={() => {
-                                if (window.confirm("Confirmer l'annulation de ce trajet ?")) {
-                                    handleAnnuler(trajet.id);
-                                }
-                            }}
-                        >
-                            Annuler
-                        </button>
+                        {/* Bouton Terminer — visible uniquement si EN_COURS */}
+                        {trajet.statut === "EN_COURS" && (
+                            <button
+                                className="btn btn-primary fw-semibold rounded-3 py-2"
+                                onClick={() => {
+                                    if (window.confirm("Confirmer la fin du trajet ? Les passagers pourront ensuite laisser un avis.")) {
+                                        handleTerminer(trajet.id);
+                                    }
+                                }}
+                            >
+                                <i className="bi bi-stop-circle-fill me-2" />
+                                Terminer le trajet
+                            </button>
+                        )}
 
-                        <button
-                            className="btn btn-outline-danger btn-sm flex-fill rounded-3 fw-semibold"
-                            onClick={() => handleTerminer(trajet.id)}
-                        >
-                            Terminer
-                        </button>
+                        {/* Modifier + Annuler — uniquement si PLANIFIE */}
+                        {trajet.statut === "PLANIFIE" && (
+                            <div className="d-flex gap-2">
+                                <button
+                                    className="btn btn-outline-secondary btn-sm flex-fill rounded-3 fw-semibold"
+                                    onClick={() => startEdit(trajet)}
+                                >
+                                    <i className="bi bi-pencil me-1" />Modifier
+                                </button>
+                                <button
+                                    className="btn btn-outline-danger btn-sm flex-fill rounded-3 fw-semibold"
+                                    onClick={() => {
+                                        if (window.confirm("Confirmer l'annulation de ce trajet ?")) {
+                                            handleAnnuler(trajet.id);
+                                        }
+                                    }}
+                                >
+                                    <i className="bi bi-x-lg me-1" />Annuler
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 

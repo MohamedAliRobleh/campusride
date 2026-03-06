@@ -118,6 +118,54 @@ router.get("/recherche", requireAuth, async (req, res) => {
 });
 
 // =====================
+// PATCH /:id/demarrer — Conducteur démarre le trajet (PLANIFIE → EN_COURS)
+// =====================
+router.patch("/:id/demarrer", requireAuth, async (req, res) => {
+  try {
+    const conducteurId = req.user.id;
+    const trajetId = req.params.id;
+
+    // Vérifier que le trajet appartient au conducteur et est PLANIFIE
+    const { rows } = await pool.query(
+      `SELECT id, conducteur_id, statut, lieu_depart, destination
+       FROM trajets WHERE id = $1`,
+      [trajetId]
+    );
+
+    if (!rows.length) return res.status(404).json({ message: "Trajet introuvable." });
+    const trajet = rows[0];
+
+    if (trajet.conducteur_id !== conducteurId)
+      return res.status(403).json({ message: "Accès refusé." });
+
+    if (trajet.statut !== "PLANIFIE")
+      return res.status(400).json({ message: "Le trajet doit être en statut PLANIFIE pour démarrer." });
+
+    // Passer à EN_COURS
+    const { rows: updated } = await pool.query(
+      `UPDATE trajets SET statut = 'EN_COURS', maj_le = NOW() WHERE id = $1 RETURNING *`,
+      [trajetId]
+    );
+
+    // Notifier les passagers acceptés
+    await pool.query(
+      `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+       SELECT r.passager_id, 'TRAJET_TERMINE',
+              'Votre trajet ' || $2 || ' → ' || $3 || ' vient de démarrer !',
+              NOW()
+       FROM reservations r
+       WHERE r.trajet_id = $1 AND r.statut = 'ACCEPTEE'`,
+      [trajetId, trajet.lieu_depart, trajet.destination]
+    );
+
+    return res.json({ trajet: updated[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
 // PATCH /:id/terminer
 // =====================
 router.patch("/:id/terminer", requireAuth, async (req, res) => {
