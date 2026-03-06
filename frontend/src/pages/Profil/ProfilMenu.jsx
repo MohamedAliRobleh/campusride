@@ -100,22 +100,23 @@ export default function ProfilMenu({ isDark, user, onPhotoUpdated }) {
               alt="Photo de profil"
               className="rounded-circle border"
               style={{ width: 84, height: 84, objectFit: "cover" }}
+              onError={(e) => { e.target.style.display = "none"; e.target.nextElementSibling.style.display = "flex"; }}
             />
-          ) : (
-            <div
-              className="rounded-circle border d-flex align-items-center justify-content-center mx-auto"
-              style={{
-                width: 84,
-                height: 84,
-                fontSize: 28,
-                fontWeight: 700,
-                color: "#198754",
-                background: isDark ? "rgba(25,135,84,0.08)" : "rgba(25,135,84,0.10)",
-              }}
-            >
-              {initial}
-            </div>
-          )}
+          ) : null}
+          <div
+            className="rounded-circle border d-flex align-items-center justify-content-center mx-auto"
+            style={{
+              width: 84,
+              height: 84,
+              fontSize: 28,
+              fontWeight: 700,
+              color: "#198754",
+              background: isDark ? "rgba(25,135,84,0.08)" : "rgba(25,135,84,0.10)",
+              display: photoUrl ? "none" : "flex",
+            }}
+          >
+            {initial}
+          </div>
 
           {/* Bouton caméra */}
           <button

@@ -239,15 +239,15 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                         alt="Photo de profil"
                         className="rounded-circle flex-shrink-0"
                         style={{ width: 34, height: 34, objectFit: "cover" }}
+                        onError={(e) => { e.target.style.display = "none"; e.target.nextElementSibling.style.display = "flex"; }}
                       />
-                    ) : (
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                        style={{ width: 34, height: 34, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem" }}
-                      >
-                        {initials}
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                      style={{ width: 34, height: 34, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.8rem", display: photoUrl ? "none" : "flex" }}
+                    >
+                      {initials}
+                    </div>
                     <div className="d-none d-lg-block text-start">
                       <div className={`fw-semibold lh-1 mb-1 ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.85rem" }}>
                         {userName}
@@ -286,15 +286,15 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                             alt="Photo de profil"
                             className="rounded-circle flex-shrink-0"
                             style={{ width: 40, height: 40, objectFit: "cover" }}
+                            onError={(e) => { e.target.style.display = "none"; e.target.nextElementSibling.style.display = "flex"; }}
                           />
-                        ) : (
-                          <div
-                            className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                            style={{ width: 40, height: 40, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.85rem" }}
-                          >
-                            {initials}
-                          </div>
-                        )}
+                        ) : null}
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                          style={{ width: 40, height: 40, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: "0.85rem", display: photoUrl ? "none" : "flex" }}
+                        >
+                          {initials}
+                        </div>
                         <div className="min-w-0">
                           <div className="fw-bold text-truncate" style={{ fontSize: "0.88rem", maxWidth: 150 }}>{userName}</div>
                           <div className="text-muted text-truncate" style={{ fontSize: "0.73rem", maxWidth: 150 }}>{user?.email || ""}</div>
