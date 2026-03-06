@@ -1,15 +1,15 @@
 {
   "rewrites": [
-    { "source": "/auth/:path*",          "destination": "https://REMPLACER_PAR_URL_RENDER/auth/:path*" },
-    { "source": "/utilisateurs/:path*",  "destination": "https://REMPLACER_PAR_URL_RENDER/utilisateurs/:path*" },
-    { "source": "/trajets/:path*",       "destination": "https://REMPLACER_PAR_URL_RENDER/trajets/:path*" },
-    { "source": "/reservations/:path*",  "destination": "https://REMPLACER_PAR_URL_RENDER/reservations/:path*" },
-    { "source": "/notifications/:path*", "destination": "https://REMPLACER_PAR_URL_RENDER/notifications/:path*" },
-    { "source": "/vehicules/:path*",     "destination": "https://REMPLACER_PAR_URL_RENDER/vehicules/:path*" },
-    { "source": "/uploads/:path*",       "destination": "https://REMPLACER_PAR_URL_RENDER/uploads/:path*" },
-    { "source": "/admin/:path*",         "destination": "https://REMPLACER_PAR_URL_RENDER/admin/:path*" },
-    { "source": "/evaluations/:path*",   "destination": "https://REMPLACER_PAR_URL_RENDER/evaluations/:path*" },
-    { "source": "/messages/:path*",      "destination": "https://REMPLACER_PAR_URL_RENDER/messages/:path*" },
+    { "source": "/auth/:path*",          "destination": "https://campusride-api.onrender.com/auth/:path*" },
+    { "source": "/utilisateurs/:path*",  "destination": "https://campusride-api.onrender.com/utilisateurs/:path*" },
+    { "source": "/trajets/:path*",       "destination": "https://campusride-api.onrender.com/trajets/:path*" },
+    { "source": "/reservations/:path*",  "destination": "https://campusride-api.onrender.com/reservations/:path*" },
+    { "source": "/notifications/:path*", "destination": "https://campusride-api.onrender.com/notifications/:path*" },
+    { "source": "/vehicules/:path*",     "destination": "https://campusride-api.onrender.com/vehicules/:path*" },
+    { "source": "/uploads/:path*",       "destination": "https://campusride-api.onrender.com/uploads/:path*" },
+    { "source": "/admin/:path*",         "destination": "https://campusride-api.onrender.com/admin/:path*" },
+    { "source": "/evaluations/:path*",   "destination": "https://campusride-api.onrender.com/evaluations/:path*" },
+    { "source": "/messages/:path*",      "destination": "https://campusride-api.onrender.com/messages/:path*" },
     { "source": "/(.*)",                 "destination": "/index.html" }
   ]
 }
