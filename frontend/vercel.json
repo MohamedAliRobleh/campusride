@@ -1,0 +1,15 @@
+{
+  "rewrites": [
+    { "source": "/auth/:path*",          "destination": "https://campusride-api.onrender.com/auth/:path*" },
+    { "source": "/utilisateurs/:path*",  "destination": "https://campusride-api.onrender.com/utilisateurs/:path*" },
+    { "source": "/trajets/:path*",       "destination": "https://campusride-api.onrender.com/trajets/:path*" },
+    { "source": "/reservations/:path*",  "destination": "https://campusride-api.onrender.com/reservations/:path*" },
+    { "source": "/notifications/:path*", "destination": "https://campusride-api.onrender.com/notifications/:path*" },
+    { "source": "/vehicules/:path*",     "destination": "https://campusride-api.onrender.com/vehicules/:path*" },
+    { "source": "/uploads/:path*",       "destination": "https://campusride-api.onrender.com/uploads/:path*" },
+    { "source": "/admin/:path*",         "destination": "https://campusride-api.onrender.com/admin/:path*" },
+    { "source": "/evaluations/:path*",   "destination": "https://campusride-api.onrender.com/evaluations/:path*" },
+    { "source": "/messages/:path*",      "destination": "https://campusride-api.onrender.com/messages/:path*" },
+    { "source": "/(.*)",                 "destination": "/index.html" }
+  ]
+}
