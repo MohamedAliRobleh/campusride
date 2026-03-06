@@ -59,7 +59,7 @@ export default defineConfig({
           },
           {
             // Cache les appels API GET (trajets, profil, etc.)
-            urlPattern: /^http:\/\/localhost:5000\/.*/i,
+            urlPattern: /^\/.*(trajets|utilisateurs|notifications|evaluations).*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',

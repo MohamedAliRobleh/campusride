@@ -22,7 +22,10 @@ const app = express();
 // Middlewares globaux
 app.use(compression());
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN ?? "*",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 
