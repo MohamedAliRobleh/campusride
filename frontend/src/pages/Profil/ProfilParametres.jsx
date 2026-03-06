@@ -392,8 +392,8 @@ export default function ProfilParametres() {
         </Section>
       )}
 
-      {/* ── 5. APPLICATION (mobile seulement) ───────────────────── */}
-      {isMobile && !isStandalone && (
+      {/* ── 5. APPLICATION ───────────────────────────────────────── */}
+      {!isStandalone && (
         <Section icon="bi-phone" title="Application mobile" subtitle="Installez CampusRide sur votre téléphone" isDark={isDark}>
           {pwaToast && (
             <div className={`alert alert-${pwaToast.type} py-2 rounded-3 mb-3`} style={{ fontSize: "0.85rem" }}>
@@ -425,15 +425,29 @@ export default function ProfilParametres() {
                 Accès rapide depuis votre écran d'accueil, sans navigateur
               </p>
             </div>
-            <button
-              type="button"
-              className="btn btn-success rounded-3 fw-semibold flex-shrink-0"
-              onClick={handlePwaInstall}
-              disabled={!isIos && !deferredPrompt}
-              style={{ fontSize: "0.82rem" }}
-            >
-              {isIos ? <><i className="bi bi-info-circle me-1" />Comment faire</> : <><i className="bi bi-download me-1" />Installer</>}
-            </button>
+            {isIos ? (
+              <button
+                type="button"
+                className="btn btn-success rounded-3 fw-semibold flex-shrink-0"
+                onClick={handlePwaInstall}
+                style={{ fontSize: "0.82rem" }}
+              >
+                <i className="bi bi-info-circle me-1" />Comment faire
+              </button>
+            ) : deferredPrompt ? (
+              <button
+                type="button"
+                className="btn btn-success rounded-3 fw-semibold flex-shrink-0"
+                onClick={handlePwaInstall}
+                style={{ fontSize: "0.82rem" }}
+              >
+                <i className="bi bi-download me-1" />Installer
+              </button>
+            ) : (
+              <span className={`small ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.75rem", textAlign: "right", maxWidth: 120 }}>
+                Utilisez le menu de votre navigateur pour installer
+              </span>
+            )}
           </div>
 
           {isDismissed() && (

@@ -13,9 +13,9 @@ export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState(_cachedPrompt);
   const [installed, setInstalled] = useState(false);
 
-  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-    navigator.userAgent
-  );
+  const isMobile =
+    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 900;
   const isIos =
     /iphone|ipad|ipod/i.test(navigator.userAgent) &&
     !/crios/i.test(navigator.userAgent);
