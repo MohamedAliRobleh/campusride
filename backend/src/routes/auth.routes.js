@@ -14,7 +14,8 @@ const router = Router();
 */
 router.post("/register", async (req, res) => {
   try {
-    const { prenom, nom, email, motDePasse } = req.body;
+    const { prenom, nom, motDePasse } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
 
     if (!prenom || !nom || !email || !motDePasse ) {
       return res.status(400).json({
@@ -79,7 +80,8 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     // Récupérer les champs
-    const { email, motDePasse } = req.body;
+    const { motDePasse } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
 
     // Vérifier présence des champs
     if (!email || !motDePasse) {
@@ -150,7 +152,7 @@ router.get("/me", requireAuth, async (req, res) => {
 
 router.post("/forgot-password", async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
 
     if (!email) {
       return res.status(400).json({ error: "Email obligatoire" });
