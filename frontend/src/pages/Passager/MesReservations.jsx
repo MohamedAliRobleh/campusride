@@ -90,7 +90,7 @@ export default function MesReservations() {
   const [filter, setFilter] = useState("ACTIVES");
   const [evalModal, setEvalModal] = useState(null); // { trajetId }
   const [dejasEvalues, setDejaEvalues] = useState(new Set());
-  const [profileUserId, setProfileUserId] = useState(null);
+  const [profileModal, setProfileModal] = useState(null); // { userId, roleContext, vehicule }
   const [mapReservation, setMapReservation] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
@@ -285,7 +285,11 @@ export default function MesReservations() {
                     <button
                       className="btn p-0 border-0 bg-transparent flex-shrink-0"
                       title="Voir le profil du conducteur"
-                      onClick={() => r.conducteur_id && setProfileUserId(r.conducteur_id)}
+                      onClick={() => r.conducteur_id && setProfileModal({
+                        userId: r.conducteur_id,
+                        roleContext: "CONDUCTEUR",
+                        vehicule: r.marque ? { marque: r.marque, modele: r.modele, couleur: r.couleur, plaque: r.plaque } : null,
+                      })}
                     >
                       {r.conducteur_photo_url ? (
                         <img
@@ -308,7 +312,11 @@ export default function MesReservations() {
                       <button
                         className="btn p-0 border-0 bg-transparent fw-semibold text-start"
                         style={{ fontSize: "0.9rem", color: "inherit" }}
-                        onClick={() => r.conducteur_id && setProfileUserId(r.conducteur_id)}
+                        onClick={() => r.conducteur_id && setProfileModal({
+                          userId: r.conducteur_id,
+                          roleContext: "CONDUCTEUR",
+                          vehicule: r.marque ? { marque: r.marque, modele: r.modele, couleur: r.couleur, plaque: r.plaque } : null,
+                        })}
                       >
                         {r.conducteur_prenom} {r.conducteur_nom}
                       </button>
@@ -425,11 +433,13 @@ export default function MesReservations() {
         />
       )}
 
-      {profileUserId && (
+      {profileModal && (
         <UserProfileModal
-          userId={profileUserId}
+          userId={profileModal.userId}
           isDark={isDark}
-          onClose={() => setProfileUserId(null)}
+          roleContext={profileModal.roleContext}
+          vehicule={profileModal.vehicule}
+          onClose={() => setProfileModal(null)}
         />
       )}
 
