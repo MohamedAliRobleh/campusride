@@ -148,6 +148,7 @@ function SectionDashboard({ stats, loading }) {
               { icon: "bi-person-badge-fill",   color: "#0d6efd", label: "Conducteurs actifs",       value: stats.total_conducteurs },
               { icon: "bi-person-fill",          color: "#198754", label: "Passagers actifs",          value: stats.total_passagers },
               { icon: "bi-shield-fill",          color: "#dc3545", label: "Administrateurs",           value: stats.total_admins },
+              { icon: "bi-person-plus-fill",     color: "#20c374", label: "Nouveaux (7 derniers jours)", value: stats.nouveaux_7j ?? "—" },
               { icon: "bi-check2-all",           color: "#198754", label: "Taux acceptation réserv.",  value: `${taux}%` },
               { icon: "bi-x-circle-fill",        color: "#dc3545", label: "Taux annulation trajets",   value: `${tauxAnnul}%` },
               { icon: "bi-star-half",            color: "#ffc107", label: "Évaluations soumises",      value: stats.total_evaluations },
@@ -162,6 +163,47 @@ function SectionDashboard({ stats, loading }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Application mobile — Installations PWA */}
+      <div className="rounded-4 p-4 mb-4" style={{ background: "#fff", boxShadow: "0 1px 6px rgba(0,0,0,.07)" }}>
+        <div style={{ height: 3, background: "linear-gradient(90deg,#0d6efd,#6610f2)", borderRadius: 2, marginBottom: 16 }} />
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <h6 className="fw-bold mb-0" style={{ fontSize: "0.88rem" }}>
+            <i className="bi bi-phone-fill me-2" style={{ color: "#0d6efd" }} />Application mobile — Installations PWA
+          </h6>
+          <span className="badge rounded-pill px-3 py-1 fw-bold" style={{ background: "rgba(13,110,253,0.12)", color: "#0d6efd", fontSize: "0.9rem" }}>
+            {stats.pwa_total ?? 0} installation(s)
+          </span>
+        </div>
+        {Number(stats.pwa_total) === 0 ? (
+          <p className="text-muted small mb-0">Aucune installation enregistrée pour le moment.</p>
+        ) : (
+          <div className="row g-3">
+            {[
+              { label: "Via la bannière d'accueil", value: Number(stats.pwa_banniere ?? 0), color: "#198754", icon: "bi-bell-fill" },
+              { label: "Via les Paramètres du profil", value: Number(stats.pwa_profil ?? 0), color: "#6f42c1", icon: "bi-gear-fill" },
+              { label: "Autre / non identifié", value: Math.max(0, Number(stats.pwa_total ?? 0) - Number(stats.pwa_banniere ?? 0) - Number(stats.pwa_profil ?? 0)), color: "#6c757d", icon: "bi-question-circle-fill" },
+            ].map(({ label, value, color, icon }) => {
+              const pct = Number(stats.pwa_total) > 0 ? Math.round((value / Number(stats.pwa_total)) * 100) : 0;
+              return (
+                <div key={label} className="col-md-4">
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <i className={`bi ${icon}`} style={{ color, fontSize: "0.85rem" }} />
+                    <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>{label}</span>
+                  </div>
+                  <div className="progress rounded-pill mb-1" style={{ height: 8 }}>
+                    <div className="progress-bar" style={{ width: `${pct}%`, background: color }} />
+                  </div>
+                  <div className="d-flex justify-content-between" style={{ fontSize: "0.72rem", color: "#6c757d" }}>
+                    <span>{value} installation(s)</span>
+                    <span>{pct}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </>
   );

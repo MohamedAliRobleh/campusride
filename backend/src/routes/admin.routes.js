@@ -23,12 +23,33 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
         (SELECT COUNT(*) FROM reservations) AS total_reservations,
         (SELECT COUNT(*) FROM reservations WHERE statut = 'ACCEPTEE') AS reservations_acceptees,
         (SELECT COUNT(*) FROM evaluations) AS total_evaluations,
-        (SELECT ROUND(AVG(note)::numeric,1) FROM evaluations) AS note_moyenne_globale
+        (SELECT ROUND(AVG(note)::numeric,1) FROM evaluations) AS note_moyenne_globale,
+        (SELECT COUNT(*) FROM utilisateurs WHERE actif = TRUE AND cree_le >= NOW() - INTERVAL '7 days') AS nouveaux_7j,
+        (SELECT COUNT(*) FROM pwa_installs) AS pwa_total,
+        (SELECT COUNT(*) FROM pwa_installs WHERE source = 'banniere') AS pwa_banniere,
+        (SELECT COUNT(*) FROM pwa_installs WHERE source = 'profil') AS pwa_profil
     `);
     return res.json(rows[0]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
+// POST /admin/pwa-install — Enregistrer une installation PWA (public, sans auth)
+// =====================
+router.post("/pwa-install", async (req, res) => {
+  try {
+    const { source, utilisateur_id } = req.body;
+    await pool.query(
+      "INSERT INTO pwa_installs (utilisateur_id, source) VALUES ($1, $2)",
+      [utilisateur_id || null, source || "inconnu"]
+    );
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false });
   }
 });
 

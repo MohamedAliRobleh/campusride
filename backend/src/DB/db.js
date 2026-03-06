@@ -173,6 +173,19 @@ export async function runMigrations() {
       console.log("Migration messages OK");
     } catch (err) { console.error("Migration messages:", err.message); }
 
+    // Table pwa_installs — suivi des installations de l'application mobile
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS pwa_installs (
+          id             SERIAL PRIMARY KEY,
+          utilisateur_id ${userRef} REFERENCES utilisateurs(id) ON DELETE SET NULL,
+          source         VARCHAR(30) DEFAULT 'inconnu',
+          installe_le    TIMESTAMPTZ DEFAULT NOW()
+        );
+      `);
+      console.log("Migration pwa_installs OK");
+    } catch (err) { console.error("Migration pwa_installs:", err.message); }
+
     console.log("Migrations OK");
   } catch (err) {
     console.error("Erreur migration:", err.message);

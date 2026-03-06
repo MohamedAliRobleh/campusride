@@ -163,7 +163,7 @@ export default function ProfilParametres() {
   const handlePwaInstall = async () => {
     if (isIos) { setShowIosInstructions(true); return; }
     if (!deferredPrompt) return;
-    const accepted = await install();
+    const accepted = await install("profil");
     if (accepted) {
       dismiss(0);
       setPwaToast({ type: "success", text: "Application installée avec succès !" });

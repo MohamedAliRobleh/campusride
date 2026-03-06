@@ -49,11 +49,21 @@ export function usePWAInstall() {
     }
   };
 
-  const install = async () => {
+  const trackInstall = (source = "inconnu") => {
+    const userId = (() => { try { return JSON.parse(localStorage.getItem("user") || "{}").id || null; } catch { return null; } })();
+    fetch("/admin/pwa-install", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source, utilisateur_id: userId }),
+    }).catch(() => {});
+  };
+
+  const install = async (source = "inconnu") => {
     if (!deferredPrompt) return false;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === "accepted") {
+      trackInstall(source);
       _cachedPrompt = null;
       setDeferredPrompt(null);
       setInstalled(true);

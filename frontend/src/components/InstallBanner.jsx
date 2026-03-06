@@ -8,7 +8,7 @@ export default function InstallBanner() {
   if (!canShowBanner || !visible) return null;
 
   const handleInstall = async () => {
-    const accepted = await install();
+    const accepted = await install("banniere");
     if (accepted) handleClose(0);
   };
 
