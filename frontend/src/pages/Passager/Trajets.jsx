@@ -5,12 +5,14 @@ import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
+import TrajetMapModal from "../../components/TrajetMapModal";
 
 export default function Trajets() {
   const navigate = useNavigate();
   const [trajets, setTrajets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [profileUserId, setProfileUserId] = useState(null);
+  const [mapTrajet, setMapTrajet] = useState(null);
   const token = localStorage.getItem("token");
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -184,16 +186,26 @@ export default function Trajets() {
                     </div>
                   </div>
 
-                  {/* Bouton Réserver */}
-                  <button
-                    type="button"
-                    className="btn btn-success w-100 rounded-3 fw-semibold mt-3 py-2"
-                    style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none" }}
-                    onClick={() => navigate("/passager/search", { state: { trajetId: t.id } })}
-                  >
-                    <i className="bi bi-check-circle me-2" />
-                    Réserver ce trajet
-                  </button>
+                  {/* Boutons Carte + Réserver */}
+                  <div className="d-flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      className={`btn btn-outline-secondary rounded-3 fw-semibold px-3 ${isDark ? "border-secondary" : ""}`}
+                      onClick={() => setMapTrajet(t)}
+                    >
+                      <i className="bi bi-map me-2" />
+                      Voir sur la carte
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-success flex-grow-1 rounded-3 fw-semibold py-2"
+                      style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none" }}
+                      onClick={() => navigate("/passager/search", { state: { trajetId: t.id } })}
+                    >
+                      <i className="bi bi-check-circle me-2" />
+                      Réserver ce trajet
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -209,6 +221,29 @@ export default function Trajets() {
           userId={profileUserId}
           isDark={isDark}
           onClose={() => setProfileUserId(null)}
+        />
+      )}
+
+      {mapTrajet && (
+        <TrajetMapModal
+          trajet={{
+            ...mapTrajet,
+            conducteur_prenom: mapTrajet.conducteur_prenom,
+            conducteur_nom: mapTrajet.conducteur_nom,
+            conducteur_photo_url: mapTrajet.conducteur_photo_url,
+            note_moyenne: mapTrajet.note_moyenne,
+            marque: mapTrajet.voiture_marque,
+            modele: mapTrajet.voiture_modele,
+            couleur: mapTrajet.voiture_couleur,
+            depart_lat: mapTrajet.depart_lat,
+            depart_lng: mapTrajet.depart_lng,
+            dest_lat: mapTrajet.dest_lat,
+            dest_lng: mapTrajet.dest_lng,
+          }}
+          isDark={isDark}
+          onClose={() => setMapTrajet(null)}
+          showReserve={mapTrajet.places_dispo > 0}
+          onReserve={() => { navigate("/passager/search", { state: { trajetId: mapTrajet.id } }); setMapTrajet(null); }}
         />
       )}
     </div>

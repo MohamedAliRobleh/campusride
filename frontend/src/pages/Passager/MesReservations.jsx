@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
+import TrajetMapModal from "../../components/TrajetMapModal";
 
 
 function EvaluationModal({ trajetId, token, onClose, isDark }) {
@@ -73,11 +74,11 @@ function EvaluationModal({ trajetId, token, onClose, isDark }) {
 }
 
 const STATUT_CONFIG = {
-  EN_ATTENTE: { label: "En attente", cls: "bg-warning-subtle text-warning", icon: "bi-hourglass-split" },
-  ACCEPTEE:   { label: "Acceptée",   cls: "bg-success-subtle text-success", icon: "bi-check-circle-fill" },
-  REFUSEE:    { label: "Refusée",    cls: "bg-danger-subtle text-danger",   icon: "bi-x-circle-fill" },
-  ANNULEE:    { label: "Annulée",    cls: "bg-secondary-subtle text-secondary", icon: "bi-slash-circle" },
-  TERMINEE:   { label: "Terminée",   cls: "bg-secondary-subtle text-secondary", icon: "bi-flag-fill" },
+  EN_ATTENTE: { label: "En attente",  cls: "bg-warning-subtle text-warning",    icon: "bi-hourglass-split" },
+  ACCEPTEE:   { label: "Acceptée",    cls: "bg-success-subtle text-success",    icon: "bi-check-circle-fill" },
+  REFUSEE:    { label: "Refusée",     cls: "bg-danger-subtle text-danger",      icon: "bi-x-circle-fill" },
+  ANNULEE:    { label: "Annulée",     cls: "bg-secondary-subtle text-secondary", icon: "bi-slash-circle" },
+  TERMINEE:   { label: "Terminée",    cls: "bg-secondary-subtle text-secondary", icon: "bi-flag-fill" },
 };
 
 export default function MesReservations() {
@@ -90,6 +91,7 @@ export default function MesReservations() {
   const [evalModal, setEvalModal] = useState(null); // { trajetId }
   const [dejasEvalues, setDejaEvalues] = useState(new Set());
   const [profileUserId, setProfileUserId] = useState(null);
+  const [mapReservation, setMapReservation] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -230,11 +232,13 @@ export default function MesReservations() {
                 <div
                   style={{
                     height: 3,
-                    background: r.statut === "ACCEPTEE"
-                      ? "linear-gradient(90deg, #198754, #20c374)"
-                      : r.statut === "EN_ATTENTE"
-                        ? "linear-gradient(90deg, #ffc107, #ffda6a)"
-                        : "linear-gradient(90deg, #6c757d, #adb5bd)",
+                    background: r.trajet_statut === "EN_COURS"
+                      ? "linear-gradient(90deg, #0d6efd, #6ea8fe)"
+                      : r.statut === "ACCEPTEE"
+                        ? "linear-gradient(90deg, #198754, #20c374)"
+                        : r.statut === "EN_ATTENTE"
+                          ? "linear-gradient(90deg, #ffc107, #ffda6a)"
+                          : "linear-gradient(90deg, #6c757d, #adb5bd)",
                   }}
                 />
 
@@ -339,13 +343,28 @@ export default function MesReservations() {
 
                   {/* Statut + boutons */}
                   <div className="d-flex justify-content-between align-items-center gap-2">
-                    <span className={`badge rounded-pill px-3 py-2 fw-semibold ${statutCfg.cls}`} style={{ fontSize: "0.78rem" }}>
-                      <i className={`bi ${statutCfg.icon} me-1`} />
-                      {statutCfg.label}
-                    </span>
+                    <div className="d-flex gap-2 align-items-center flex-wrap">
+                      <span className={`badge rounded-pill px-3 py-2 fw-semibold ${statutCfg.cls}`} style={{ fontSize: "0.78rem" }}>
+                        <i className={`bi ${statutCfg.icon} me-1`} />
+                        {statutCfg.label}
+                      </span>
+                      {r.statut === "ACCEPTEE" && r.trajet_statut === "EN_COURS" && (
+                        <span className="badge rounded-pill bg-primary px-3 py-2 fw-semibold" style={{ fontSize: "0.78rem" }}>
+                          <i className="bi bi-car-front-fill me-1" />
+                          En route !
+                        </span>
+                      )}
+                    </div>
 
                     <div className="d-flex gap-2 flex-wrap">
-                      {r.statut === "TERMINEE" && !dejasEvalues.has(r.trajet_id) && (
+                      <button
+                        className="btn btn-outline-secondary btn-sm rounded-3"
+                        title="Voir sur la carte"
+                        onClick={() => setMapReservation(r)}
+                      >
+                        <i className="bi bi-map" />
+                      </button>
+                      {r.statut === "ACCEPTEE" && r.trajet_statut === "TERMINE" && !dejasEvalues.has(r.trajet_id) && (
                         <button
                           className="btn btn-outline-warning btn-sm rounded-3 fw-semibold"
                           onClick={() => setEvalModal({ trajetId: r.trajet_id })}
@@ -354,7 +373,7 @@ export default function MesReservations() {
                           Évaluer
                         </button>
                       )}
-                      {r.statut === "TERMINEE" && dejasEvalues.has(r.trajet_id) && (
+                      {r.statut === "ACCEPTEE" && r.trajet_statut === "TERMINE" && dejasEvalues.has(r.trajet_id) && (
                         <span className="badge bg-warning-subtle text-warning px-2 py-2" style={{ fontSize: "0.72rem" }}>
                           <i className="bi bi-star-fill me-1" />Évalué
                         </span>
@@ -411,6 +430,25 @@ export default function MesReservations() {
           userId={profileUserId}
           isDark={isDark}
           onClose={() => setProfileUserId(null)}
+        />
+      )}
+
+      {mapReservation && (
+        <TrajetMapModal
+          trajet={{
+            lieu_depart: mapReservation.lieu_depart,
+            destination: mapReservation.destination,
+            dateheure_depart: mapReservation.dateheure_depart,
+            conducteur_prenom: mapReservation.conducteur_prenom,
+            conducteur_nom: mapReservation.conducteur_nom,
+            conducteur_photo_url: mapReservation.conducteur_photo_url,
+            marque: mapReservation.marque,
+            modele: mapReservation.modele,
+            couleur: mapReservation.couleur,
+          }}
+          isDark={isDark}
+          onClose={() => setMapReservation(null)}
+          showReserve={false}
         />
       )}
     </div>

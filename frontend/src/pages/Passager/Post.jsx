@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate.jsx";
 import Footer from "../../components/Footer.jsx";
 import PlacesInput from "../../components/PlacesInput.jsx";
+import TripMap from "../../components/TripMap.jsx";
 
 export default function Post() {
   const navigate = useNavigate();
@@ -25,6 +26,9 @@ export default function Post() {
   // Coordonnées GPS des points de départ et destination
   const [departCoords, setDepartCoords] = useState(null);  // { lat, lng }
   const [destCoords,   setDestCoords]   = useState(null);
+
+  // Afficher la carte preview si les deux champs sont remplis
+  const showMapPreview = formData.depart.length > 3 && formData.destination.length > 3;
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -164,6 +168,26 @@ export default function Post() {
                   </div>
                 </div>
               </div>
+
+              {/* Carte preview live */}
+              {showMapPreview && (
+                <div className="mb-4">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style={{ width: 30, height: 30, background: "rgba(25,135,84,0.1)" }}>
+                      <i className="bi bi-map-fill text-success" style={{ fontSize: "0.85rem" }} />
+                    </div>
+                    <span className="fw-bold" style={{ fontSize: "0.88rem" }}>Aperçu du trajet</span>
+                  </div>
+                  <TripMap
+                    depart={formData.depart}
+                    destination={formData.destination}
+                    fromCoords={departCoords ? { lat: departCoords.lat, lon: departCoords.lng } : null}
+                    toCoords={destCoords ? { lat: destCoords.lat, lon: destCoords.lng } : null}
+                    isDark={isDark}
+                    height={220}
+                  />
+                </div>
+              )}
 
               <hr className={isDark ? "border-secondary" : ""} />
 

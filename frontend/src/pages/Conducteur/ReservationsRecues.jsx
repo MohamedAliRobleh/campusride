@@ -307,7 +307,7 @@ export default function ReservationsRecues() {
                       {r.trajet_statut === "TERMINE" && r.statut === "ACCEPTEE" && !dejasEvalues.has(r.reservation_id) && (
                         <button
                           className="btn btn-outline-warning btn-sm rounded-3 fw-semibold"
-                          onClick={() => setEvalModal({ trajetId: r.trajet_id, passagerId: r.passager_id, passagerPrenom: r.prenom })}
+                          onClick={() => setEvalModal({ trajetId: r.trajet_id, passagerId: r.passager_id, passagerPrenom: r.prenom, reservationId: r.reservation_id })}
                         >
                           <i className="bi bi-star-fill me-1" />
                           Évaluer
@@ -379,7 +379,7 @@ export default function ReservationsRecues() {
           token={token}
           isDark={isDark}
           onClose={(submitted) => {
-            if (submitted) setDejaEvalues((prev) => new Set([...prev, evalModal.reservation_id]));
+            if (submitted) setDejaEvalues((prev) => new Set([...prev, evalModal.reservationId]));
             setEvalModal(null);
           }}
         />
