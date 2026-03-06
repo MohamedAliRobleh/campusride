@@ -29,6 +29,7 @@ import ProfilParametres from "./pages/Profil/ProfilParametres.jsx";
 
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
+import InstallBanner from "./components/InstallBanner.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -47,6 +48,8 @@ export default function App() {
     document.body.dataset.bsTheme = theme;
   }, [theme]);
   return (
+    <>
+    <InstallBanner />
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/register" element={<Register />} />
@@ -83,5 +86,6 @@ export default function App() {
         <Route path="parametres" element={<ProfilParametres />} />
       </Route>
     </Routes>
+    </>
   );
 }
