@@ -59,8 +59,8 @@ router.post("/conversations", requireAuth, async (req, res) => {
     } else {
       // Générer l'UUID côté SQL pour compatibilité avec toutes les configs
       const { rows } = await pool.query(
-        `INSERT INTO conversations (id, user1_id, user2_id)
-         VALUES (gen_random_uuid(), $1, $2) RETURNING id;`,
+        `INSERT INTO conversations (user1_id, user2_id)
+         VALUES ($1, $2) RETURNING id;`,
         [userId, interlocuteur_id]
       );
       convId = rows[0].id;
@@ -144,8 +144,8 @@ router.post("/conversations/:id/messages", requireAuth, async (req, res) => {
     if (check.rows.length === 0) return res.status(403).json({ message: "Accès refusé." });
 
     const { rows } = await pool.query(
-      `INSERT INTO messages (id, conversation_id, expediteur_id, contenu)
-       VALUES (gen_random_uuid(), $1, $2, $3) RETURNING *`,
+      `INSERT INTO messages (conversation_id, expediteur_id, contenu)
+       VALUES ($1, $2, $3) RETURNING *`,
       [convId, userId, String(contenu).trim()]
     );
 
@@ -155,7 +155,7 @@ router.post("/conversations/:id/messages", requireAuth, async (req, res) => {
     try {
       await pool.query(
         `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
-         VALUES ($1, 'RAPPEL_TRAJET', $2, NOW())`,
+         VALUES ($1, 'MESSAGE_RECU', $2, NOW())`,
         [destinataireId, "Vous avez reçu un nouveau message dans votre messagerie."]
       );
     } catch { /* ignore */ }

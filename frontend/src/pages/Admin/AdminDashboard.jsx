@@ -13,10 +13,18 @@ const STATUT_CFG = {
   ANNULE:    { label: "Annulé",    bg: "#dc3545", light: "#f8d7da", text: "#842029" },
 };
 
+const RESA_STATUT_CFG = {
+  EN_ATTENTE: { label: "En attente", bg: "#fd7e14", light: "#fff3cd", text: "#664d03" },
+  ACCEPTEE:   { label: "Acceptée",   bg: "#198754", light: "#d1e7dd", text: "#0f5132" },
+  REFUSEE:    { label: "Refusée",    bg: "#dc3545", light: "#f8d7da", text: "#842029" },
+  ANNULEE:    { label: "Annulée",    bg: "#6c757d", light: "#e2e3e5", text: "#41464b" },
+};
+
 const NAV_ITEMS = [
   { id: "dashboard",     icon: "bi-speedometer2",   label: "Tableau de bord" },
   { id: "utilisateurs",  icon: "bi-people-fill",    label: "Utilisateurs" },
   { id: "trajets",       icon: "bi-map-fill",       label: "Trajets" },
+  { id: "reservations",  icon: "bi-bookmark-fill",  label: "Réservations" },
 ];
 
 // ─── Sous-composants légers ────────────────────────────────────────────────────
@@ -553,6 +561,163 @@ function SectionTrajets({ token, showToast }) {
   );
 }
 
+// ─── Section : Réservations ────────────────────────────────────────────────────
+function SectionReservations({ token, showToast }) {
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statutFilter, setStatutFilter] = useState("TOUS");
+  const [search, setSearch] = useState("");
+
+  const fetchReservations = useCallback(async (s = "", st = "TOUS") => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (st && st !== "TOUS") params.set("statut", st);
+      if (s) params.set("search", s);
+      const res = await fetch(`/admin/reservations${params.toString() ? "?" + params : ""}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setReservations(data.reservations || []);
+    } catch { showToast("Erreur chargement réservations.", "danger"); }
+    finally { setLoading(false); }
+  }, [token]);
+
+  useEffect(() => { fetchReservations(); }, [fetchReservations]);
+
+  const counts = { TOUS: reservations.length };
+  reservations.forEach((r) => { counts[r.statut] = (counts[r.statut] || 0) + 1; });
+
+  const filtered = statutFilter === "TOUS" ? reservations : reservations.filter((r) => r.statut === statutFilter);
+
+  return (
+    <>
+      {/* Onglets statut */}
+      <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
+        {["TOUS", "EN_ATTENTE", "ACCEPTEE", "REFUSEE", "ANNULEE"].map((st) => {
+          const cfg = st === "TOUS" ? { label: "Tous", bg: "#6f42c1" } : RESA_STATUT_CFG[st];
+          const count = counts[st] || 0;
+          const active = statutFilter === st;
+          return (
+            <button key={st}
+              className="btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1"
+              style={{
+                fontSize: "0.78rem", fontWeight: active ? 700 : 500,
+                background: active ? cfg.bg : "transparent",
+                color: active ? "#fff" : "#6c757d",
+                border: `1.5px solid ${active ? cfg.bg : "#dee2e6"}`,
+              }}
+              onClick={() => { setStatutFilter(st); fetchReservations(search, st); }}
+            >
+              {cfg.label}
+              <span className="badge rounded-pill ms-1"
+                style={{ background: active ? "rgba(255,255,255,.25)" : "#e9ecef", color: active ? "#fff" : "#495057", fontSize: "0.65rem" }}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+
+        <div className="ms-auto input-group rounded-3 overflow-hidden" style={{ maxWidth: 280, border: "1px solid #dee2e6" }}>
+          <span className="input-group-text bg-white border-0"><i className="bi bi-search text-muted" style={{ fontSize: "0.8rem" }} /></span>
+          <input type="text" className="form-control border-0 shadow-none" placeholder="Passager, trajet..."
+            value={search} style={{ fontSize: "0.82rem" }}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchReservations(search, statutFilter)} />
+          {search && <button className="btn btn-sm border-0 bg-white text-muted" onClick={() => { setSearch(""); fetchReservations("", statutFilter); }}>✕</button>}
+        </div>
+      </div>
+
+      {/* Tableau */}
+      <div className="rounded-4 overflow-hidden" style={{ background: "#fff", boxShadow: "0 1px 6px rgba(0,0,0,.07)" }}>
+        <div style={{ height: 3, background: "linear-gradient(90deg,#6f42c1,#a855f7)" }} />
+        {loading ? (
+          <div className="text-center py-5"><div className="spinner-border" style={{ color: "#6f42c1" }} /></div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-5 text-muted">
+            <i className="bi bi-bookmark" style={{ fontSize: "2rem", opacity: .3 }} />
+            <p className="mt-2 mb-0 small">Aucune réservation trouvée</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover mb-0" style={{ fontSize: "0.82rem" }}>
+              <thead style={{ background: "#f8f9fa", borderBottom: "2px solid #e9ecef" }}>
+                <tr>
+                  <th className="ps-4 py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Passager</th>
+                  <th className="py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Trajet</th>
+                  <th className="py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Conducteur</th>
+                  <th className="py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Date départ</th>
+                  <th className="py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Demandé le</th>
+                  <th className="text-center py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Statut réserv.</th>
+                  <th className="text-center py-3 fw-semibold text-muted" style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: ".5px" }}>Statut trajet</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r) => {
+                  const resaCfg   = RESA_STATUT_CFG[r.statut] || RESA_STATUT_CFG.ANNULEE;
+                  const trajetCfg = STATUT_CFG[r.trajet_statut] || STATUT_CFG.ANNULE;
+                  return (
+                    <tr key={r.id} style={{ verticalAlign: "middle" }}>
+                      <td className="ps-4 py-3">
+                        <div className="d-flex align-items-center gap-2">
+                          <Avatar prenom={r.passager_prenom} nom={r.passager_nom} photo={r.passager_photo_url} size={30} />
+                          <div>
+                            <div className="fw-semibold lh-1">{r.passager_prenom} {r.passager_nom}</div>
+                            <div className="text-muted mt-1" style={{ fontSize: "0.7rem" }}>{r.passager_email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <div className="d-flex align-items-start gap-1">
+                          <div className="d-flex flex-column align-items-center flex-shrink-0 mt-1" style={{ gap: 2 }}>
+                            <div className="rounded-circle bg-success" style={{ width: 6, height: 6 }} />
+                            <div style={{ width: 1.5, height: 12, background: "#198754", opacity: .35 }} />
+                            <i className="bi bi-geo-alt-fill text-success" style={{ fontSize: "0.62rem" }} />
+                          </div>
+                          <div>
+                            <div className="fw-semibold lh-1 text-truncate" style={{ maxWidth: 170, fontSize: "0.8rem" }}>{r.lieu_depart}</div>
+                            <div className="text-muted mt-1 text-truncate" style={{ fontSize: "0.73rem", maxWidth: 170 }}>{r.destination}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <span className="fw-semibold">{r.conducteur_prenom} {r.conducteur_nom}</span>
+                      </td>
+                      <td className="py-3">
+                        <div className="fw-semibold">{new Date(r.dateheure_depart).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                        <div className="text-muted" style={{ fontSize: "0.73rem" }}>{new Date(r.dateheure_depart).toLocaleDateString("fr-CA", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                      </td>
+                      <td className="py-3">
+                        <div style={{ fontSize: "0.78rem" }}>{new Date(r.demande_le).toLocaleDateString("fr-CA", { day: "2-digit", month: "short" })}</div>
+                        <div className="text-muted" style={{ fontSize: "0.7rem" }}>{new Date(r.demande_le).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                      </td>
+                      <td className="text-center py-3">
+                        <span className="badge rounded-pill px-3 py-1 fw-semibold"
+                          style={{ background: resaCfg.light, color: resaCfg.text, fontSize: "0.7rem" }}>
+                          {resaCfg.label}
+                        </span>
+                      </td>
+                      <td className="text-center py-3">
+                        <span className="badge rounded-pill px-2 py-1"
+                          style={{ background: trajetCfg.light, color: trajetCfg.text, fontSize: "0.68rem" }}>
+                          {trajetCfg.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="px-4 py-2 text-muted text-end" style={{ fontSize: "0.75rem", borderTop: "1px solid #f0f0f0" }}>
+          {filtered.length} réservation(s) affichée(s)
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Composant principal ────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -587,6 +752,7 @@ export default function AdminDashboard() {
     dashboard:    { icon: "bi-speedometer2",  title: "Tableau de bord",  sub: "Vue d'ensemble de la plateforme" },
     utilisateurs: { icon: "bi-people-fill",   title: "Utilisateurs",     sub: "Gérer les comptes et les rôles" },
     trajets:      { icon: "bi-map-fill",       title: "Trajets",          sub: "Consulter et modérer les trajets" },
+    reservations: { icon: "bi-bookmark-fill", title: "Réservations",     sub: "Consulter toutes les réservations" },
   };
   const current = sectionTitles[activeSection];
 
@@ -736,6 +902,9 @@ export default function AdminDashboard() {
           )}
           {activeSection === "trajets" && (
             <SectionTrajets token={token} showToast={showToast} />
+          )}
+          {activeSection === "reservations" && (
+            <SectionReservations token={token} showToast={showToast} />
           )}
         </main>
       </div>

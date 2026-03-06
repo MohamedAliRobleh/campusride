@@ -62,27 +62,8 @@ export async function createReservation(passagerId, trajetId) {
       return { error: "TRAJET_PAST" };
     }
 
-    // ======================================================
-    // Bloquer si (EN_ATTENTE + ACCEPTEE) >= places_total
-    // ======================================================
-    const countRes = await client.query(
-      `
-      SELECT COUNT(*)::int AS nb
-      FROM reservations
-      WHERE trajet_id = $1
-        AND statut IN ('EN_ATTENTE','ACCEPTEE')
-      `,
-      [trajetId]
-    );
-
-    const nbReservationsActives = countRes.rows[0].nb;
-
-    if (nbReservationsActives >= trajet.places_total) {
-      await client.query("ROLLBACK");
-      return { error: "NO_PLACES_AVAILABLE" };
-    }
-
-    // Vérifier disponibilité des places (ta condition existante)
+    // places_dispo est décrémenté dès la CRÉATION (pas à l'acceptation)
+    // → 0 signifie que toutes les places sont soit réservées soit en attente
     if (trajet.places_dispo <= 0) {
       await client.query("ROLLBACK");
       return { error: "NO_PLACES_AVAILABLE" };
@@ -99,6 +80,12 @@ VALUES ($1, $2)
 RETURNING *;
   `,
       [trajetId, passagerId]
+    );
+
+    // Décrémenter places_dispo dès la création de la demande
+    await client.query(
+      `UPDATE trajets SET places_dispo = places_dispo - 1 WHERE id = $1`,
+      [trajetId]
     );
 
     // ===============================
@@ -220,13 +207,6 @@ export async function acceptReservation(conducteurId, reservationId) {
       return { error: "NOT_PENDING" };
     }
 
-    // Vérifier places disponibles
-    if (row.places_dispo <= 0) {
-      await client.query("ROLLBACK");
-      return { error: "NO_PLACES_AVAILABLE" };
-    }
-
-
     // Mettre réservation ACCEPTÉE
     const reservationRes = await client.query(
       `
@@ -239,30 +219,10 @@ export async function acceptReservation(conducteurId, reservationId) {
     );
 
 
-    // Décrémenter places_dispo
-    const trajetRes = await client.query(
-      `
-      UPDATE trajets
-      SET places_dispo = places_dispo - 1
-      WHERE id = $1
-      RETURNING places_dispo;
-      `,
-      [row.trajet_id]
-    );
-
-    const newPlaces = trajetRes.rows[0].places_dispo;
-
-    // CLÔTURE AUTOMATIQUE SI COMPLET
-    if (newPlaces === 0) {
-      await client.query(
-        `
-        UPDATE trajets
-        SET statut = 'TERMINE'
-        WHERE id = $1
-        `,
-        [row.trajet_id]
-      );
-    }
+    // places_dispo a déjà été décrémenté à la création de la réservation
+    const newPlaces = row.places_dispo;
+    // Le statut ne change PAS automatiquement :
+    // le conducteur clique "Démarrer" → EN_COURS, puis "Terminer" → TERMINE
 
     // ===============================
     // Notifier le passager : réservation acceptée
@@ -290,7 +250,7 @@ export async function acceptReservation(conducteurId, reservationId) {
       trajet: {
         id: row.trajet_id,
         places_dispo: newPlaces,
-        statut: newPlaces === 0 ? "TERMINE" : "PLANIFIE"
+        statut: "PLANIFIE"
       }
     };
 
@@ -358,6 +318,13 @@ export async function refuseReservation(conducteurId, reservationId) {
       `,
       [reservationId]
     );
+
+    // Restaurer la place (décrémentée à la création)
+    await client.query(
+      `UPDATE trajets SET places_dispo = places_dispo + 1 WHERE id = $1`,
+      [row.trajet_id]
+    );
+
     // notifier passager
     await client.query(
       `
@@ -399,6 +366,7 @@ export async function getReservationsByPassager(passagerId) {
   t.lieu_depart,
   t.destination,
   t.dateheure_depart,
+  t.statut AS trajet_statut,
 
   u.id AS conducteur_id,
   u.prenom AS conducteur_prenom,
@@ -482,17 +450,12 @@ export async function cancelReservation(passagerId, reservationId) {
       return { error: "TRAJET_PAST" };
     }
 
-    // 5️ Si ACCEPTÉE → remettre une place
-    if (row.statut === "ACCEPTEE") {
-      await client.query(
-        `
-        UPDATE trajets
-        SET places_dispo = places_dispo + 1
-        WHERE id = $1
-        `,
-        [row.trajet_id]
-      );
-    }
+    // 5️ Restaurer la place (places_dispo est décrémenté à la création,
+    //    donc on restaure que la réservation soit EN_ATTENTE ou ACCEPTEE)
+    await client.query(
+      `UPDATE trajets SET places_dispo = places_dispo + 1 WHERE id = $1`,
+      [row.trajet_id]
+    );
 
     // 6️ Mettre statut ANNULEE
     const reservationRes = await client.query(
