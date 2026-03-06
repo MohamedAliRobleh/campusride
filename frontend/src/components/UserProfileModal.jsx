@@ -17,7 +17,7 @@ function StarRating({ value, max = 5, size = "1rem" }) {
   return <span className="d-inline-flex gap-1">{stars}</span>;
 }
 
-export default function UserProfileModal({ userId, isDark, onClose }) {
+export default function UserProfileModal({ userId, isDark, onClose, roleContext, vehicule }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -35,8 +35,9 @@ export default function UserProfileModal({ userId, isDark, onClose }) {
       .then(userData => {
         const user = userData.user || null;
         setProfile(user);
-        // Choisir le bon endpoint selon le rôle
-        const evalUrl = (user?.role === "PASSAGER")
+        // Choisir le bon endpoint selon le rôle (contexte prioritaire sur la BD)
+        const role = roleContext || user?.role;
+        const evalUrl = (role === "PASSAGER")
           ? `/evaluations/passager/${userId}`
           : `/evaluations/conducteur/${userId}`;
         return fetch(evalUrl).then(r => r.json());
@@ -124,7 +125,7 @@ export default function UserProfileModal({ userId, isDark, onClose }) {
                     className="position-absolute bottom-0 end-0 badge rounded-pill"
                     style={{ fontSize: "0.6rem", background: "#198754", border: "2px solid white", padding: "3px 7px" }}
                   >
-                    {profile.role === "CONDUCTEUR" ? (
+                    {(roleContext || profile.role) === "CONDUCTEUR" ? (
                       <><i className="bi bi-car-front-fill me-1" />Conducteur</>
                     ) : (
                       <><i className="bi bi-person-fill me-1" />Passager</>
@@ -180,6 +181,36 @@ export default function UserProfileModal({ userId, isDark, onClose }) {
                   </div>
                 </div>
               </div>
+
+              {/* Véhicule (si conducteur) */}
+              {vehicule && (
+                <div
+                  className={`rounded-3 p-3 mb-4 d-flex align-items-center gap-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`}
+                >
+                  <i className="bi bi-car-front-fill text-success" style={{ fontSize: "1.4rem", flexShrink: 0 }} />
+                  <div>
+                    <div className="fw-semibold" style={{ fontSize: "0.88rem" }}>
+                      {vehicule.marque} {vehicule.modele}
+                      {vehicule.couleur && <span className={`ms-2 small ${isDark ? "text-secondary" : "text-muted"}`}>· {vehicule.couleur}</span>}
+                    </div>
+                    {vehicule.plaque && (
+                      <span
+                        className="d-inline-block mt-1 fw-bold"
+                        style={{
+                          fontSize: "0.7rem",
+                          background: isDark ? "#343a40" : "#212529",
+                          color: "#f8f9fa",
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          letterSpacing: "0.1em",
+                        }}
+                      >
+                        {vehicule.plaque}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Bouton contacter */}
               <button
