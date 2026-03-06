@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { logout } from "../../utils/auth.js";
+import { usePWAInstall } from "../../hooks/usePWAInstall.js";
 
 // ─── Composant section ────────────────────────────────────────────────────────
 function Section({ icon, title, subtitle, isDark, children }) {
@@ -152,6 +153,28 @@ export default function ProfilParametres() {
     } finally {
       setRoleLoading(false);
     }
+  };
+
+  // === PWA Install ===
+  const { isMobile, isIos, isStandalone, deferredPrompt, install, dismiss, isDismissed } = usePWAInstall();
+  const [pwaToast, setPwaToast] = useState(null);
+  const [showIosInstructions, setShowIosInstructions] = useState(false);
+
+  const handlePwaInstall = async () => {
+    if (isIos) { setShowIosInstructions(true); return; }
+    if (!deferredPrompt) return;
+    const accepted = await install();
+    if (accepted) {
+      dismiss(0);
+      setPwaToast({ type: "success", text: "Application installée avec succès !" });
+      setTimeout(() => setPwaToast(null), 4000);
+    }
+  };
+
+  const handleReshowBanner = () => {
+    dismiss(0); // supprime le délai de 30 jours
+    setPwaToast({ type: "success", text: "La bannière d'installation réapparaîtra à la prochaine visite." });
+    setTimeout(() => setPwaToast(null), 4000);
   };
 
   // === Supprimer le compte ===
@@ -369,7 +392,64 @@ export default function ProfilParametres() {
         </Section>
       )}
 
-      {/* ── 5. COMPTE ────────────────────────────────────────────── */}
+      {/* ── 5. APPLICATION (mobile seulement) ───────────────────── */}
+      {isMobile && !isStandalone && (
+        <Section icon="bi-phone" title="Application mobile" subtitle="Installez CampusRide sur votre téléphone" isDark={isDark}>
+          {pwaToast && (
+            <div className={`alert alert-${pwaToast.type} py-2 rounded-3 mb-3`} style={{ fontSize: "0.85rem" }}>
+              <i className={`bi ${pwaToast.type === "success" ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill"} me-2`} />
+              {pwaToast.text}
+            </div>
+          )}
+
+          {showIosInstructions && (
+            <div className={`rounded-3 p-3 mb-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}>
+              <div className="fw-semibold mb-2" style={{ fontSize: "0.88rem" }}>
+                <i className="bi bi-apple me-2 text-success" />Comment installer sur iOS :
+              </div>
+              <ol className={`small mb-0 ps-3 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.82rem", lineHeight: 1.8 }}>
+                <li>Ouvre cette page dans <strong>Safari</strong></li>
+                <li>Appuie sur le bouton <i className="bi bi-box-arrow-up text-success" /> <strong>Partager</strong></li>
+                <li>Sélectionne <strong>« Ajouter à l'écran d'accueil »</strong></li>
+                <li>Confirme en appuyant sur <strong>Ajouter</strong></li>
+              </ol>
+            </div>
+          )}
+
+          <div className={`rounded-3 p-3 d-flex align-items-center justify-content-between gap-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}>
+            <div>
+              <div className="fw-semibold" style={{ fontSize: "0.88rem" }}>
+                <i className="bi bi-download me-2 text-success" />Installer l'application
+              </div>
+              <p className={`small mb-0 mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+                Accès rapide depuis votre écran d'accueil, sans navigateur
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-success rounded-3 fw-semibold flex-shrink-0"
+              onClick={handlePwaInstall}
+              disabled={!isIos && !deferredPrompt}
+              style={{ fontSize: "0.82rem" }}
+            >
+              {isIos ? <><i className="bi bi-info-circle me-1" />Comment faire</> : <><i className="bi bi-download me-1" />Installer</>}
+            </button>
+          </div>
+
+          {isDismissed() && (
+            <button
+              type="button"
+              className={`btn btn-link p-0 mt-2 ${isDark ? "text-secondary" : "text-muted"}`}
+              style={{ fontSize: "0.78rem" }}
+              onClick={handleReshowBanner}
+            >
+              <i className="bi bi-arrow-clockwise me-1" />Réafficher la bannière d'installation
+            </button>
+          )}
+        </Section>
+      )}
+
+      {/* ── 6. COMPTE ────────────────────────────────────────────── */}
       <Section icon="bi-person-x" title="Compte" subtitle="Actions irréversibles concernant votre compte" isDark={isDark}>
         <div className={`rounded-3 p-3 mb-3 ${isDark ? "bg-danger bg-opacity-10 border border-danger" : "bg-danger bg-opacity-10 border border-danger border-opacity-25"}`}>
           <div className="d-flex align-items-start gap-3">

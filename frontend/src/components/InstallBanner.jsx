@@ -1,62 +1,21 @@
-import { useEffect, useState } from "react";
-
-const DISMISS_KEY = "pwa_install_dismissed_until";
+import { useState } from "react";
+import { usePWAInstall } from "../hooks/usePWAInstall";
 
 export default function InstallBanner() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [show, setShow] = useState(false);
-  const [isIos, setIsIos] = useState(false);
-  const [visible, setVisible] = useState(false); // pour l'animation slide-up
+  const { canShowBanner, isIos, install, dismiss } = usePWAInstall();
+  const [visible, setVisible] = useState(true);
 
-  useEffect(() => {
-    // Ne pas afficher si déjà installé en standalone
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
-    if (window.navigator.standalone === true) return;
-
-    // Ne pas afficher si l'utilisateur a déjà refusé récemment
-    const dismissedUntil = localStorage.getItem(DISMISS_KEY);
-    if (dismissedUntil && Date.now() < parseInt(dismissedUntil)) return;
-
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios/i.test(navigator.userAgent);
-    setIsIos(ios);
-
-    if (ios) {
-      // iOS Safari : afficher la bannière avec instructions
-      setShow(true);
-      setTimeout(() => setVisible(true), 100);
-      return;
-    }
-
-    // Android / Chrome : écouter l'événement beforeinstallprompt
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShow(true);
-      setTimeout(() => setVisible(true), 100);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  if (!canShowBanner || !visible) return null;
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      handleDismiss(0); // fermer sans délai
-    }
-    setDeferredPrompt(null);
+    const accepted = await install();
+    if (accepted) handleClose(0);
   };
 
-  const handleDismiss = (days = 30) => {
+  const handleClose = (days = 30) => {
     setVisible(false);
-    setTimeout(() => setShow(false), 350);
-    if (days > 0) {
-      localStorage.setItem(DISMISS_KEY, Date.now() + days * 24 * 60 * 60 * 1000);
-    }
+    dismiss(days);
   };
-
-  if (!show) return null;
 
   return (
     <div
@@ -67,10 +26,16 @@ export default function InstallBanner() {
         right: 0,
         zIndex: 2000,
         padding: "0 12px 12px",
-        transform: visible ? "translateY(0)" : "translateY(110%)",
-        transition: "transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        animation: "slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(110%); }
+          to   { transform: translateY(0); }
+        }
+      `}</style>
+
       <div
         style={{
           maxWidth: 480,
@@ -99,7 +64,7 @@ export default function InstallBanner() {
             border: "1.5px solid rgba(255,255,255,0.25)",
           }}
         >
-          <i className="bi bi-car-front-fill" style={{ fontSize: "1.4rem", color: "#fff" }} />
+          <i className="bi bi-car-front-fill" style={{ fontSize: "1.4rem" }} />
         </div>
 
         {/* Texte */}
@@ -109,9 +74,8 @@ export default function InstallBanner() {
           </div>
           {isIos ? (
             <div style={{ fontSize: "0.72rem", opacity: 0.88, marginTop: 3, lineHeight: 1.4 }}>
-              Appuie sur{" "}
-              <i className="bi bi-box-arrow-up" style={{ fontSize: "0.75rem" }} />
-              {" "}puis <strong>« Ajouter à l'écran d'accueil »</strong>
+              Appuie sur <i className="bi bi-box-arrow-up" style={{ fontSize: "0.75rem" }} />{" "}
+              puis <strong>« Ajouter à l'écran d'accueil »</strong>
             </div>
           ) : (
             <div style={{ fontSize: "0.72rem", opacity: 0.88, marginTop: 3 }}>
@@ -120,7 +84,7 @@ export default function InstallBanner() {
           )}
         </div>
 
-        {/* Bouton installer (Android seulement) */}
+        {/* Bouton installer (Android) */}
         {!isIos && (
           <button
             onClick={handleInstall}
@@ -141,9 +105,9 @@ export default function InstallBanner() {
           </button>
         )}
 
-        {/* Bouton fermer */}
+        {/* Fermer */}
         <button
-          onClick={() => handleDismiss(30)}
+          onClick={() => handleClose(30)}
           style={{
             background: "rgba(255,255,255,0.15)",
             border: "none",
