@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "crypto";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";
 
@@ -30,7 +31,7 @@ router.post("/", requireAuth, async (req, res) => {
          WHERE r.trajet_id = $1
            AND t.conducteur_id = $2
            AND r.passager_id = $3
-           AND r.statut IN ('ACCEPTEE','TERMINEE')
+           AND r.statut = 'ACCEPTEE'
            AND t.statut = 'TERMINE'`,
         [trajet_id, evaluateurId, passager_id]
       );
@@ -46,7 +47,7 @@ router.post("/", requireAuth, async (req, res) => {
          JOIN trajets t ON t.id = r.trajet_id
          WHERE r.trajet_id = $1
            AND r.passager_id = $2
-           AND r.statut IN ('ACCEPTEE','TERMINEE')
+           AND r.statut = 'ACCEPTEE'
            AND t.statut = 'TERMINE'`,
         [trajet_id, evaluateurId]
       );
@@ -56,23 +57,32 @@ router.post("/", requireAuth, async (req, res) => {
       evalueId = check.rows[0].conducteur_id;
     }
 
-    const { rows } = await pool.query(
-      `INSERT INTO evaluations (evaluateur_id, evalue_id, trajet_id, note, commentaire)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (evaluateur_id, trajet_id) DO NOTHING
-       RETURNING *;`,
-      [evaluateurId, evalueId, trajet_id, noteNum, commentaire || null]
+    // Vérifier si déjà évalué
+    const existing = await pool.query(
+      `SELECT id FROM evaluations WHERE evaluateur_id = $1 AND evalue_id = $2 AND trajet_id = $3`,
+      [evaluateurId, evalueId, trajet_id]
     );
-
-    if (rows.length === 0) {
-      return res.status(409).json({ message: "Vous avez déjà évalué ce trajet." });
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ message: "Vous avez déjà évalué cette personne pour ce trajet." });
     }
 
-    await pool.query(
-      `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
-       VALUES ($1, 'TRAJET_TERMINE', $2, NOW())`,
-      [evalueId, `Vous avez reçu une évaluation de ${noteNum}/5 étoiles.`]
+    const { rows } = await pool.query(
+      `INSERT INTO evaluations (id, evaluateur_id, evalue_id, trajet_id, note, commentaire)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *;`,
+      [randomUUID(), evaluateurId, evalueId, trajet_id, noteNum, commentaire || null]
     );
+
+    // Notification non-critique (ne bloque pas si le type enum est manquant)
+    try {
+      await pool.query(
+        `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+         VALUES ($1, 'TRAJET_TERMINE', $2, NOW())`,
+        [evalueId, `Vous avez reçu une évaluation de ${noteNum}/5 étoiles.`]
+      );
+    } catch (notifErr) {
+      console.warn("[eval] notification échouée (non-critique):", notifErr.message);
+    }
 
     return res.status(201).json({ evaluation: rows[0] });
   } catch (err) {
@@ -146,10 +156,16 @@ router.get("/passager/:id", async (req, res) => {
 // =====================
 router.get("/trajet/:id/moi", requireAuth, async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT id FROM evaluations WHERE evaluateur_id = $1 AND trajet_id = $2`,
-      [req.user.id, req.params.id]
-    );
+    const { evalue_id } = req.query;
+    let query, params;
+    if (evalue_id) {
+      query = `SELECT id FROM evaluations WHERE evaluateur_id = $1 AND trajet_id = $2 AND evalue_id = $3`;
+      params = [req.user.id, req.params.id, evalue_id];
+    } else {
+      query = `SELECT id FROM evaluations WHERE evaluateur_id = $1 AND trajet_id = $2`;
+      params = [req.user.id, req.params.id];
+    }
+    const { rows } = await pool.query(query, params);
     return res.json({ deja_evalue: rows.length > 0 });
   } catch (err) {
     console.error(err);

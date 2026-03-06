@@ -13,13 +13,18 @@ const router = Router();
   ROUTE : POST /auth/register
 */
 router.post("/register", async (req, res) => {
-  console.log("=== REGISTER BODY ===", req.body);
   try {
     const { prenom, nom, email, motDePasse } = req.body;
 
     if (!prenom || !nom || !email || !motDePasse ) {
       return res.status(400).json({
         error: "Tous les champs sont obligatoires",
+      });
+    }
+
+    if (motDePasse.length < 8) {
+      return res.status(400).json({
+        error: "Le mot de passe doit contenir au moins 8 caractères.",
       });
     }
 
@@ -177,6 +182,11 @@ router.post("/forgot-password", async (req, res) => {
       `,
       [tokenHash, expiration, userId]
     );
+
+    if (!process.env.FRONTEND_URL) {
+      console.error("[forgot-password] FRONTEND_URL non défini dans .env");
+      return res.status(500).json({ error: "Erreur de configuration serveur" });
+    }
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 

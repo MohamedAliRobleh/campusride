@@ -10,7 +10,7 @@ const router = Router();
 
 
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
 
     const result = await pool.query(

@@ -81,9 +81,6 @@ router.patch("/:id/accepter", requireAuth, async (req, res) => {
     if (result.error === "NOT_PENDING") {
       return res.status(409).json({ message: "Réservation déjà traitée." });
     }
-    if (result.error === "NO_PLACES_AVAILABLE") {
-      return res.status(409).json({ message: "Plus aucune place disponible." });
-    }
 
     return res.json(result);
   } catch (err) {

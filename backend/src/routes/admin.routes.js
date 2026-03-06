@@ -135,16 +135,103 @@ router.get("/trajets", requireAuth, requireAdmin, async (req, res) => {
 });
 
 // =====================
-// PATCH /admin/trajets/:id/annuler — Annuler un trajet
+// PATCH /admin/trajets/:id/annuler — Annuler un trajet + réservations + notifications
 // =====================
 router.patch("/trajets/:id/annuler", requireAuth, requireAdmin, async (req, res) => {
+  const client = await pool.connect();
   try {
-    const { rows } = await pool.query(
-      `UPDATE trajets SET statut = 'ANNULE' WHERE id = $1 AND statut IN ('PLANIFIE','EN_COURS') RETURNING id, statut`,
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      `UPDATE trajets SET statut = 'ANNULE', maj_le = NOW()
+       WHERE id = $1 AND statut IN ('PLANIFIE','EN_COURS')
+       RETURNING id, lieu_depart, destination`,
       [req.params.id]
     );
-    if (rows.length === 0) return res.status(404).json({ message: "Trajet introuvable ou déjà terminé/annulé." });
-    return res.json(rows[0]);
+    if (rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Trajet introuvable ou déjà terminé/annulé." });
+    }
+    const trajet = rows[0];
+
+    // Annuler les réservations actives
+    const annuleResa = await client.query(
+      `UPDATE reservations SET statut = 'ANNULEE', reponse_le = NOW()
+       WHERE trajet_id = $1 AND statut IN ('ACCEPTEE','EN_ATTENTE')
+       RETURNING passager_id`,
+      [trajet.id]
+    );
+
+    // Notifier les passagers impactés
+    if (annuleResa.rows.length > 0) {
+      const passagerIds = [...new Set(annuleResa.rows.map(r => r.passager_id))];
+      await client.query(
+        `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+         SELECT unnest($1::text[]), 'TRAJET_ANNULE', $2, NOW()`,
+        [passagerIds, `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} a été annulé par un administrateur.`]
+      );
+    }
+
+    await client.query("COMMIT");
+    return res.json({ id: trajet.id, statut: "ANNULE", reservations_annulees: annuleResa.rowCount });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================
+// GET /admin/reservations — Liste toutes les réservations
+// =====================
+router.get("/reservations", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { statut, search } = req.query;
+    const params = [];
+    const where = [];
+
+    if (statut && statut !== "TOUS") {
+      params.push(statut);
+      where.push(`r.statut = $${params.length}`);
+    }
+    if (search) {
+      params.push(search);
+      where.push(
+        `(up.prenom ILIKE '%' || $${params.length} || '%'
+          OR up.nom   ILIKE '%' || $${params.length} || '%'
+          OR t.lieu_depart  ILIKE '%' || $${params.length} || '%'
+          OR t.destination  ILIKE '%' || $${params.length} || '%')`
+      );
+    }
+
+    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    const { rows } = await pool.query(
+      `SELECT
+         r.id, r.statut, r.demande_le, r.reponse_le,
+         up.id    AS passager_id,
+         up.prenom AS passager_prenom,
+         up.nom    AS passager_nom,
+         up.email  AS passager_email,
+         pp.photo_url AS passager_photo_url,
+         t.id   AS trajet_id,
+         t.lieu_depart, t.destination, t.dateheure_depart,
+         t.statut AS trajet_statut,
+         uc.prenom AS conducteur_prenom,
+         uc.nom    AS conducteur_nom
+       FROM reservations r
+       JOIN utilisateurs up ON up.id = r.passager_id
+       LEFT JOIN profils pp ON pp.utilisateur_id = r.passager_id
+       JOIN trajets t ON t.id = r.trajet_id
+       JOIN utilisateurs uc ON uc.id = t.conducteur_id
+       ${whereClause}
+       ORDER BY r.demande_le DESC
+       LIMIT 200`,
+      params
+    );
+    return res.json({ reservations: rows });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });

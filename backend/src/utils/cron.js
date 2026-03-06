@@ -5,6 +5,20 @@ import { pool } from "../DB/db.js";
  * Tourne toutes les heures.
  */
 export function startCronJobs() {
+  // Passer automatiquement les trajets PLANIFIE dont l'heure est passée à EN_COURS
+  const mettreAJourStatuts = async () => {
+    try {
+      await pool.query(`
+        UPDATE trajets
+        SET statut = 'EN_COURS'
+        WHERE statut = 'PLANIFIE'
+          AND dateheure_depart <= NOW()
+      `);
+    } catch (err) {
+      console.error("[Cron] Erreur mise à jour statuts:", err.message);
+    }
+  };
+
   const envoyerRappels = async () => {
     try {
       // Trouver les trajets qui partent dans 23h–25h et n'ont pas encore eu de rappel
@@ -61,8 +75,9 @@ export function startCronJobs() {
   };
 
   // Exécuter immédiatement au démarrage, puis toutes les heures
+  mettreAJourStatuts();
   envoyerRappels();
-  setInterval(envoyerRappels, 60 * 60 * 1000);
+  setInterval(() => { mettreAJourStatuts(); envoyerRappels(); }, 60 * 60 * 1000);
 
-  console.log("[Cron] Rappels automatiques activés (toutes les heures).");
+  console.log("[Cron] Rappels automatiques et mise à jour statuts activés (toutes les heures).");
 }
