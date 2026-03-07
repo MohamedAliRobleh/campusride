@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomUUID } from "crypto";
-import pool from "../DB/db.js";
+import { pool } from "../DB/db.js";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 
 const router = Router();
