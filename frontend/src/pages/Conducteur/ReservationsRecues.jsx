@@ -4,6 +4,7 @@ import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
 import EmergencyButton from "../../components/EmergencyButton";
+import ReportModal from "../../components/ReportModal";
 
 // ── Modal évaluation passager ─────────────────────────────────────────────────
 function EvalPassagerModal({ trajetId, passagerId, passagerPrenom, token, isDark, onClose }) {
@@ -92,6 +93,7 @@ export default function ReservationsRecues() {
   const [profileUserId, setProfileUserId] = useState(null);
   const [evalModal, setEvalModal] = useState(null); // { trajetId, passagerId, passagerPrenom }
   const [dejasEvalues, setDejaEvalues] = useState(new Set());
+  const [reportPassager, setReportPassager] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -320,6 +322,16 @@ export default function ReservationsRecues() {
                         </span>
                       )}
 
+                      {r.statut === "ACCEPTEE" && r.passager_id && (
+                        <button
+                          className="btn btn-outline-danger btn-sm rounded-3"
+                          title="Signaler le passager"
+                          onClick={() => setReportPassager(r)}
+                        >
+                          <i className="bi bi-flag" />
+                        </button>
+                      )}
+
                       {r.statut === "EN_ATTENTE" && (
                         <>
                           <button
@@ -386,6 +398,16 @@ export default function ReservationsRecues() {
         />
       )}
       <EmergencyButton />
+
+      {reportPassager && (
+        <ReportModal
+          type="UTILISATEUR"
+          cible_id={reportPassager.passager_id}
+          nomCible={`${reportPassager.prenom} ${reportPassager.nom}`}
+          isDark={isDark}
+          onClose={() => setReportPassager(null)}
+        />
+      )}
     </div>
   );
 }
