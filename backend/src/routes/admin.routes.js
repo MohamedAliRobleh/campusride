@@ -85,11 +85,19 @@ router.get("/users", requireAuth, requireAdmin, async (req, res) => {
 router.patch("/users/:id/toggle-actif", requireAuth, requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
+
+    // Interdire de désactiver son propre compte ou un autre admin
+    const { rows: target } = await pool.query(
+      `SELECT role FROM utilisateurs WHERE id = $1`, [userId]
+    );
+    if (target.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
+    if (target[0].role === "ADMIN") return res.status(403).json({ message: "Impossible de désactiver un compte administrateur." });
+    if (String(userId) === String(req.user.id)) return res.status(403).json({ message: "Vous ne pouvez pas désactiver votre propre compte." });
+
     const { rows } = await pool.query(
       `UPDATE utilisateurs SET actif = NOT actif WHERE id = $1 RETURNING id, actif, role`,
       [userId]
     );
-    if (rows.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
     return res.json(rows[0]);
   } catch (err) {
     console.error(err);

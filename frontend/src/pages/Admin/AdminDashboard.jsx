@@ -210,7 +210,7 @@ function SectionDashboard({ stats, loading }) {
 }
 
 // ─── Section : Utilisateurs ────────────────────────────────────────────────────
-function SectionUtilisateurs({ token, showToast }) {
+function SectionUtilisateurs({ token, showToast, currentUser }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -378,13 +378,19 @@ function SectionUtilisateurs({ token, showToast }) {
                       </span>
                     </td>
                     <td className="text-center py-3">
-                      <button
-                        className={`btn btn-sm rounded-3 fw-semibold ${u.actif ? "btn-outline-danger" : "btn-outline-success"}`}
-                        style={{ fontSize: "0.72rem", padding: "3px 10px" }}
-                        onClick={() => u.actif ? setConfirmDeact(u) : handleToggleActif(u.id, u.actif)}
-                      >
-                        {u.actif ? <><i className="bi bi-slash-circle me-1" />Désactiver</> : <><i className="bi bi-check-circle me-1" />Activer</>}
-                      </button>
+                      {u.role === "ADMIN" || u.id === currentUser?.id ? (
+                        <span className="text-muted" style={{ fontSize: "0.72rem" }} title={u.id === currentUser?.id ? "Votre propre compte" : "Compte administrateur protégé"}>
+                          <i className="bi bi-shield-lock-fill me-1" />Protégé
+                        </span>
+                      ) : (
+                        <button
+                          className={`btn btn-sm rounded-3 fw-semibold ${u.actif ? "btn-outline-danger" : "btn-outline-success"}`}
+                          style={{ fontSize: "0.72rem", padding: "3px 10px" }}
+                          onClick={() => u.actif ? setConfirmDeact(u) : handleToggleActif(u.id, u.actif)}
+                        >
+                          {u.actif ? <><i className="bi bi-slash-circle me-1" />Désactiver</> : <><i className="bi bi-check-circle me-1" />Activer</>}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1022,7 +1028,7 @@ export default function AdminDashboard() {
             <SectionDashboard stats={stats} loading={loadingStats} />
           )}
           {activeSection === "utilisateurs" && (
-            <SectionUtilisateurs token={token} showToast={showToast} />
+            <SectionUtilisateurs token={token} showToast={showToast} currentUser={currentUser} />
           )}
           {activeSection === "trajets" && (
             <SectionTrajets token={token} showToast={showToast} />
