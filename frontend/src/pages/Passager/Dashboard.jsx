@@ -198,7 +198,7 @@ export default function Dashboard() {
                                 >
                                   <PlacesInput
                                     className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
-                                    placeholder="Ex: 1485 Caldwell Ave, Ottawa"
+                                    placeholder="Ex: Kanata, Orléans, Gatineau…"
                                     value={depart}
                                     onChange={(v) => { setDepart(v); setDepartCoords(null); }}
                                     onPlaceSelect={(p) => { setDepart(p.address); setDepartCoords({ lat: p.lat, lng: p.lng }); }}
@@ -346,6 +346,10 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </form>
+                      <div className={`d-inline-flex align-items-center gap-1 rounded-3 px-2 py-1 mt-2 ${isDark ? "bg-dark border border-secondary" : "bg-success-subtle"}`} style={{ fontSize: "0.75rem" }}>
+                        <i className="bi bi-chat-dots text-success" />
+                        <span className={isDark ? "text-secondary" : "text-success"}>Le point de rendez-vous sera convenu avec le conducteur via la messagerie.</span>
+                      </div>
                     </div>
                   </div>
                 </div>

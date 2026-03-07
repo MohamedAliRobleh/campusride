@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";
+import { randomUUID } from "crypto";
 
 const router = Router();
 
@@ -57,11 +58,10 @@ router.post("/conversations", requireAuth, async (req, res) => {
     if (existing.rows.length > 0) {
       convId = existing.rows[0].id;
     } else {
-      // Générer l'UUID côté SQL pour compatibilité avec toutes les configs
       const { rows } = await pool.query(
-        `INSERT INTO conversations (user1_id, user2_id)
-         VALUES ($1, $2) RETURNING id;`,
-        [userId, interlocuteur_id]
+        `INSERT INTO conversations (id, user1_id, user2_id)
+         VALUES ($1, $2, $3) RETURNING id;`,
+        [randomUUID(), userId, interlocuteur_id]
       );
       convId = rows[0].id;
     }
@@ -144,9 +144,9 @@ router.post("/conversations/:id/messages", requireAuth, async (req, res) => {
     if (check.rows.length === 0) return res.status(403).json({ message: "Accès refusé." });
 
     const { rows } = await pool.query(
-      `INSERT INTO messages (conversation_id, expediteur_id, contenu)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [convId, userId, String(contenu).trim()]
+      `INSERT INTO messages (id, conversation_id, expediteur_id, contenu)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [randomUUID(), convId, userId, String(contenu).trim()]
     );
 
     // Notif destinataire

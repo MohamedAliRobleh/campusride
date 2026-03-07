@@ -30,6 +30,7 @@ import ProfilParametres from "./pages/Profil/ProfilParametres.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
 import InstallBanner from "./components/InstallBanner.jsx";
+import Disclaimer from "./pages/Disclaimer.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -68,6 +69,7 @@ export default function App() {
 />
 
 
+      <Route path="/disclaimer" element={<Disclaimer />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route

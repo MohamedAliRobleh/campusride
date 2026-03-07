@@ -58,6 +58,10 @@ export default function Trajets() {
             <p className={`small mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
               Trouvez un trajet et réservez votre place en quelques secondes.
             </p>
+            <div className={`d-inline-flex align-items-center gap-1 rounded-3 px-2 py-1 mt-1 ${isDark ? "bg-dark border border-secondary" : "bg-success-subtle"}`} style={{ fontSize: "0.75rem" }}>
+              <i className="bi bi-chat-dots text-success" />
+              <span className={isDark ? "text-secondary" : "text-success"}>Le point de rendez-vous sera convenu avec le conducteur via la messagerie.</span>
+            </div>
           </div>
 
           {/* Loading */}

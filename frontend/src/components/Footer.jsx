@@ -105,9 +105,22 @@ export default function Footer({ isDark }) {
           <p className="mb-0 text-white" style={{ opacity: 0.5, fontSize: "0.78rem" }}>
             © {year} CampusRide — Tous droits réservés
           </p>
-          <p className="mb-0 text-white" style={{ opacity: 0.5, fontSize: "0.78rem" }}>
-            Collège La Cité · Ottawa, Canada
-          </p>
+          <div className="d-flex align-items-center gap-3">
+            <Link
+              to="/disclaimer"
+              className="text-decoration-none text-white"
+              style={{ opacity: 0.5, fontSize: "0.78rem" }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.9"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "0.5"}
+            >
+              <i className="bi bi-shield-check me-1" />
+              Avis de non-responsabilité
+            </Link>
+            <span className="text-white" style={{ opacity: 0.3 }}>·</span>
+            <p className="mb-0 text-white" style={{ opacity: 0.5, fontSize: "0.78rem" }}>
+              Collège La Cité · Ottawa, Canada
+            </p>
+          </div>
         </div>
       </div>
     </footer>

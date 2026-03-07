@@ -146,11 +146,15 @@ export default function Post() {
                       <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
                         <PlacesInput
                           className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
-                          placeholder="Ex: 1485 Caldwell Ave, Ottawa"
+                          placeholder="Ex: Kanata, Orléans, Gatineau…"
                           value={formData.depart}
                           onChange={(val) => setFormData((prev) => ({ ...prev, depart: val }))}
                           onPlaceSelect={(p) => { setFormData((prev) => ({ ...prev, depart: p.address })); setDepartCoords({ lat: p.lat, lng: p.lng }); }}
                         />
+                      </div>
+                      <div className={`mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.72rem" }}>
+                        <i className="bi bi-chat-dots me-1 text-success" />
+                        Le point de rendez-vous précis sera convenu avec les passagers via la messagerie.
                       </div>
                     </div>
                     <div>
