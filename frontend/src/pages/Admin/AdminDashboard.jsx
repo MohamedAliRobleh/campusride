@@ -808,6 +808,7 @@ function SectionSignalements({ token, showToast }) {
       const params = filterStatut ? `?statut=${filterStatut}` : "";
       const res = await fetch(`/admin/signalements${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
+      if (!res.ok) { showToast(data.message || `Erreur ${res.status}`, "danger"); return; }
       setSignalements(data.signalements || []);
     } catch { showToast("Erreur chargement signalements.", "danger"); }
     finally { setLoading(false); }
