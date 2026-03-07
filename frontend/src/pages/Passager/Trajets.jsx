@@ -6,6 +6,8 @@ import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
 import TrajetMapModal from "../../components/TrajetMapModal";
+import ReportModal from "../../components/ReportModal";
+import EmergencyButton from "../../components/EmergencyButton";
 
 export default function Trajets() {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ export default function Trajets() {
   const [loading, setLoading] = useState(true);
   const [profileUserId, setProfileUserId] = useState(null);
   const [mapTrajet, setMapTrajet] = useState(null);
+  const [reportTrajet, setReportTrajet] = useState(null);
   const token = localStorage.getItem("token");
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -190,7 +193,7 @@ export default function Trajets() {
                     </div>
                   </div>
 
-                  {/* Boutons Carte + Réserver */}
+                  {/* Boutons Carte + Réserver + Signaler */}
                   <div className="d-flex gap-2 mt-3">
                     <button
                       type="button"
@@ -208,6 +211,14 @@ export default function Trajets() {
                     >
                       <i className="bi bi-check-circle me-2" />
                       Réserver ce trajet
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger rounded-3 px-2"
+                      title="Signaler ce trajet"
+                      onClick={() => setReportTrajet(t)}
+                    >
+                      <i className="bi bi-flag" />
                     </button>
                   </div>
                 </div>
@@ -250,6 +261,18 @@ export default function Trajets() {
           onReserve={() => { navigate("/passager/search", { state: { trajetId: mapTrajet.id } }); setMapTrajet(null); }}
         />
       )}
+
+      {reportTrajet && (
+        <ReportModal
+          type="TRAJET"
+          cible_id={reportTrajet.id}
+          nomCible={`${reportTrajet.lieu_depart} → ${reportTrajet.destination}`}
+          isDark={isDark}
+          onClose={() => setReportTrajet(null)}
+        />
+      )}
+
+      <EmergencyButton />
     </div>
   );
 }

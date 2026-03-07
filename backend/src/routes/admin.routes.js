@@ -267,4 +267,48 @@ router.get("/reservations", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ── Signalements ──────────────────────────────────────────────
+// GET /admin/signalements
+router.get("/signalements", requireAdmin, async (req, res) => {
+  const { statut } = req.query;
+  const params = [];
+  let where = "";
+  if (statut) { params.push(statut); where = `WHERE s.statut = $${params.length}`; }
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.*,
+              us.prenom AS signaleur_prenom, us.nom AS signaleur_nom, us.email AS signaleur_email
+       FROM signalements s
+       JOIN utilisateurs us ON us.id = s.signaleur_id
+       ${where}
+       ORDER BY s.cree_le DESC
+       LIMIT 300`,
+      params
+    );
+    return res.json({ signalements: rows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// PATCH /admin/signalements/:id/statut
+router.patch("/signalements/:id/statut", requireAdmin, async (req, res) => {
+  const { statut } = req.body;
+  if (!["TRAITE", "REJETE", "EN_ATTENTE"].includes(statut)) {
+    return res.status(400).json({ message: "Statut invalide." });
+  }
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE signalements SET statut = $1 WHERE id = $2`,
+      [statut, req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ message: "Signalement introuvable." });
+    return res.json({ message: "Statut mis à jour." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
 export default router;

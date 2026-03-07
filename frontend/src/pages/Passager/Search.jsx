@@ -6,6 +6,8 @@ import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
 import TrajetMapModal from "../../components/TrajetMapModal";
+import ReportModal from "../../components/ReportModal";
+import EmergencyButton from "../../components/EmergencyButton";
 
 export default function Search() {
   const location = useLocation();
@@ -18,6 +20,7 @@ export default function Search() {
   const [toast, setToast] = useState({ show: false, text: "", type: "success" });
   const [profileUserId, setProfileUserId] = useState(null);
   const [mapTrajet, setMapTrajet] = useState(null);
+  const [reportTrajet, setReportTrajet] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -307,6 +310,14 @@ export default function Search() {
                           : <><i className="bi bi-check-circle me-1" />Réserver</>
                         }
                       </button>
+                      <button
+                        className="btn btn-outline-danger rounded-3 flex-shrink-0"
+                        title="Signaler ce trajet"
+                        onClick={() => setReportTrajet(trajet)}
+                        style={{ width: 40, height: 38, padding: 0 }}
+                      >
+                        <i className="bi bi-flag" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -367,6 +378,18 @@ export default function Search() {
           onReserve={() => { handleReservation(mapTrajet.id); setMapTrajet(null); }}
         />
       )}
+
+      {reportTrajet && (
+        <ReportModal
+          type="TRAJET"
+          cible_id={reportTrajet.id}
+          nomCible={`${reportTrajet.lieu_depart} → ${reportTrajet.destination}`}
+          isDark={isDark}
+          onClose={() => setReportTrajet(null)}
+        />
+      )}
+
+      <EmergencyButton />
     </div>
   );
 }

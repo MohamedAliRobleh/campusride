@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
+import ReportModal from "../../components/ReportModal";
+import EmergencyButton from "../../components/EmergencyButton";
 
 // Messages rapides prédéfinis — covoiturage
 const QUICK_REPLIES = [
@@ -32,6 +34,7 @@ export default function Messages() {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
+  const [showReport, setShowReport] = useState(false);
   const [convError, setConvError] = useState(null);
   // Mobile: "list" = show conversations, "chat" = show selected conversation
   const [mobileView, setMobileView] = useState("list");
@@ -367,6 +370,16 @@ export default function Messages() {
                       <i className="bi bi-lightning-fill" />
                       <span className="d-none d-sm-inline ms-1">Rapides</span>
                     </button>
+                    {/* Signaler l'utilisateur */}
+                    <button
+                      type="button"
+                      className={`btn btn-sm rounded-3 flex-shrink-0 btn-outline-danger`}
+                      style={{ fontSize: "0.75rem" }}
+                      onClick={() => setShowReport(true)}
+                      title="Signaler cet utilisateur"
+                    >
+                      <i className="bi bi-flag" />
+                    </button>
                   </div>
 
                   {/* Messages list */}
@@ -499,6 +512,18 @@ export default function Messages() {
           </div>
         </div>
       </main>
+
+      {showReport && selectedConv && (
+        <ReportModal
+          type="UTILISATEUR"
+          cible_id={selectedConv.interlocuteur_id}
+          nomCible={`${selectedConv.interlocuteur_prenom} ${selectedConv.interlocuteur_nom}`}
+          isDark={isDark}
+          onClose={() => setShowReport(false)}
+        />
+      )}
+
+      <EmergencyButton />
     </div>
   );
 }

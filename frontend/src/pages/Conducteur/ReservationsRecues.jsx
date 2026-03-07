@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
+import EmergencyButton from "../../components/EmergencyButton";
 
 // ── Modal évaluation passager ─────────────────────────────────────────────────
 function EvalPassagerModal({ trajetId, passagerId, passagerPrenom, token, isDark, onClose }) {
@@ -384,6 +385,7 @@ export default function ReservationsRecues() {
           }}
         />
       )}
+      <EmergencyButton />
     </div>
   );
 }

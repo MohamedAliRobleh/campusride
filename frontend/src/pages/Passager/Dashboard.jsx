@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer.jsx";
 import HeaderPrivate from "../../components/HeaderPrivate.jsx";
 import PlacesInput from "../../components/PlacesInput.jsx";
+import EmergencyButton from "../../components/EmergencyButton";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -524,6 +525,7 @@ export default function Dashboard() {
       </main>
 
       <Footer isDark={isDark} style={{ backgroundColor: "#8ac55a" }} />
+      <EmergencyButton />
     </div>
   );
 }

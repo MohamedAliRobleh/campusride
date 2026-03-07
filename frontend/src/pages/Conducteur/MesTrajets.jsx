@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import PlacesInput from "../../components/PlacesInput";
+import EmergencyButton from "../../components/EmergencyButton";
 
 export default function MesTrajets() {
     const [trajets, setTrajets] = useState([]);
@@ -509,6 +510,7 @@ export default function MesTrajets() {
             )}
 
             <Footer />
+            <EmergencyButton />
         </div>
     );
 }

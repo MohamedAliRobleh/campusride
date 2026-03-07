@@ -6,6 +6,7 @@ import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
 import TrajetMapModal from "../../components/TrajetMapModal";
+import EmergencyButton from "../../components/EmergencyButton";
 
 
 function EvaluationModal({ trajetId, token, onClose, isDark }) {
@@ -461,6 +462,7 @@ export default function MesReservations() {
           showReserve={false}
         />
       )}
+      <EmergencyButton />
     </div>
   );
 }

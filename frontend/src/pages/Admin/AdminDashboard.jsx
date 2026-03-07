@@ -25,7 +25,14 @@ const NAV_ITEMS = [
   { id: "utilisateurs",  icon: "bi-people-fill",    label: "Utilisateurs" },
   { id: "trajets",       icon: "bi-map-fill",       label: "Trajets" },
   { id: "reservations",  icon: "bi-bookmark-fill",  label: "Réservations" },
+  { id: "signalements",  icon: "bi-flag-fill",      label: "Signalements" },
 ];
+
+const SIGNAL_STATUT_CFG = {
+  EN_ATTENTE: { label: "En attente", bg: "#fd7e14", light: "#fff3cd", text: "#664d03" },
+  TRAITE:     { label: "Traité",     bg: "#198754", light: "#d1e7dd", text: "#0f5132" },
+  REJETE:     { label: "Rejeté",     bg: "#6c757d", light: "#e2e3e5", text: "#41464b" },
+};
 
 // ─── Sous-composants légers ────────────────────────────────────────────────────
 function Avatar({ prenom, nom, photo, size = 34 }) {
@@ -788,6 +795,152 @@ function SectionReservations({ token, showToast }) {
   );
 }
 
+// ─── Section : Signalements ────────────────────────────────────────────────────
+function SectionSignalements({ token, showToast }) {
+  const [signalements, setSignalements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatut, setFilterStatut] = useState("");
+  const [updating, setUpdating] = useState(null);
+
+  const fetchSignalements = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = filterStatut ? `?statut=${filterStatut}` : "";
+      const res = await fetch(`/admin/signalements${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setSignalements(data.signalements || []);
+    } catch { showToast("Erreur chargement signalements.", "danger"); }
+    finally { setLoading(false); }
+  }, [token, filterStatut, showToast]);
+
+  useEffect(() => { fetchSignalements(); }, [fetchSignalements]);
+
+  const updateStatut = async (id, statut) => {
+    try {
+      setUpdating(id);
+      const res = await fetch(`/admin/signalements/${id}/statut`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ statut }),
+      });
+      if (!res.ok) { showToast("Erreur mise à jour.", "danger"); return; }
+      showToast("Statut mis à jour.", "success");
+      fetchSignalements();
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setUpdating(null); }
+  };
+
+  return (
+    <>
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+          <h5 className="fw-bold mb-0" style={{ fontSize: "1rem" }}>Signalements</h5>
+          <p className="text-muted mb-0" style={{ fontSize: "0.75rem" }}>Signalements soumis par les utilisateurs</p>
+        </div>
+        <select
+          className="form-select rounded-3"
+          style={{ width: "auto", fontSize: "0.82rem" }}
+          value={filterStatut}
+          onChange={(e) => setFilterStatut(e.target.value)}
+        >
+          <option value="">Tous les statuts</option>
+          <option value="EN_ATTENTE">En attente</option>
+          <option value="TRAITE">Traité</option>
+          <option value="REJETE">Rejeté</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-5"><div className="spinner-border text-success" /></div>
+      ) : signalements.length === 0 ? (
+        <div className="text-center py-5 rounded-4 bg-white shadow-sm">
+          <i className="bi bi-flag text-success" style={{ fontSize: "2.5rem", opacity: 0.3 }} />
+          <p className="mt-3 fw-semibold mb-1">Aucun signalement</p>
+        </div>
+      ) : (
+        <div className="rounded-4 bg-white shadow-sm overflow-hidden">
+          <div style={{ height: 3, background: "linear-gradient(90deg,#dc3545,#fd7e14)" }} />
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead style={{ background: "#f8f9fa", fontSize: "0.75rem" }}>
+                <tr>
+                  <th className="px-4 py-3 fw-semibold text-muted">Date</th>
+                  <th className="px-3 py-3 fw-semibold text-muted">Signaleur</th>
+                  <th className="px-3 py-3 fw-semibold text-muted">Type</th>
+                  <th className="px-3 py-3 fw-semibold text-muted">Motif</th>
+                  <th className="px-3 py-3 fw-semibold text-muted">Description</th>
+                  <th className="px-3 py-3 fw-semibold text-muted text-center">Statut</th>
+                  <th className="px-3 py-3 fw-semibold text-muted text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {signalements.map((s) => {
+                  const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
+                  return (
+                    <tr key={s.id}>
+                      <td className="px-4 py-3">
+                        <div style={{ fontSize: "0.78rem" }}>{new Date(s.cree_le).toLocaleDateString("fr-CA", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                        <div className="text-muted" style={{ fontSize: "0.7rem" }}>{new Date(s.cree_le).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="fw-semibold" style={{ fontSize: "0.82rem" }}>{s.signaleur_prenom} {s.signaleur_nom}</div>
+                        <div className="text-muted" style={{ fontSize: "0.72rem" }}>{s.signaleur_email}</div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="badge rounded-pill px-2 py-1"
+                          style={{ background: s.type === "TRAJET" ? "#0d6efd18" : "#dc354518", color: s.type === "TRAJET" ? "#0d6efd" : "#dc3545", fontSize: "0.7rem" }}>
+                          <i className={`bi ${s.type === "TRAJET" ? "bi-map" : "bi-person"} me-1`} />{s.type}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3" style={{ fontSize: "0.82rem" }}>{s.motif}</td>
+                      <td className="px-3 py-3 text-muted" style={{ fontSize: "0.78rem", maxWidth: 180 }}>
+                        {s.description || <em>—</em>}
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <span className="badge rounded-pill px-3 py-1 fw-semibold"
+                          style={{ background: cfg.light, color: cfg.text, fontSize: "0.7rem" }}>
+                          {cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <div className="d-flex gap-1 justify-content-center">
+                          {s.statut !== "TRAITE" && (
+                            <button
+                              className="btn btn-sm rounded-3"
+                              style={{ background: "#d1e7dd", color: "#0f5132", fontSize: "0.72rem", padding: "3px 10px" }}
+                              disabled={updating === s.id}
+                              onClick={() => updateStatut(s.id, "TRAITE")}
+                            >
+                              <i className="bi bi-check-lg me-1" />Traité
+                            </button>
+                          )}
+                          {s.statut !== "REJETE" && (
+                            <button
+                              className="btn btn-sm rounded-3"
+                              style={{ background: "#f8d7da", color: "#842029", fontSize: "0.72rem", padding: "3px 10px" }}
+                              disabled={updating === s.id}
+                              onClick={() => updateStatut(s.id, "REJETE")}
+                            >
+                              <i className="bi bi-x-lg me-1" />Rejeter
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2 text-muted text-end" style={{ fontSize: "0.75rem", borderTop: "1px solid #f0f0f0" }}>
+            {signalements.length} signalement(s)
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ─── Composant principal ────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -823,6 +976,7 @@ export default function AdminDashboard() {
     utilisateurs: { icon: "bi-people-fill",   title: "Utilisateurs",     sub: "Gérer les comptes et les rôles" },
     trajets:      { icon: "bi-map-fill",       title: "Trajets",          sub: "Consulter et modérer les trajets" },
     reservations: { icon: "bi-bookmark-fill", title: "Réservations",     sub: "Consulter toutes les réservations" },
+    signalements: { icon: "bi-flag-fill",     title: "Signalements",     sub: "Gérer les signalements utilisateurs" },
   };
   const current = sectionTitles[activeSection];
 
@@ -1035,6 +1189,9 @@ export default function AdminDashboard() {
           )}
           {activeSection === "reservations" && (
             <SectionReservations token={token} showToast={showToast} />
+          )}
+          {activeSection === "signalements" && (
+            <SectionSignalements token={token} showToast={showToast} />
           )}
         </main>
       </div>
