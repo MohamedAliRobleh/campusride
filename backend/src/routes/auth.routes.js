@@ -94,7 +94,7 @@ router.post("/login", async (req, res) => {
               p.photo_url
        FROM utilisateurs u
        LEFT JOIN profils p ON p.utilisateur_id = u.id
-       WHERE u.email = $1`,
+       WHERE LOWER(u.email) = $1`,
       [email]
     );
 
@@ -159,7 +159,7 @@ router.post("/forgot-password", async (req, res) => {
     }
 
     const result = await pool.query(
-      "SELECT id FROM utilisateurs WHERE email = $1",
+      "SELECT id FROM utilisateurs WHERE LOWER(email) = $1",
       [email]
     );
 

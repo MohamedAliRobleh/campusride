@@ -222,7 +222,10 @@ router.post("/me/photo", requireAuth, upload.single("photo"), async (req, res) =
     if (!req.file) {
       return res.status(400).json({ message: "Aucun fichier reçu." });
     }
-    const photoUrl = `/uploads/${req.file.filename}`;
+    // Cloudinary → req.file.path est l'URL complète ; disque local → construire le chemin relatif
+    const photoUrl = req.file.path?.startsWith("http")
+      ? req.file.path
+      : `/uploads/${req.file.filename}`;
     const result = await updateUserPhoto(req.user.id, photoUrl);
     return res.json({ photo_url: result.photo_url });
   } catch (err) {
