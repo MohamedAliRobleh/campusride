@@ -356,10 +356,8 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
           {/* Notifications (always) */}
           <NotifDropdown />
 
-          {/* Desktop: user dropdown */}
-          <div className="d-none d-lg-flex align-items-center gap-2">
-            <UserDropdown />
-          </div>
+          {/* Avatar dropdown (always visible) */}
+          <UserDropdown />
 
           {/* Mobile: logout button */}
           <button
