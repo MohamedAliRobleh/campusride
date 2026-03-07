@@ -218,7 +218,11 @@ const handleSubmit = async (e) => {
                   onChange={(e) => setTerms(e.target.checked)}
                 />
                 <label className="form-check-label" htmlFor="terms">
-                  J’accepte les conditions d’utilisation.
+                  J’accepte l’{" "}
+                  <Link to="/disclaimer" target="_blank" className="text-success fw-semibold">
+                    avis de non-responsabilité
+                  </Link>{" "}
+                  et les conditions d’utilisation de CampusRide.
                 </label>
               </div>
 
