@@ -7,6 +7,7 @@ import Footer from "../../components/Footer";
 import UserProfileModal from "../../components/UserProfileModal";
 import TrajetMapModal from "../../components/TrajetMapModal";
 import EmergencyButton from "../../components/EmergencyButton";
+import ReportModal from "../../components/ReportModal";
 
 
 function EvaluationModal({ trajetId, token, onClose, isDark }) {
@@ -93,6 +94,7 @@ export default function MesReservations() {
   const [dejasEvalues, setDejaEvalues] = useState(new Set());
   const [profileModal, setProfileModal] = useState(null); // { userId, roleContext, vehicule }
   const [mapReservation, setMapReservation] = useState(null);
+  const [reportRes, setReportRes] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -410,6 +412,16 @@ export default function MesReservations() {
                           Annuler
                         </button>
                       )}
+                      {/* Signaler le conducteur — pendant ou après le trajet */}
+                      {r.statut === "ACCEPTEE" && r.conducteur_id && (
+                        <button
+                          className="btn btn-outline-danger btn-sm rounded-3"
+                          title="Signaler le conducteur"
+                          onClick={() => setReportRes(r)}
+                        >
+                          <i className="bi bi-flag" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -462,6 +474,16 @@ export default function MesReservations() {
           showReserve={false}
         />
       )}
+      {reportRes && (
+        <ReportModal
+          type="UTILISATEUR"
+          cible_id={reportRes.conducteur_id}
+          nomCible={`${reportRes.conducteur_prenom} ${reportRes.conducteur_nom}`}
+          isDark={isDark}
+          onClose={() => setReportRes(null)}
+        />
+      )}
+
       <EmergencyButton />
     </div>
   );
