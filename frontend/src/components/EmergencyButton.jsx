@@ -38,7 +38,7 @@ export default function EmergencyButton() {
         aria-label="Urgence"
         style={{
           position: "fixed",
-          bottom: 24,
+          bottom: "calc(60px + 16px)",
           right: 20,
           zIndex: 1050,
           width: 48,
