@@ -166,12 +166,43 @@ export default function Messages() {
 
   const totalNonLus = conversations.reduce((s, c) => s + Number(c.non_lus || 0), 0);
 
-  const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (ts) => new Date(ts).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
+
   const formatDate = (ts) => {
     const d = new Date(ts);
     const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
     if (d.toDateString() === today.toDateString()) return formatTime(ts);
-    return d.toLocaleDateString("fr-CA", { day: "2-digit", month: "short" });
+    if (d.toDateString() === yesterday.toDateString()) return `Hier ${formatTime(ts)}`;
+    return d.toLocaleDateString("fr-CA", { day: "2-digit", month: "short", year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined }) + " " + formatTime(ts);
+  };
+
+  const getDateSeparatorLabel = (ts) => {
+    const d = new Date(ts);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Aujourd'hui";
+    if (d.toDateString() === yesterday.toDateString()) return "Hier";
+    return d.toLocaleDateString("fr-CA", {
+      weekday: "long", day: "numeric", month: "long",
+      year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+    });
+  };
+
+  const buildMessagesWithSeparators = (msgs) => {
+    const result = [];
+    let lastDateStr = null;
+    for (const m of msgs) {
+      const dateStr = new Date(m.envoye_le).toDateString();
+      if (dateStr !== lastDateStr) {
+        result.push({ type: "separator", date: m.envoye_le, key: `sep-${dateStr}` });
+        lastDateStr = dateStr;
+      }
+      result.push({ type: "message", data: m });
+    }
+    return result;
   };
 
   const ConvItem = ({ c }) => {
@@ -354,7 +385,27 @@ export default function Messages() {
                           Utilisez les messages rapides ou écrivez votre message.
                         </p>
                       </div>
-                    ) : messages.map((m) => {
+                    ) : buildMessagesWithSeparators(messages).map((item) => {
+                      if (item.type === "separator") {
+                        return (
+                          <div key={item.key} className="d-flex align-items-center gap-2 my-1">
+                            <div className="flex-grow-1" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.1)" : "#e9ecef" }} />
+                            <span
+                              className="rounded-pill px-3 py-1 fw-semibold flex-shrink-0"
+                              style={{
+                                fontSize: "0.68rem",
+                                background: isDark ? "rgba(255,255,255,0.08)" : "#f0f0f0",
+                                color: isDark ? "rgba(255,255,255,0.5)" : "#888",
+                                letterSpacing: "0.03em",
+                              }}
+                            >
+                              {getDateSeparatorLabel(item.date)}
+                            </span>
+                            <div className="flex-grow-1" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.1)" : "#e9ecef" }} />
+                          </div>
+                        );
+                      }
+                      const m = item.data;
                       const isMine = m.expediteur_id === currentUser?.id;
                       return (
                         <div key={m.id} className={`d-flex ${isMine ? "justify-content-end" : "justify-content-start"}`}>
