@@ -162,7 +162,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
               </ul>
 
               {/* ===== RIGHT NAV ===== */}
-              <ul className="navbar-nav align-items-lg-center gap-lg-2 mt-2 mt-lg-0">
+              <ul className="navbar-nav align-items-lg-center gap-lg-2 mt-1 mt-lg-0">
 
                 {/* Notifications */}
                 <li className="nav-item dropdown">

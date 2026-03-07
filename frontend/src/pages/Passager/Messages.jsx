@@ -5,14 +5,14 @@ import HeaderPrivate from "../../components/HeaderPrivate";
 
 // Messages rapides prédéfinis — covoiturage
 const QUICK_REPLIES = [
-  { label: "🚗 Je suis en route",         text: "Je suis en route !" },
-  { label: "📍 J'arrive au point RV",     text: "Je suis arrivé au point de rendez-vous." },
-  { label: "⏳ Légèrement en retard",      text: "Je serai légèrement en retard, merci de patienter." },
-  { label: "✅ C'est confirmé",            text: "C'est confirmé, à tout à l'heure !" },
-  { label: "👍 Merci pour le trajet",      text: "Merci beaucoup pour le trajet !" },
-  { label: "❓ Où êtes-vous ?",            text: "Bonjour, où êtes-vous actuellement ?" },
-  { label: "🅿️ Quel point de départ ?",   text: "Quel est exactement votre point de départ ?" },
-  { label: "🔔 Rappel trajet",             text: "Rappel : notre trajet est prévu bientôt, à tout à l'heure !" },
+  { label: "🚗 En route",            text: "Je suis en route !" },
+  { label: "📍 Au point RV",         text: "Je suis arrivé au point de rendez-vous." },
+  { label: "⏳ Légèrement en retard", text: "Je serai légèrement en retard, merci de patienter." },
+  { label: "✅ C'est confirmé",       text: "C'est confirmé, à tout à l'heure !" },
+  { label: "👍 Merci",               text: "Merci beaucoup pour le trajet !" },
+  { label: "❓ Où êtes-vous ?",       text: "Bonjour, où êtes-vous actuellement ?" },
+  { label: "🅿️ Point de départ ?",   text: "Quel est exactement votre point de départ ?" },
+  { label: "🔔 Rappel trajet",        text: "Rappel : notre trajet est prévu bientôt, à tout à l'heure !" },
 ];
 
 export default function Messages() {
@@ -33,6 +33,8 @@ export default function Messages() {
   const [sending, setSending] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
   const [convError, setConvError] = useState(null);
+  // Mobile: "list" = show conversations, "chat" = show selected conversation
+  const [mobileView, setMobileView] = useState("list");
   const msgContainerRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -62,54 +64,51 @@ export default function Messages() {
     finally { setLoadingMsgs(false); }
   };
 
-  // Créer ou retrouver une conversation puis la sélectionner
   const openConversationWith = async (interlocuteurId, existingList) => {
     try {
       setConvError(null);
-      console.log("[Messages] openConversationWith id=", interlocuteurId);
-
-      // D'abord chercher dans la liste déjà chargée
       const found = (existingList || conversations).find(
         (c) => String(c.interlocuteur_id) === String(interlocuteurId)
       );
-      if (found) { console.log("[Messages] conv found in list:", found); setSelectedConv(found); return; }
+      if (found) { selectConversation(found); return; }
 
-      // Sinon créer/trouver via l'API
       const res = await fetch("/messages/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ interlocuteur_id: interlocuteurId }),
       });
-      console.log("[Messages] POST /conversations status=", res.status);
       const data = await res.json();
-      console.log("[Messages] POST /conversations data=", data);
 
-      if (!res.ok) {
-        setConvError(data.message || "Impossible d'ouvrir la conversation.");
-        return;
-      }
+      if (!res.ok) { setConvError(data.message || "Impossible d'ouvrir la conversation."); return; }
 
       let conv = data.conversation;
-
-      // Si le backend n'a pas retourné l'objet complet, refetch la liste
       if (!conv) {
         const refreshed = await fetchConversations();
         conv = refreshed.find((c) => String(c.interlocuteur_id) === String(interlocuteurId)) ?? null;
-        if (conv) setSelectedConv(conv);
+        if (conv) selectConversation(conv);
         else setConvError("Conversation créée mais introuvable. Rechargez la page.");
         return;
       }
 
-      // Ajouter en tête si pas encore dans la liste
       setConversations((prev) => {
         if (prev.find((c) => c.id === conv.id)) return prev;
         return [conv, ...prev];
       });
-      setSelectedConv(conv);
+      selectConversation(conv);
     } catch (err) {
       console.error("openConversationWith error:", err);
       setConvError("Erreur réseau. Vérifiez que le serveur est démarré.");
     }
+  };
+
+  const selectConversation = (c) => {
+    setSelectedConv(c);
+    setMobileView("chat");
+  };
+
+  const goBackToList = () => {
+    setMobileView("list");
+    setSelectedConv(null);
   };
 
   useEffect(() => {
@@ -126,21 +125,18 @@ export default function Messages() {
     }
   }, [selectedConv?.id]);
 
-  // Scroll vers le bas dans le conteneur de messages (sans affecter la page)
   useEffect(() => {
     if (msgContainerRef.current) {
       msgContainerRef.current.scrollTop = msgContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Polling toutes les 5s
   useEffect(() => {
     if (!selectedConv) return;
     const interval = setInterval(() => fetchMessages(selectedConv.id), 5000);
     return () => clearInterval(interval);
   }, [selectedConv?.id]);
 
-  // Envoyer un message (utilisé par le formulaire ET les quick replies)
   const sendMessage = async (text) => {
     const content = text.trim();
     if (!content || !selectedConv || sending) return;
@@ -155,7 +151,6 @@ export default function Messages() {
         const data = await res.json();
         setMessages((prev) => [...prev, data.message]);
         setNewMsg("");
-        // Mettre à jour le dernier message dans la liste
         setConversations((prev) => prev.map((c) =>
           c.id === selectedConv.id
             ? { ...c, dernier_message: content, dernier_message_le: new Date().toISOString() }
@@ -166,27 +161,60 @@ export default function Messages() {
     finally { setSending(false); }
   };
 
-  const handleSend = (e) => {
-    e.preventDefault();
-    sendMessage(newMsg);
-  };
-
-  const handleQuickReply = (text) => {
-    sendMessage(text);
-    inputRef.current?.focus();
-  };
+  const handleSend = (e) => { e.preventDefault(); sendMessage(newMsg); };
+  const handleQuickReply = (text) => { sendMessage(text); inputRef.current?.focus(); };
 
   const totalNonLus = conversations.reduce((s, c) => s + Number(c.non_lus || 0), 0);
 
-  const formatTime = (ts) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const formatDate = (ts) => {
     const d = new Date(ts);
     const today = new Date();
     if (d.toDateString() === today.toDateString()) return formatTime(ts);
     return d.toLocaleDateString("fr-CA", { day: "2-digit", month: "short" });
+  };
+
+  const ConvItem = ({ c }) => {
+    const initiales = ((c.interlocuteur_prenom?.[0] ?? "") + (c.interlocuteur_nom?.[0] ?? "")).toUpperCase() || "?";
+    const isSelected = selectedConv?.id === c.id;
+    return (
+      <button
+        type="button"
+        className={`w-100 btn text-start border-0 d-flex align-items-center gap-2 px-3 py-2 ${isSelected ? (isDark ? "bg-success bg-opacity-25" : "bg-success-subtle") : ""}`}
+        style={{ borderRadius: 0, borderBottom: `1px solid ${isDark ? "#2d3748" : "#f0f0f0"}` }}
+        onClick={() => selectConversation(c)}
+      >
+        {c.interlocuteur_photo_url ? (
+          <img src={c.interlocuteur_photo_url} alt="" className="rounded-circle flex-shrink-0"
+            style={{ width: 44, height: 44, objectFit: "cover" }} />
+        ) : (
+          <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+            style={{ width: 44, height: 44, background: "linear-gradient(135deg,#198754,#20c374)", fontSize: "0.82rem" }}>
+            {initiales}
+          </div>
+        )}
+        <div className="flex-grow-1 min-w-0">
+          <div className="d-flex justify-content-between align-items-center">
+            <span className="fw-semibold text-truncate" style={{ fontSize: "0.88rem" }}>
+              {c.interlocuteur_prenom} {c.interlocuteur_nom}
+            </span>
+            {c.dernier_message_le && (
+              <span className={`flex-shrink-0 ms-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.7rem" }}>
+                {formatDate(c.dernier_message_le)}
+              </span>
+            )}
+          </div>
+          <div className="d-flex justify-content-between align-items-center mt-1">
+            <span className={`text-truncate ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem", maxWidth: 180 }}>
+              {c.dernier_message || <em>Démarrez la conversation</em>}
+            </span>
+            {Number(c.non_lus) > 0 && (
+              <span className="badge bg-success rounded-pill flex-shrink-0 ms-1" style={{ fontSize: "0.62rem" }}>{c.non_lus}</span>
+            )}
+          </div>
+        </div>
+      </button>
+    );
   };
 
   return (
@@ -198,11 +226,12 @@ export default function Messages() {
 
       <main className="flex-grow-1 d-flex flex-column overflow-hidden">
         <div
-          className="container d-flex flex-column flex-grow-1 overflow-hidden py-3"
-          style={{ maxWidth: 1000 }}
+          className="d-flex flex-column flex-grow-1 overflow-hidden py-2 py-md-3"
+          style={{ maxWidth: 1000, width: "100%", margin: "0 auto", padding: "0 12px" }}
         >
-          <div className="mb-2 d-flex align-items-center gap-2 flex-shrink-0">
-            <h4 className="fw-bold mb-0">Messagerie</h4>
+          {/* Titre — masqué sur mobile quand on est en vue chat */}
+          <div className={`mb-2 d-flex align-items-center gap-2 flex-shrink-0 ${mobileView === "chat" ? "d-none d-md-flex" : "d-flex"}`}>
+            <h4 className="fw-bold mb-0" style={{ fontSize: "1.1rem" }}>Messagerie</h4>
             {totalNonLus > 0 && (
               <span className="badge bg-danger rounded-pill">{totalNonLus}</span>
             )}
@@ -219,10 +248,10 @@ export default function Messages() {
             className={`rounded-4 shadow-sm overflow-hidden flex-grow-1 ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}
             style={{ display: "flex", minHeight: 0 }}
           >
-            {/* ── Liste conversations ── */}
+            {/* ── Liste conversations ── visible sur desktop TOUJOURS, sur mobile seulement si mobileView=list */}
             <div
-              className={`d-flex flex-column border-end ${isDark ? "border-secondary" : ""}`}
-              style={{ width: 290, minWidth: 200, flexShrink: 0 }}
+              className={`d-flex flex-column border-end ${isDark ? "border-secondary" : ""} ${mobileView === "chat" ? "d-none d-md-flex" : "d-flex"}`}
+              style={{ width: "min(290px, 100%)", flexShrink: 0 }}
             >
               <div style={{ height: 3, background: "linear-gradient(90deg,#198754,#20c374)" }} />
               <div className="p-3 border-bottom" style={{ borderColor: isDark ? "#495057" : "#dee2e6" }}>
@@ -245,54 +274,14 @@ export default function Messages() {
                       Cliquez sur "Message" depuis une carte de trajet pour démarrer.
                     </p>
                   </div>
-                ) : conversations.map((c) => {
-                  const initiales = ((c.interlocuteur_prenom?.[0] ?? "") + (c.interlocuteur_nom?.[0] ?? "")).toUpperCase() || "?";
-                  const isSelected = selectedConv?.id === c.id;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`w-100 btn text-start border-0 d-flex align-items-center gap-2 px-3 py-2 ${isSelected ? (isDark ? "bg-success bg-opacity-25" : "bg-success-subtle") : (isDark ? "" : "")}`}
-                      style={{ borderRadius: 0, borderBottom: `1px solid ${isDark ? "#2d3748" : "#f0f0f0"}` }}
-                      onClick={() => setSelectedConv(c)}
-                    >
-                      {c.interlocuteur_photo_url ? (
-                        <img src={c.interlocuteur_photo_url} alt="" className="rounded-circle flex-shrink-0"
-                          style={{ width: 40, height: 40, objectFit: "cover" }} />
-                      ) : (
-                        <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                          style={{ width: 40, height: 40, background: "linear-gradient(135deg,#198754,#20c374)", fontSize: "0.78rem" }}>
-                          {initiales}
-                        </div>
-                      )}
-                      <div className="flex-grow-1 min-w-0">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className={`fw-semibold ${Number(c.non_lus) > 0 ? "" : ""}`} style={{ fontSize: "0.85rem" }}>
-                            {c.interlocuteur_prenom} {c.interlocuteur_nom}
-                          </span>
-                          {c.dernier_message_le && (
-                            <span className={`flex-shrink-0 ms-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.68rem" }}>
-                              {formatDate(c.dernier_message_le)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="d-flex justify-content-between align-items-center mt-1">
-                          <span className={`text-truncate ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.75rem", maxWidth: 150 }}>
-                            {c.dernier_message || <em>Démarrez la conversation</em>}
-                          </span>
-                          {Number(c.non_lus) > 0 && (
-                            <span className="badge bg-success rounded-pill flex-shrink-0 ms-1" style={{ fontSize: "0.6rem" }}>{c.non_lus}</span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                ) : conversations.map((c) => <ConvItem key={c.id} c={c} />)}
               </div>
             </div>
 
-            {/* ── Zone messages ── */}
-            <div className="d-flex flex-column flex-grow-1 min-w-0">
+            {/* ── Zone messages ── visible sur desktop TOUJOURS, sur mobile seulement si mobileView=chat */}
+            <div
+              className={`flex-column flex-grow-1 min-w-0 ${mobileView === "list" ? "d-none d-md-flex" : "d-flex"}`}
+            >
               {!selectedConv ? (
                 <div className="d-flex flex-column align-items-center justify-content-center h-100 px-4 text-center">
                   <i className="bi bi-chat-text text-success" style={{ fontSize: "3.5rem", opacity: 0.25 }} />
@@ -300,14 +289,24 @@ export default function Messages() {
                     Sélectionnez une conversation
                   </p>
                   <p className={`small ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.8rem" }}>
-                    ou cliquez sur le bouton <strong>Message</strong> depuis une carte de trajet ou de réservation.
+                    ou cliquez sur <strong>Message</strong> depuis une carte de trajet.
                   </p>
                 </div>
               ) : (
                 <>
-                  {/* Header conversation */}
+                  {/* Header conversation — avec bouton retour sur mobile */}
                   <div className={`px-3 py-2 border-bottom d-flex align-items-center gap-2 ${isDark ? "border-secondary" : ""}`}
                     style={{ minHeight: 56 }}>
+                    {/* Bouton retour — mobile seulement */}
+                    <button
+                      type="button"
+                      className={`btn btn-sm d-md-none rounded-3 me-1 flex-shrink-0 ${isDark ? "btn-outline-light" : "btn-outline-secondary"}`}
+                      style={{ padding: "4px 8px" }}
+                      onClick={goBackToList}
+                    >
+                      <i className="bi bi-chevron-left" />
+                    </button>
+
                     {selectedConv.interlocuteur_photo_url ? (
                       <img src={selectedConv.interlocuteur_photo_url} alt="" className="rounded-circle flex-shrink-0"
                         style={{ width: 38, height: 38, objectFit: "cover" }} />
@@ -329,13 +328,13 @@ export default function Messages() {
                     {/* Toggle quick replies */}
                     <button
                       type="button"
-                      className={`btn btn-sm rounded-3 ${showQuickReplies ? "btn-success" : (isDark ? "btn-outline-light" : "btn-outline-secondary")}`}
+                      className={`btn btn-sm rounded-3 flex-shrink-0 ${showQuickReplies ? "btn-success" : (isDark ? "btn-outline-light" : "btn-outline-secondary")}`}
                       style={{ fontSize: "0.75rem" }}
                       onClick={() => setShowQuickReplies((v) => !v)}
                       title="Messages rapides"
                     >
-                      <i className="bi bi-lightning-fill me-1" />
-                      Rapides
+                      <i className="bi bi-lightning-fill" />
+                      <span className="d-none d-sm-inline ms-1">Rapides</span>
                     </button>
                   </div>
 
@@ -370,7 +369,7 @@ export default function Messages() {
                               </div>
                             )
                           )}
-                          <div style={{ maxWidth: "65%" }}>
+                          <div style={{ maxWidth: "75%" }}>
                             <div
                               className={`px-3 py-2 ${isMine ? "rounded-4 rounded-end-1 text-white" : "rounded-4 rounded-start-1"} ${!isMine ? (isDark ? "bg-secondary bg-opacity-25" : "bg-light") : ""}`}
                               style={{
@@ -434,7 +433,7 @@ export default function Messages() {
                     <button
                       type="submit"
                       className="btn btn-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                      style={{ width: 42, height: 42, background: "linear-gradient(135deg,#198754,#20c374)", border: "none", flexShrink: 0 }}
+                      style={{ width: 42, height: 42, background: "linear-gradient(135deg,#198754,#20c374)", border: "none" }}
                       disabled={sending || !newMsg.trim()}
                     >
                       {sending

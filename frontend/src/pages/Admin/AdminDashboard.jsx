@@ -823,14 +823,13 @@ export default function AdminDashboard() {
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#f4f6f8" }}>
 
-      {/* ── Sidebar ── */}
+      {/* ── Sidebar desktop ── */}
       <aside
         style={{
           width: 240, flexShrink: 0,
           background: "linear-gradient(180deg,#0f4c2a 0%,#198754 60%,#20c374 100%)",
           display: "flex", flexDirection: "column",
           boxShadow: "2px 0 12px rgba(0,0,0,.18)",
-          transform: sidebarOpen ? "translateX(0)" : undefined,
           transition: "transform .25s",
           zIndex: 100,
         }}
@@ -930,15 +929,63 @@ export default function AdminDashboard() {
       {/* ── Contenu principal ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        {/* Top bar */}
-        <header style={{ background: "#fff", borderBottom: "1px solid #e9ecef", padding: "0 28px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        {/* ── Top bar MOBILE (d-md-none) ── */}
+        <header
+          className="d-flex d-md-none align-items-center justify-content-between flex-shrink-0"
+          style={{
+            background: "linear-gradient(135deg,#0f4c2a,#198754)",
+            padding: "10px 16px",
+            minHeight: 56,
+          }}
+        >
+          <div className="d-flex align-items-center gap-2">
+            <div className="rounded-circle bg-white d-flex align-items-center justify-content-center flex-shrink-0"
+              style={{ width: 32, height: 32 }}>
+              <i className="bi bi-shield-fill" style={{ color: "#198754", fontSize: "1rem" }} />
+            </div>
+            <div>
+              <div className="fw-bold text-white" style={{ fontSize: "0.88rem", lineHeight: 1.1 }}>CampusRide</div>
+              <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,.65)", letterSpacing: ".5px" }}>ADMIN PANEL</div>
+            </div>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            {currentUser && (
+              <div className="d-flex align-items-center gap-1" style={{ background: "rgba(255,255,255,.12)", borderRadius: 8, padding: "4px 8px" }}>
+                <Avatar prenom={currentUser.prenom} nom={currentUser.nom} size={22} />
+                <span className="text-white fw-semibold" style={{ fontSize: "0.75rem" }}>{currentUser.prenom}</span>
+              </div>
+            )}
+            <button
+              onClick={() => navigate("/passager")}
+              className="btn btn-sm border-0 d-flex align-items-center gap-1"
+              style={{ background: "rgba(255,255,255,.15)", color: "#fff", borderRadius: 8, fontSize: "0.75rem", padding: "5px 10px" }}
+              title="Quitter l'admin"
+            >
+              <i className="bi bi-box-arrow-left" />
+              <span className="d-none d-sm-inline">Quitter</span>
+            </button>
+            <button
+              onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); navigate("/login"); }}
+              className="btn btn-sm border-0 d-flex align-items-center"
+              style={{ background: "rgba(220,53,69,.3)", color: "#ff8fa3", borderRadius: 8, padding: "5px 8px" }}
+              title="Se déconnecter"
+            >
+              <i className="bi bi-power" />
+            </button>
+          </div>
+        </header>
+
+        {/* ── Top bar DESKTOP (d-none d-md-flex) ── */}
+        <header
+          className="d-none d-md-flex align-items-center justify-content-between flex-shrink-0"
+          style={{ background: "#fff", borderBottom: "1px solid #e9ecef", padding: "0 28px", height: 60 }}
+        >
           <div>
             <div className="fw-bold" style={{ fontSize: "0.95rem", lineHeight: 1.1 }}>
               <i className={`bi ${current.icon} text-success me-2`} />{current.title}
             </div>
             <div className="text-muted" style={{ fontSize: "0.72rem" }}>{current.sub}</div>
           </div>
-          {/* Stats rapides en-tête */}
           {stats && (
             <div className="d-none d-lg-flex gap-4 align-items-center">
               {[
@@ -956,8 +1003,21 @@ export default function AdminDashboard() {
           )}
         </header>
 
+        {/* ── Titre section — mobile seulement ── */}
+        <div
+          className="d-flex d-md-none align-items-center gap-2 flex-shrink-0"
+          style={{ background: "#fff", borderBottom: "1px solid #e9ecef", padding: "10px 16px" }}
+        >
+          <i className={`bi ${current.icon} text-success`} />
+          <div>
+            <div className="fw-bold" style={{ fontSize: "0.88rem", lineHeight: 1.1 }}>{current.title}</div>
+            <div className="text-muted" style={{ fontSize: "0.68rem" }}>{current.sub}</div>
+          </div>
+        </div>
+
         {/* Contenu scrollable */}
-        <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+        <main style={{ flex: 1, overflowY: "auto", padding: "16px", paddingBottom: 80 }}
+          className="p-md-4">
           {activeSection === "dashboard" && (
             <SectionDashboard stats={stats} loading={loadingStats} />
           )}
@@ -972,6 +1032,45 @@ export default function AdminDashboard() {
           )}
         </main>
       </div>
+
+      {/* ── Bottom tab bar MOBILE ── */}
+      <nav
+        className="d-flex d-md-none"
+        style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          background: "#fff",
+          borderTop: "1px solid #e9ecef",
+          zIndex: 1000,
+          height: 60,
+          boxShadow: "0 -2px 12px rgba(0,0,0,.08)",
+        }}
+      >
+        {NAV_ITEMS.map(({ id, icon, label }) => {
+          const active = activeSection === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setActiveSection(id)}
+              style={{
+                flex: 1,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                border: "none",
+                background: "none",
+                color: active ? "#198754" : "#6c757d",
+                gap: 2,
+                padding: "6px 0",
+                fontSize: "0.58rem",
+                fontWeight: active ? 700 : 400,
+                borderTop: active ? "2.5px solid #198754" : "2.5px solid transparent",
+                transition: "color .15s",
+              }}
+            >
+              <i className={`bi ${icon}`} style={{ fontSize: "1.15rem" }} />
+              {label.replace("Tableau de bord", "Tableau")}
+            </button>
+          );
+        })}
+      </nav>
 
       <Toast toast={toast} onClose={() => setToast((p) => ({ ...p, show: false }))} />
     </div>
