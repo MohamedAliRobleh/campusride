@@ -49,7 +49,20 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications([]);
-      if (notif.type === "DEMANDE_RESERVATION") navigate("/conducteur/reservations-recues");
+
+      /* Navigation selon le type */
+      const dest = {
+        DEMANDE_RESERVATION:  "/conducteur/reservations-recues",
+        RESERVATION_ANNULEE:  "/conducteur/reservations-recues",
+        RESERVATION_ACCEPTEE: "/passager/mes-reservations",
+        RESERVATION_REFUSEE:  "/passager/mes-reservations",
+        TRAJET_MODIFIE:       "/passager/mes-reservations",
+        TRAJET_TERMINE:       "/passager/mes-reservations",
+        TRAJET_ANNULE:        "/passager/mes-reservations",
+        RAPPEL_TRAJET:        "/passager/mes-reservations",
+        MESSAGE_RECU:         "/passager/messages",
+      }[notif.type];
+      if (dest) navigate(dest);
     } catch {}
   };
 
@@ -101,7 +114,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
           </span>
         )}
       </button>
-      <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 300 }}>
+      <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 280, maxWidth: "calc(100vw - 24px)" }}>
         <li className="px-3 pt-2 pb-1">
           <div className="fw-bold" style={{ fontSize: "0.85rem" }}>
             <i className="bi bi-bell-fill text-success me-2" />
@@ -132,7 +145,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
                 >
                   <i className="bi bi-bell-fill text-success" style={{ fontSize: "0.7rem" }} />
                 </div>
-                <span className="fw-semibold" style={{ fontSize: "0.82rem", lineHeight: 1.35 }}>
+                <span className="fw-semibold" style={{ fontSize: "0.82rem", lineHeight: 1.35, whiteSpace: "normal", wordBreak: "break-word", minWidth: 0 }}>
                   {notif.message}
                 </span>
               </button>
