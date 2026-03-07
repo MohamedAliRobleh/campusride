@@ -49,6 +49,11 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [
+          /^\/auth/, /^\/utilisateurs/, /^\/trajets/, /^\/reservations/,
+          /^\/notifications/, /^\/vehicules/, /^\/uploads/, /^\/admin/,
+          /^\/evaluations/, /^\/messages/, /^\/signalements/, /^\/health/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -121,6 +126,11 @@ export default defineConfig({
         secure: false,
       },
       "/messages": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/signalements": {
         target: "http://localhost:5000",
         changeOrigin: true,
         secure: false,
