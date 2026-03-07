@@ -276,3 +276,10 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 767.98px) {
   body.admin-page { padding-bottom: 60px; }
 }
+
+/* Private pages: bottom tab bar clearance on mobile */
+@media (max-width: 991.98px) {
+  body:not(.admin-page) {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  }
+}
