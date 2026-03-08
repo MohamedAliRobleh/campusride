@@ -34,6 +34,12 @@ const SIGNAL_STATUT_CFG = {
   REJETE:     { label: "Rejeté",     bg: "#6c757d", light: "#e2e3e5", text: "#41464b" },
 };
 
+const NIVEAU_CFG = {
+  1: { label: "N1 — Mineur",  color: "#ffc107", bg: "#fff8e1", text: "#6c4a00" },
+  2: { label: "N2 — Modéré",  color: "#fd7e14", bg: "#fff3e8", text: "#7a3b00" },
+  3: { label: "N3 — Grave",   color: "#dc3545", bg: "#fdf0f0", text: "#7a0000" },
+};
+
 // ─── Sous-composants légers ────────────────────────────────────────────────────
 function Avatar({ prenom, nom, photo, size = 34 }) {
   const initials = ((prenom?.[0] ?? "") + (nom?.[0] ?? "")).toUpperCase() || "?";
@@ -796,11 +802,223 @@ function SectionReservations({ token, showToast }) {
 }
 
 // ─── Section : Signalements ────────────────────────────────────────────────────
+function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
+  const [updating, setUpdating] = useState(null);
+  if (!s) return null;
+  const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
+  const nCfg = NIVEAU_CFG[s.niveau] || NIVEAU_CFG[2];
+  const estSuspendu = s.cible_actif === false;
+  const nb = Number(s.cible_avertissements) || 0;
+  const barColor = nb === 0 ? "#198754" : nb === 1 ? "#fd7e14" : "#dc3545";
+
+  const doAction = async (url, method, label) => {
+    if (!window.confirm(`${label} ?`)) return;
+    try {
+      setUpdating(label);
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+      showToast(data.message || "OK.", "success");
+      onRefresh();
+      onClose();
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setUpdating(null); }
+  };
+
+  return (
+    <div className="modal d-block" style={{ background: "rgba(0,0,0,0.55)", zIndex: 1060 }} onClick={onClose}>
+      <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+          {/* Header avec niveau */}
+          <div className="d-flex align-items-center gap-3 px-4 py-3" style={{ background: nCfg.bg, borderBottom: `2px solid ${nCfg.color}` }}>
+            <span className="rounded-pill px-3 py-1 fw-bold" style={{ background: nCfg.color, color: "#fff", fontSize: "0.78rem" }}>
+              {nCfg.label}
+            </span>
+            <div>
+              <div className="fw-bold" style={{ color: nCfg.text }}>{s.motif}</div>
+              <div style={{ fontSize: "0.75rem", color: nCfg.text, opacity: 0.8 }}>
+                {new Date(s.cree_le).toLocaleDateString("fr-CA", { day: "2-digit", month: "long", year: "numeric" })} à {new Date(s.cree_le).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </div>
+            </div>
+            <span className="badge rounded-pill ms-auto px-3 py-1" style={{ background: cfg.light, color: cfg.text }}>{cfg.label}</span>
+            <button type="button" className="btn-close ms-2" onClick={onClose} />
+          </div>
+
+          <div className="p-4">
+            <div className="row g-4">
+              {/* Colonne gauche : Signaleur */}
+              <div className="col-md-6">
+                <div className="rounded-3 p-3 h-100" style={{ background: "#f8f9fa", border: "1.5px solid #e9ecef" }}>
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <i className="bi bi-person-fill text-muted" />
+                    <span className="fw-semibold text-muted" style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Signaleur</span>
+                  </div>
+                  <div className="fw-bold" style={{ fontSize: "1rem" }}>{s.signaleur_prenom} {s.signaleur_nom}</div>
+                  <div className="text-muted mb-2" style={{ fontSize: "0.82rem" }}>{s.signaleur_email}</div>
+                  <div className="d-flex gap-2 flex-wrap">
+                    <span className="badge rounded-pill px-2" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.68rem" }}>{s.signaleur_role}</span>
+                    {s.signaleur_depuis && (
+                      <span className="text-muted" style={{ fontSize: "0.72rem" }}>
+                        Membre depuis {new Date(s.signaleur_depuis).toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
+                      </span>
+                    )}
+                  </div>
+                  {(s.signaleur_avertissements > 0 || s.signaleur_nb_signalements_emis > 0) && (
+                    <div className="mt-2 rounded-3 p-2" style={{ background: "#fff3cd", fontSize: "0.72rem", color: "#664d03" }}>
+                      {s.signaleur_avertissements > 0 && <div><i className="bi bi-exclamation-triangle me-1" />{s.signaleur_avertissements} avertissement(s) sur son propre compte</div>}
+                      {s.signaleur_nb_signalements_emis > 0 && <div><i className="bi bi-flag me-1" />{s.signaleur_nb_signalements_emis} signalement(s) émis au total</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Colonne droite : Cible */}
+              <div className="col-md-6">
+                <div className="rounded-3 p-3 h-100" style={{ background: "#f8f9fa", border: "1.5px solid #e9ecef" }}>
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <i className={`bi ${s.type === "TRAJET" ? "bi-map-fill" : "bi-person-exclamation"} text-muted`} />
+                    <span className="fw-semibold text-muted" style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Cible — {s.type}</span>
+                  </div>
+                  {s.type === "UTILISATEUR" && s.cible_prenom ? (
+                    <>
+                      <div className="fw-bold" style={{ fontSize: "1rem" }}>{s.cible_prenom} {s.cible_nom}</div>
+                      <div className="text-muted mb-2" style={{ fontSize: "0.82rem" }}>{s.cible_email}</div>
+                      <div className="d-flex gap-2 flex-wrap mb-2">
+                        <span className="badge rounded-pill px-2" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.68rem" }}>{s.cible_role}</span>
+                        {s.cible_depuis && (
+                          <span className="text-muted" style={{ fontSize: "0.72rem" }}>
+                            Membre depuis {new Date(s.cible_depuis).toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
+                          </span>
+                        )}
+                        {estSuspendu && (
+                          <span className="badge rounded-pill px-2" style={{ background: "#f8d7da", color: "#842029", fontSize: "0.68rem" }}>
+                            <i className="bi bi-slash-circle me-1" />Suspendu
+                          </span>
+                        )}
+                      </div>
+                      {/* Historique signalements */}
+                      <div className="mb-1" style={{ fontSize: "0.72rem" }}>
+                        <span className="text-muted">Signalements reçus : </span>
+                        <span style={{ color: "#dc3545", fontWeight: 600 }}>{s.cible_nb_signalements_graves || 0} grave(s)</span>
+                        {" · "}
+                        <span style={{ color: "#fd7e14", fontWeight: 600 }}>{s.cible_nb_signalements_moderes || 0} modéré(s)</span>
+                        {" · "}
+                        <span className="text-muted">{s.cible_nb_signalements || 0} total</span>
+                      </div>
+                      {/* Barre progression avertissements */}
+                      <div className="mt-1 mb-1">
+                        <div className="d-flex justify-content-between mb-1" style={{ fontSize: "0.7rem" }}>
+                          <span style={{ color: barColor, fontWeight: 600 }}><i className="bi bi-exclamation-triangle me-1" />{nb}/3 avertissements officiels</span>
+                        </div>
+                        <div className="rounded-pill overflow-hidden" style={{ height: 6, background: "#e9ecef" }}>
+                          <div style={{ width: `${Math.min((nb / 3) * 100, 100)}%`, height: "100%", background: barColor, transition: "width 0.3s" }} />
+                        </div>
+                      </div>
+                    </>
+                  ) : s.type === "TRAJET" && s.cible_trajet_depart ? (
+                    <>
+                      <div className="fw-bold mb-1">{s.cible_trajet_depart}</div>
+                      <div className="d-flex align-items-center gap-1 text-muted mb-2" style={{ fontSize: "0.82rem" }}>
+                        <i className="bi bi-arrow-right" /> {s.cible_trajet_dest}
+                      </div>
+                      {s.cible_trajet_date && (
+                        <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                          {new Date(s.cible_trajet_date).toLocaleDateString("fr-CA", { day: "2-digit", month: "long", year: "numeric" })}
+                        </div>
+                      )}
+                      {s.cible_trajet_statut && (
+                        <span className="badge rounded-pill px-2 mt-1" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.68rem" }}>{s.cible_trajet_statut}</span>
+                      )}
+                    </>
+                  ) : <div className="text-muted" style={{ fontSize: "0.82rem" }}>Informations indisponibles</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            {s.description && (
+              <div className="mt-3 rounded-3 p-3" style={{ background: "#f8f9fa", border: "1.5px solid #e9ecef" }}>
+                <div className="fw-semibold mb-1" style={{ fontSize: "0.78rem", color: "#6c757d" }}>Description fournie</div>
+                <p className="mb-0" style={{ fontSize: "0.87rem" }}>{s.description}</p>
+              </div>
+            )}
+
+            {/* N3 : avertissement rouge */}
+            {s.niveau === 3 && (
+              <div className="mt-3 rounded-3 p-3 d-flex gap-2 align-items-start" style={{ background: "#fdf0f0", border: "1.5px solid #f5c6cb" }}>
+                <i className="bi bi-exclamation-octagon-fill text-danger flex-shrink-0 mt-1" />
+                <div style={{ fontSize: "0.82rem", color: "#7a0000" }}>
+                  <div className="fw-bold mb-1">Signalement de niveau grave</div>
+                  Si le compte était actif, une suspension préventive a été appliquée automatiquement. Vérifiez les faits et réactivez si nécessaire.
+                </div>
+              </div>
+            )}
+
+            {/* Boutons d'action */}
+            <div className="d-flex gap-2 flex-wrap mt-4 pt-3" style={{ borderTop: "1px solid #e9ecef" }}>
+              {s.type === "UTILISATEUR" && !estSuspendu && s.cible_prenom && (
+                <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
+                  style={{ background: nb >= 2 ? "#f8d7da" : "#fff3cd", color: nb >= 2 ? "#842029" : "#664d03" }}
+                  onClick={() => doAction(`/admin/signalements/${s.id}/avertir`, "POST",
+                    nb >= 2 ? "Avertir (entraîne un ban automatique)" : `Envoyer l'avertissement ${nb + 1}/3`)}>
+                  {updating === (nb >= 2 ? "Avertir (entraîne un ban automatique)" : `Envoyer l'avertissement ${nb + 1}/3`)
+                    ? <span className="spinner-border spinner-border-sm" />
+                    : nb >= 2
+                      ? <><i className="bi bi-slash-circle me-1" />Avertir → Ban automatique</>
+                      : <><i className="bi bi-exclamation-triangle me-1" />Avertir ({nb + 1}/3)</>}
+                </button>
+              )}
+              {s.type === "UTILISATEUR" && s.cible_prenom && (
+                <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
+                  style={{ background: estSuspendu ? "#d1e7dd" : "#f8d7da", color: estSuspendu ? "#0f5132" : "#842029" }}
+                  onClick={() => doAction(`/admin/users/${s.cible_id}/toggle-actif`, "PATCH",
+                    estSuspendu ? "Réactiver ce compte" : "Suspendre ce compte")}>
+                  {estSuspendu ? <><i className="bi bi-check-circle me-1" />Réactiver le compte</> : <><i className="bi bi-slash-circle me-1" />Suspendre le compte</>}
+                </button>
+              )}
+              {s.statut !== "TRAITE" && (
+                <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
+                  style={{ background: "#d1e7dd", color: "#0f5132" }}
+                  onClick={async () => {
+                    if (!window.confirm("Marquer comme Traité ?")) return;
+                    try {
+                      setUpdating("traiteMod");
+                      const res = await fetch(`/admin/signalements/${s.id}/statut`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ statut: "TRAITE" }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+                      showToast("Marqué Traité.", "success");
+                      onRefresh(); onClose();
+                    } catch { showToast("Erreur réseau.", "danger"); }
+                    finally { setUpdating(null); }
+                  }}>
+                  <i className="bi bi-check-lg me-1" />Marquer Traité
+                </button>
+              )}
+              {s.statut !== "REJETE" && (
+                <button className="btn btn-sm rounded-3 fw-semibold ms-auto" disabled={!!updating}
+                  style={{ background: "#e9ecef", color: "#495057" }}
+                  onClick={() => doAction(`/admin/signalements/${s.id}/statut`, "PATCH", "Rejeter ce signalement")}>
+                  <i className="bi bi-x-lg me-1" />Rejeter
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionSignalements({ token, showToast }) {
   const [signalements, setSignalements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatut, setFilterStatut] = useState("");
   const [updating, setUpdating] = useState(null);
+  const [selectedSignalement, setSelectedSignalement] = useState(null);
 
   const fetchSignalements = useCallback(async () => {
     try {
@@ -867,10 +1085,19 @@ function SectionSignalements({ token, showToast }) {
 
   return (
     <>
+      {selectedSignalement && (
+        <SignalementDetailModal
+          s={selectedSignalement}
+          token={token}
+          showToast={showToast}
+          onClose={() => setSelectedSignalement(null)}
+          onRefresh={fetchSignalements}
+        />
+      )}
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <div>
           <h5 className="fw-bold mb-0" style={{ fontSize: "1rem" }}>Signalements</h5>
-          <p className="text-muted mb-0" style={{ fontSize: "0.75rem" }}>Signalements soumis par les utilisateurs</p>
+          <p className="text-muted mb-0" style={{ fontSize: "0.75rem" }}>Signalements soumis — cliquer sur une ligne pour voir le détail</p>
         </div>
         <select
           className="form-select rounded-3"
@@ -911,11 +1138,16 @@ function SectionSignalements({ token, showToast }) {
               <tbody>
                 {signalements.map((s) => {
                   const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
+                  const nCfg = NIVEAU_CFG[s.niveau] || NIVEAU_CFG[2];
                   const estSuspendu = s.cible_actif === false;
                   const busy = (suf) => updating === s.id + suf;
 
                   return (
-                    <tr key={s.id}>
+                    <tr key={s.id}
+                      onClick={() => setSelectedSignalement(s)}
+                      style={{ cursor: "pointer" }}
+                      title="Cliquer pour voir le détail"
+                    >
                       <td className="px-4 py-3">
                         <div style={{ fontSize: "0.78rem" }}>{new Date(s.cree_le).toLocaleDateString("fr-CA", { day: "2-digit", month: "short", year: "numeric" })}</div>
                         <div className="text-muted" style={{ fontSize: "0.7rem" }}>{new Date(s.cree_le).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
@@ -995,7 +1227,13 @@ function SectionSignalements({ token, showToast }) {
                         )}
                       </td>
 
-                      <td className="px-3 py-3" style={{ fontSize: "0.82rem" }}>{s.motif}</td>
+                      <td className="px-3 py-3">
+                        <span className="d-inline-block rounded-pill px-2 py-0 mb-1 fw-semibold"
+                          style={{ background: nCfg.bg, color: nCfg.text, fontSize: "0.62rem", border: `1px solid ${nCfg.color}40` }}>
+                          {nCfg.label}
+                        </span>
+                        <div style={{ fontSize: "0.82rem" }}>{s.motif}</div>
+                      </td>
                       <td className="px-3 py-3 text-muted" style={{ fontSize: "0.78rem", maxWidth: 160 }}>
                         {s.description || <em>—</em>}
                       </td>
@@ -1009,7 +1247,7 @@ function SectionSignalements({ token, showToast }) {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="d-flex flex-column gap-1" style={{ minWidth: 110 }}>
 
                           {/* Avertir — UTILISATEUR actif seulement */}

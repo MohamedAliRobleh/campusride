@@ -204,6 +204,15 @@ export async function runMigrations() {
       console.log("Migration signalements OK");
     } catch (err) { console.error("Migration signalements:", err.message); }
 
+    // Migration: colonne niveau de gravité sur signalements (1=mineur, 2=modéré, 3=grave)
+    try {
+      await pool.query(`
+        ALTER TABLE signalements ADD COLUMN IF NOT EXISTS niveau SMALLINT NOT NULL DEFAULT 2
+          CHECK (niveau IN (1, 2, 3));
+      `);
+      console.log("Migration signalements.niveau OK");
+    } catch (err) { console.error("Migration signalements.niveau:", err.message); }
+
     // Migration: colonne avertissements sur utilisateurs
     try {
       await pool.query(`

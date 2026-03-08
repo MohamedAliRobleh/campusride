@@ -285,13 +285,17 @@ router.get("/signalements", requireAuth, requireAdmin, async (req, res) => {
               uc.actif           AS cible_actif,       uc.cree_le      AS cible_depuis,
               uc.avertissements  AS cible_avertissements,
               (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR') AS cible_nb_signalements,
-              t.lieu_depart AS cible_trajet_depart,    t.destination AS cible_trajet_dest
+              (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR' AND sx.niveau = 3) AS cible_nb_signalements_graves,
+              (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR' AND sx.niveau = 2) AS cible_nb_signalements_moderes,
+              (SELECT COUNT(*) FROM signalements sx WHERE sx.signaleur_id = s.signaleur_id) AS signaleur_nb_signalements_emis,
+              t.lieu_depart AS cible_trajet_depart,    t.destination AS cible_trajet_dest,
+              t.dateheure_depart AS cible_trajet_date, t.statut AS cible_trajet_statut
        FROM signalements s
        JOIN utilisateurs us ON us.id = s.signaleur_id
        LEFT JOIN utilisateurs uc ON uc.id = s.cible_id AND s.type = 'UTILISATEUR'
        LEFT JOIN trajets      t  ON t.id  = s.cible_id AND s.type = 'TRAJET'
        ${where}
-       ORDER BY s.cree_le DESC
+       ORDER BY s.niveau DESC, s.cree_le DESC
        LIMIT 300`,
       params
     );
