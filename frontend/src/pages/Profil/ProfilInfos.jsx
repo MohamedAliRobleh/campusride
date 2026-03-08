@@ -7,6 +7,7 @@ export default function ProfilInfos() {
   const [editMode, setEditMode] = useState(false);
   const [telephone, setTelephone] = useState("");
   const [zones, setZones] = useState("");
+  const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -15,6 +16,7 @@ export default function ProfilInfos() {
     if (user) {
       setTelephone(user.telephone || "");
       setZones(user.zones_depart_preferees?.join(", ") || "");
+      setBio(user.bio || "");
     }
   }, [user]);
 
@@ -29,6 +31,7 @@ export default function ProfilInfos() {
         body: JSON.stringify({
           telephone,
           zones_depart_preferees: zones.split(",").map(z => z.trim()).filter(Boolean),
+          bio: bio.trim() || null,
         }),
       });
       const data = await res.json();
@@ -225,6 +228,44 @@ export default function ProfilInfos() {
                 ) : (
                   <span className={`fw-semibold ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.92rem" }}>
                     Aucune zone
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Bio */}
+          <div className="mb-3">
+            <label className="form-label" style={{ fontSize: "0.78rem", fontWeight: 600 }}>
+              <i className="bi bi-person-lines-fill me-1 text-success" />
+              Bio <span className={`fw-normal ${isDark ? "text-secondary" : "text-muted"}`}>(visible par les autres membres)</span>
+            </label>
+            {editMode ? (
+              <>
+                <textarea
+                  className={`form-control rounded-3 ${isDark ? "bg-dark text-light border-secondary" : ""}`}
+                  rows={4}
+                  placeholder="Parlez de vous : études, langues parlées, centres d'intérêt, style de conduite…"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  maxLength={500}
+                  style={{ fontSize: "0.88rem", resize: "vertical" }}
+                />
+                <div className={`d-flex justify-content-end mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.72rem" }}>
+                  {bio.length}/500 caractères
+                </div>
+              </>
+            ) : (
+              <div
+                className={`rounded-3 p-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}
+                style={{ fontSize: "0.88rem", lineHeight: 1.65, minHeight: 60 }}
+              >
+                {user.bio ? (
+                  <span style={{ whiteSpace: "pre-wrap" }}>{user.bio}</span>
+                ) : (
+                  <span className={isDark ? "text-secondary" : "text-muted"}>
+                    <i className="bi bi-pencil me-1" />
+                    Aucune bio — cliquez sur Modifier pour en ajouter une.
                   </span>
                 )}
               </div>

@@ -25,6 +25,7 @@ export async function runMigrations() {
   try {
     await pool.query(`
       ALTER TABLE profils   ADD COLUMN IF NOT EXISTS photo_url TEXT;
+      ALTER TABLE profils   ADD COLUMN IF NOT EXISTS bio TEXT;
       ALTER TABLE vehicules ADD COLUMN IF NOT EXISTS photo_url TEXT;
       ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS depart_lat DOUBLE PRECISION;
       ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS depart_lng DOUBLE PRECISION;

@@ -140,6 +140,22 @@ export default function UserProfileModal({ userId, isDark, onClose, roleContext,
                 </p>
               </div>
 
+              {/* Bio */}
+              {profile.bio && (
+                <div
+                  className={`rounded-3 p-3 mb-4 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}
+                  style={{ fontSize: "0.85rem", lineHeight: 1.7 }}
+                >
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <i className="bi bi-person-lines-fill text-success" style={{ fontSize: "0.9rem" }} />
+                    <span className="fw-semibold" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#198754" }}>À propos</span>
+                  </div>
+                  <p className={`mb-0 ${isDark ? "text-light" : "text-dark"}`} style={{ whiteSpace: "pre-wrap" }}>
+                    {profile.bio}
+                  </p>
+                </div>
+              )}
+
               {/* Stats cards */}
               <div className="row g-2 mb-4">
                 {/* Note moyenne */}

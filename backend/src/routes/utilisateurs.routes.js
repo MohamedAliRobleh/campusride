@@ -67,7 +67,7 @@ router.patch("/me", requireAuth, async (req, res) => {
 
     const userId = req.user.id;
     //Récupération des données du body
-    const { telephone, zones_depart_preferees } = req.body;
+    const { telephone, zones_depart_preferees, bio } = req.body;
 
     //Validation simple
     const telephoneClean =
@@ -89,12 +89,15 @@ router.patch("/me", requireAuth, async (req, res) => {
         .map(z => String(z).trim())
         .filter(z => z.length > 0);
     }
-    
+
+    const bioClean = bio !== undefined ? String(bio).trim().slice(0, 500) || null : undefined;
+
     //Mise à jour via modèle
     const profil = await updateUserProfile(
       userId,
       telephoneClean,
-      zonesClean
+      zonesClean,
+      bioClean
     );
 
     return res.json({ profil });
@@ -241,7 +244,7 @@ router.get("/:id/public", async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT u.id, u.prenom, u.nom, u.role, u.cree_le,
-              p.photo_url,
+              p.photo_url, p.bio,
               (SELECT COUNT(*) FROM trajets WHERE conducteur_id = u.id AND statut = 'TERMINE') AS trajets_conduits,
               (SELECT ROUND(AVG(note)::numeric, 1) FROM evaluations WHERE evalue_id = u.id) AS note_moyenne,
               (SELECT COUNT(*) FROM evaluations WHERE evalue_id = u.id) AS nb_evaluations
