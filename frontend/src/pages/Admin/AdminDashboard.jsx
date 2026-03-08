@@ -818,14 +818,48 @@ function SectionSignalements({ token, showToast }) {
 
   const updateStatut = async (id, statut) => {
     try {
-      setUpdating(id);
+      setUpdating(id + statut);
       const res = await fetch(`/admin/signalements/${id}/statut`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ statut }),
       });
-      if (!res.ok) { showToast("Erreur mise à jour.", "danger"); return; }
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur mise à jour.", "danger"); return; }
       showToast("Statut mis à jour.", "success");
+      fetchSignalements();
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setUpdating(null); }
+  };
+
+  const avertir = async (id) => {
+    if (!window.confirm("Envoyer un avertissement officiel à cet utilisateur ?")) return;
+    try {
+      setUpdating(id + "avertir");
+      const res = await fetch(`/admin/signalements/${id}/avertir`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+      showToast("Avertissement envoyé.", "success");
+      fetchSignalements();
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setUpdating(null); }
+  };
+
+  const toggleSuspendre = async (cibleId, estActif, signalementId) => {
+    const action = estActif ? "suspendre" : "réactiver";
+    if (!window.confirm(`Voulez-vous ${action} ce compte ?`)) return;
+    try {
+      setUpdating(signalementId + "suspend");
+      const res = await fetch(`/admin/users/${cibleId}/toggle-actif`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+      showToast(data.actif ? "Compte réactivé." : "Compte suspendu.", "success");
       fetchSignalements();
     } catch { showToast("Erreur réseau.", "danger"); }
     finally { setUpdating(null); }
@@ -867,62 +901,110 @@ function SectionSignalements({ token, showToast }) {
                 <tr>
                   <th className="px-4 py-3 fw-semibold text-muted">Date</th>
                   <th className="px-3 py-3 fw-semibold text-muted">Signaleur</th>
-                  <th className="px-3 py-3 fw-semibold text-muted">Type</th>
+                  <th className="px-3 py-3 fw-semibold text-muted">Type / Cible</th>
                   <th className="px-3 py-3 fw-semibold text-muted">Motif</th>
                   <th className="px-3 py-3 fw-semibold text-muted">Description</th>
                   <th className="px-3 py-3 fw-semibold text-muted text-center">Statut</th>
-                  <th className="px-3 py-3 fw-semibold text-muted text-center">Actions</th>
+                  <th className="px-3 py-3 fw-semibold text-muted">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {signalements.map((s) => {
                   const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
+                  const estSuspendu = s.cible_actif === false;
+                  const busy = (suf) => updating === s.id + suf;
+
                   return (
                     <tr key={s.id}>
                       <td className="px-4 py-3">
                         <div style={{ fontSize: "0.78rem" }}>{new Date(s.cree_le).toLocaleDateString("fr-CA", { day: "2-digit", month: "short", year: "numeric" })}</div>
                         <div className="text-muted" style={{ fontSize: "0.7rem" }}>{new Date(s.cree_le).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                       </td>
+
+                      {/* Signaleur */}
                       <td className="px-3 py-3">
                         <div className="fw-semibold" style={{ fontSize: "0.82rem" }}>{s.signaleur_prenom} {s.signaleur_nom}</div>
                         <div className="text-muted" style={{ fontSize: "0.72rem" }}>{s.signaleur_email}</div>
                       </td>
+
+                      {/* Type + Cible */}
                       <td className="px-3 py-3">
-                        <span className="badge rounded-pill px-2 py-1"
+                        <span className="badge rounded-pill px-2 py-1 mb-1 d-inline-block"
                           style={{ background: s.type === "TRAJET" ? "#0d6efd18" : "#dc354518", color: s.type === "TRAJET" ? "#0d6efd" : "#dc3545", fontSize: "0.7rem" }}>
                           <i className={`bi ${s.type === "TRAJET" ? "bi-map" : "bi-person"} me-1`} />{s.type}
                         </span>
+                        {s.type === "UTILISATEUR" && s.cible_prenom && (
+                          <div>
+                            <div className="fw-semibold" style={{ fontSize: "0.8rem" }}>{s.cible_prenom} {s.cible_nom}</div>
+                            <div className="text-muted" style={{ fontSize: "0.7rem" }}>{s.cible_email}</div>
+                            {estSuspendu && (
+                              <span className="badge rounded-pill px-2 py-1 mt-1 d-inline-block" style={{ background: "#f8d7da", color: "#842029", fontSize: "0.65rem" }}>
+                                <i className="bi bi-slash-circle me-1" />Suspendu
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {s.type === "TRAJET" && s.cible_trajet_depart && (
+                          <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                            {s.cible_trajet_depart} → {s.cible_trajet_dest}
+                          </div>
+                        )}
                       </td>
+
                       <td className="px-3 py-3" style={{ fontSize: "0.82rem" }}>{s.motif}</td>
-                      <td className="px-3 py-3 text-muted" style={{ fontSize: "0.78rem", maxWidth: 180 }}>
+                      <td className="px-3 py-3 text-muted" style={{ fontSize: "0.78rem", maxWidth: 160 }}>
                         {s.description || <em>—</em>}
                       </td>
+
+                      {/* Statut */}
                       <td className="px-3 py-3 text-center">
                         <span className="badge rounded-pill px-3 py-1 fw-semibold"
                           style={{ background: cfg.light, color: cfg.text, fontSize: "0.7rem" }}>
                           {cfg.label}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-center">
-                        <div className="d-flex gap-1 justify-content-center">
+
+                      {/* Actions */}
+                      <td className="px-3 py-3">
+                        <div className="d-flex flex-column gap-1" style={{ minWidth: 110 }}>
+
+                          {/* Avertir — UTILISATEUR actif seulement */}
+                          {s.type === "UTILISATEUR" && !estSuspendu && s.cible_prenom && (
+                            <button className="btn btn-sm rounded-3"
+                              style={{ background: "#fff3cd", color: "#664d03", fontSize: "0.72rem", padding: "3px 8px" }}
+                              disabled={!!updating} onClick={() => avertir(s.id)}>
+                              {busy("avertir") ? <span className="spinner-border spinner-border-sm" />
+                                : <><i className="bi bi-exclamation-triangle me-1" />Avertir</>}
+                            </button>
+                          )}
+
+                          {/* Suspendre / Réactiver */}
+                          {s.type === "UTILISATEUR" && s.cible_prenom && (
+                            <button className="btn btn-sm rounded-3"
+                              style={{ background: estSuspendu ? "#d1e7dd" : "#f8d7da", color: estSuspendu ? "#0f5132" : "#842029", fontSize: "0.72rem", padding: "3px 8px" }}
+                              disabled={!!updating} onClick={() => toggleSuspendre(s.cible_id, !estSuspendu, s.id)}>
+                              {busy("suspend") ? <span className="spinner-border spinner-border-sm" />
+                                : estSuspendu
+                                  ? <><i className="bi bi-check-circle me-1" />Réactiver</>
+                                  : <><i className="bi bi-slash-circle me-1" />Suspendre</>}
+                            </button>
+                          )}
+
+                          {/* Traité / Rejeté */}
                           {s.statut !== "TRAITE" && (
-                            <button
-                              className="btn btn-sm rounded-3"
-                              style={{ background: "#d1e7dd", color: "#0f5132", fontSize: "0.72rem", padding: "3px 10px" }}
-                              disabled={updating === s.id}
-                              onClick={() => updateStatut(s.id, "TRAITE")}
-                            >
-                              <i className="bi bi-check-lg me-1" />Traité
+                            <button className="btn btn-sm rounded-3"
+                              style={{ background: "#d1e7dd", color: "#0f5132", fontSize: "0.72rem", padding: "3px 8px" }}
+                              disabled={!!updating} onClick={() => updateStatut(s.id, "TRAITE")}>
+                              {busy("TRAITE") ? <span className="spinner-border spinner-border-sm" />
+                                : <><i className="bi bi-check-lg me-1" />Traité</>}
                             </button>
                           )}
                           {s.statut !== "REJETE" && (
-                            <button
-                              className="btn btn-sm rounded-3"
-                              style={{ background: "#f8d7da", color: "#842029", fontSize: "0.72rem", padding: "3px 10px" }}
-                              disabled={updating === s.id}
-                              onClick={() => updateStatut(s.id, "REJETE")}
-                            >
-                              <i className="bi bi-x-lg me-1" />Rejeter
+                            <button className="btn btn-sm rounded-3"
+                              style={{ background: "#e9ecef", color: "#495057", fontSize: "0.72rem", padding: "3px 8px" }}
+                              disabled={!!updating} onClick={() => updateStatut(s.id, "REJETE")}>
+                              {busy("REJETE") ? <span className="spinner-border spinner-border-sm" />
+                                : <><i className="bi bi-x-lg me-1" />Rejeter</>}
                             </button>
                           )}
                         </div>

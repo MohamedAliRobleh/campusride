@@ -277,9 +277,14 @@ router.get("/signalements", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT s.*,
-              us.prenom AS signaleur_prenom, us.nom AS signaleur_nom, us.email AS signaleur_email
+              us.prenom  AS signaleur_prenom, us.nom  AS signaleur_nom,  us.email AS signaleur_email,
+              uc.prenom  AS cible_prenom,     uc.nom  AS cible_nom,      uc.email AS cible_email,
+              uc.actif   AS cible_actif,
+              t.lieu_depart AS cible_trajet_depart, t.destination AS cible_trajet_dest
        FROM signalements s
        JOIN utilisateurs us ON us.id = s.signaleur_id
+       LEFT JOIN utilisateurs uc ON uc.id = s.cible_id AND s.type = 'UTILISATEUR'
+       LEFT JOIN trajets      t  ON t.id  = s.cible_id AND s.type = 'TRAJET'
        ${where}
        ORDER BY s.cree_le DESC
        LIMIT 300`,
@@ -305,6 +310,35 @@ router.patch("/signalements/:id/statut", requireAuth, requireAdmin, async (req, 
     );
     if (!rowCount) return res.status(404).json({ message: "Signalement introuvable." });
     return res.json({ message: "Statut mis à jour." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// POST /admin/signalements/:id/avertir — envoie une notification d'avertissement à l'utilisateur signalé
+router.post("/signalements/:id/avertir", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.cible_id, s.type, s.motif,
+              uc.prenom AS cible_prenom, uc.actif AS cible_actif
+       FROM signalements s
+       LEFT JOIN utilisateurs uc ON uc.id = s.cible_id AND s.type = 'UTILISATEUR'
+       WHERE s.id = $1`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Signalement introuvable." });
+    const s = rows[0];
+    if (s.type !== "UTILISATEUR") return res.status(400).json({ message: "L'avertissement s'applique uniquement aux utilisateurs." });
+    if (!s.cible_actif && s.cible_actif !== null) return res.status(400).json({ message: "Ce compte est déjà suspendu." });
+
+    await pool.query(
+      `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+       VALUES ($1, 'AVERTISSEMENT', $2, NOW())`,
+      [s.cible_id, `⚠️ Votre compte a reçu un avertissement officiel de l'administration CampusRide suite à un signalement (motif : ${s.motif}). Tout comportement répété entraînera la suspension de votre compte.`]
+    );
+    await pool.query(`UPDATE signalements SET statut = 'TRAITE' WHERE id = $1`, [req.params.id]);
+    return res.json({ message: "Avertissement envoyé." });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });
