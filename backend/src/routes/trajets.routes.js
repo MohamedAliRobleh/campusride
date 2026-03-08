@@ -266,6 +266,81 @@ router.get("/populaires", async (req, res) => {
 });
 
 // =====================
+// PATCH /:id/position — Conducteur met à jour sa position GPS en direct
+// =====================
+router.patch("/:id/position", requireAuth, async (req, res) => {
+  try {
+    const conducteurId = req.user.id;
+    const trajetId = req.params.id;
+    const { lat, lng } = req.body;
+
+    if (lat == null || lng == null) return res.status(400).json({ message: "lat et lng sont requis." });
+
+    const { rows } = await pool.query(
+      `SELECT conducteur_id, statut FROM trajets WHERE id = $1`,
+      [trajetId]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Trajet introuvable." });
+    if (rows[0].conducteur_id !== conducteurId) return res.status(403).json({ message: "Accès refusé." });
+    if (rows[0].statut !== "EN_COURS") return res.status(400).json({ message: "Le trajet doit être EN_COURS." });
+
+    await pool.query(
+      `UPDATE trajets SET conducteur_lat = $1, conducteur_lng = $2 WHERE id = $3`,
+      [parseFloat(lat), parseFloat(lng), trajetId]
+    );
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
+// GET /:id/live — Position en direct du conducteur (conducteur OU passager ACCEPTEE)
+// =====================
+router.get("/:id/live", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const trajetId = req.params.id;
+
+    const { rows } = await pool.query(
+      `SELECT t.conducteur_id, t.statut, t.conducteur_lat, t.conducteur_lng,
+              t.dest_lat, t.dest_lng, t.depart_lat, t.depart_lng,
+              t.destination, t.lieu_depart
+       FROM trajets t WHERE t.id = $1`,
+      [trajetId]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Trajet introuvable." });
+    const t = rows[0];
+
+    const isConducteur = t.conducteur_id === userId;
+    if (!isConducteur) {
+      const { rows: resas } = await pool.query(
+        `SELECT 1 FROM reservations WHERE trajet_id = $1 AND passager_id = $2 AND statut = 'ACCEPTEE'`,
+        [trajetId, userId]
+      );
+      if (!resas.length) return res.status(403).json({ message: "Accès refusé." });
+    }
+
+    return res.json({
+      conducteur_lat: t.conducteur_lat,
+      conducteur_lng: t.conducteur_lng,
+      dest_lat: t.dest_lat,
+      dest_lng: t.dest_lng,
+      depart_lat: t.depart_lat,
+      depart_lng: t.depart_lng,
+      destination: t.destination,
+      lieu_depart: t.lieu_depart,
+      statut: t.statut,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
 // PATCH /:id  Modifier trajet
 // =====================
 router.patch("/:id", requireAuth, async (req, res) => {

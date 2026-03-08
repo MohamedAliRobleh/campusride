@@ -367,6 +367,8 @@ export async function getReservationsByPassager(passagerId) {
   t.destination,
   t.dateheure_depart,
   t.statut AS trajet_statut,
+  t.dest_lat,
+  t.dest_lng,
 
   u.id AS conducteur_id,
   u.prenom AS conducteur_prenom,

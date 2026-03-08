@@ -27,10 +27,12 @@ export async function runMigrations() {
       ALTER TABLE profils   ADD COLUMN IF NOT EXISTS photo_url TEXT;
       ALTER TABLE profils   ADD COLUMN IF NOT EXISTS bio TEXT;
       ALTER TABLE vehicules ADD COLUMN IF NOT EXISTS photo_url TEXT;
-      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS depart_lat DOUBLE PRECISION;
-      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS depart_lng DOUBLE PRECISION;
-      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS dest_lat   DOUBLE PRECISION;
-      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS dest_lng   DOUBLE PRECISION;
+      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS depart_lat     DOUBLE PRECISION;
+      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS depart_lng     DOUBLE PRECISION;
+      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS dest_lat       DOUBLE PRECISION;
+      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS dest_lng       DOUBLE PRECISION;
+      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS conducteur_lat DOUBLE PRECISION;
+      ALTER TABLE trajets   ADD COLUMN IF NOT EXISTS conducteur_lng DOUBLE PRECISION;
     `);
 
     // Ajouter les valeurs manquantes à l'enum type_notification
