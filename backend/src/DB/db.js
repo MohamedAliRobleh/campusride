@@ -37,7 +37,8 @@ export async function runMigrations() {
     const enumValues = [
       'TRAJET_PUBLIE', 'DEMANDE_RESERVATION', 'RESERVATION_ACCEPTEE',
       'RESERVATION_REFUSEE', 'RAPPEL_TRAJET', 'TRAJET_MODIFIE',
-      'TRAJET_TERMINE', 'TRAJET_ANNULE', 'RESERVATION_ANNULEE', 'MESSAGE_RECU'
+      'TRAJET_TERMINE', 'TRAJET_ANNULE', 'RESERVATION_ANNULEE', 'MESSAGE_RECU',
+      'AVERTISSEMENT', 'SIGNALEMENT_RECU'
     ];
     for (const val of enumValues) {
       try {

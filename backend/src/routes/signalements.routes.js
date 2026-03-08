@@ -53,8 +53,8 @@ router.post("/", requireAuth, async (req, res) => {
 
       for (const admin of admins.rows) {
         await pool.query(
-          `INSERT INTO notifications (utilisateur_id, type, contenu, lu)
-           VALUES ($1, 'MESSAGE_RECU', $2, FALSE)`,
+          `INSERT INTO notifications (utilisateur_id, type, message)
+           VALUES ($1, 'SIGNALEMENT_RECU', $2)`,
           [admin.id, contenu]
         );
       }
