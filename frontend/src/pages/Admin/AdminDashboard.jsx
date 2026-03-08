@@ -1,6 +1,7 @@
 // src/pages/Admin/AdminDashboard.jsx
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useConfirm } from "../../components/ConfirmModal";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const ROLE_LABELS = { ADMIN: "Admin", CONDUCTEUR: "Conducteur", PASSAGER: "Passager" };
@@ -804,6 +805,7 @@ function SectionReservations({ token, showToast }) {
 // ─── Section : Signalements ────────────────────────────────────────────────────
 function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   const [updating, setUpdating] = useState(null);
+  const { confirm, ConfirmDialog } = useConfirm();
   if (!s) return null;
   const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
   const nCfg = NIVEAU_CFG[s.niveau] || NIVEAU_CFG[2];
@@ -811,11 +813,14 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   const nb = Number(s.cible_avertissements) || 0;
   const barColor = nb === 0 ? "#198754" : nb === 1 ? "#fd7e14" : "#dc3545";
 
-  const doAction = async (url, method, label) => {
-    if (!window.confirm(`${label} ?`)) return;
+  const doAction = async (url, method, opts) => {
+    const ok = await confirm(opts);
+    if (!ok) return;
     try {
-      setUpdating(label);
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } });
+      setUpdating(opts.title);
+      const fetchOpts = { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
+      if (opts.body) fetchOpts.body = JSON.stringify(opts.body);
+      const res = await fetch(url, fetchOpts);
       const data = await res.json();
       if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
       showToast(data.message || "OK.", "success");
@@ -826,6 +831,8 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   };
 
   return (
+    <>
+    {ConfirmDialog}
     <div className="modal d-block" style={{ background: "rgba(0,0,0,0.55)", zIndex: 1060 }} onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
@@ -959,9 +966,15 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
               {s.type === "UTILISATEUR" && !estSuspendu && s.cible_prenom && (
                 <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
                   style={{ background: nb >= 2 ? "#f8d7da" : "#fff3cd", color: nb >= 2 ? "#842029" : "#664d03" }}
-                  onClick={() => doAction(`/admin/signalements/${s.id}/avertir`, "POST",
-                    nb >= 2 ? "Avertir (entraîne un ban automatique)" : `Envoyer l'avertissement ${nb + 1}/3`)}>
-                  {updating === (nb >= 2 ? "Avertir (entraîne un ban automatique)" : `Envoyer l'avertissement ${nb + 1}/3`)
+                  onClick={() => doAction(`/admin/signalements/${s.id}/avertir`, "POST", {
+                    title: nb >= 2 ? "Avertir → Ban automatique" : `Avertir (${nb + 1}/3)`,
+                    message: nb >= 2
+                      ? "Ce 3ème avertissement entraînera le ban automatique du compte."
+                      : `Un avertissement officiel sera envoyé à ${s.cible_prenom} ${s.cible_nom} sans révéler votre identité.`,
+                    confirmLabel: nb >= 2 ? "Avertir et bannir" : "Envoyer l'avertissement",
+                    variant: nb >= 2 ? "danger" : "warning",
+                  })}>
+                  {updating === (nb >= 2 ? "Avertir → Ban automatique" : `Avertir (${nb + 1}/3)`)
                     ? <span className="spinner-border spinner-border-sm" />
                     : nb >= 2
                       ? <><i className="bi bi-slash-circle me-1" />Avertir → Ban automatique</>
@@ -971,37 +984,40 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
               {s.type === "UTILISATEUR" && s.cible_prenom && (
                 <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
                   style={{ background: estSuspendu ? "#d1e7dd" : "#f8d7da", color: estSuspendu ? "#0f5132" : "#842029" }}
-                  onClick={() => doAction(`/admin/users/${s.cible_id}/toggle-actif`, "PATCH",
-                    estSuspendu ? "Réactiver ce compte" : "Suspendre ce compte")}>
+                  onClick={() => doAction(`/admin/users/${s.cible_id}/toggle-actif`, "PATCH", {
+                    title: estSuspendu ? "Réactiver le compte" : "Suspendre le compte",
+                    message: estSuspendu
+                      ? `Le compte de ${s.cible_prenom} ${s.cible_nom} sera réactivé et pourra se reconnecter.`
+                      : `Le compte de ${s.cible_prenom} ${s.cible_nom} sera suspendu. L'utilisateur ne pourra plus se connecter.`,
+                    confirmLabel: estSuspendu ? "Réactiver" : "Suspendre",
+                    variant: estSuspendu ? "success" : "danger",
+                  })}>
                   {estSuspendu ? <><i className="bi bi-check-circle me-1" />Réactiver le compte</> : <><i className="bi bi-slash-circle me-1" />Suspendre le compte</>}
                 </button>
               )}
               {s.statut !== "TRAITE" && (
                 <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
                   style={{ background: "#d1e7dd", color: "#0f5132" }}
-                  onClick={async () => {
-                    if (!window.confirm("Marquer comme Traité ?")) return;
-                    try {
-                      setUpdating("traiteMod");
-                      const res = await fetch(`/admin/signalements/${s.id}/statut`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({ statut: "TRAITE" }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
-                      showToast("Marqué Traité.", "success");
-                      onRefresh(); onClose();
-                    } catch { showToast("Erreur réseau.", "danger"); }
-                    finally { setUpdating(null); }
-                  }}>
+                  onClick={() => doAction(`/admin/signalements/${s.id}/statut`, "PATCH", {
+                    title: "Marquer comme Traité",
+                    message: "Ce signalement sera archivé comme traité. Aucune action supplémentaire ne sera requise.",
+                    confirmLabel: "Marquer Traité",
+                    variant: "success",
+                    body: { statut: "TRAITE" },
+                  })}>
                   <i className="bi bi-check-lg me-1" />Marquer Traité
                 </button>
               )}
               {s.statut !== "REJETE" && (
                 <button className="btn btn-sm rounded-3 fw-semibold ms-auto" disabled={!!updating}
                   style={{ background: "#e9ecef", color: "#495057" }}
-                  onClick={() => doAction(`/admin/signalements/${s.id}/statut`, "PATCH", "Rejeter ce signalement")}>
+                  onClick={() => doAction(`/admin/signalements/${s.id}/statut`, "PATCH", {
+                    title: "Rejeter le signalement",
+                    message: "Ce signalement sera marqué comme rejeté. Il restera visible dans l'historique.",
+                    confirmLabel: "Rejeter",
+                    variant: "warning",
+                    body: { statut: "REJETE" },
+                  })}>
                   <i className="bi bi-x-lg me-1" />Rejeter
                 </button>
               )}
@@ -1010,6 +1026,7 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -1019,6 +1036,7 @@ function SectionSignalements({ token, showToast }) {
   const [filterStatut, setFilterStatut] = useState("");
   const [updating, setUpdating] = useState(null);
   const [selectedSignalement, setSelectedSignalement] = useState(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const fetchSignalements = useCallback(async () => {
     try {
@@ -1050,8 +1068,16 @@ function SectionSignalements({ token, showToast }) {
     finally { setUpdating(null); }
   };
 
-  const avertir = async (id) => {
-    if (!window.confirm("Envoyer un avertissement officiel à cet utilisateur ?")) return;
+  const avertir = async (id, nb) => {
+    const ok = await confirm({
+      title: nb >= 2 ? "Avertir → Ban automatique" : `Avertir (${nb + 1}/3)`,
+      message: nb >= 2
+        ? "Ce 3ème avertissement entraînera le ban automatique du compte."
+        : "Un avertissement officiel sera envoyé à l'utilisateur sans révéler votre identité.",
+      confirmLabel: nb >= 2 ? "Avertir et bannir" : "Envoyer l'avertissement",
+      variant: nb >= 2 ? "danger" : "warning",
+    });
+    if (!ok) return;
     try {
       setUpdating(id + "avertir");
       const res = await fetch(`/admin/signalements/${id}/avertir`, {
@@ -1066,9 +1092,16 @@ function SectionSignalements({ token, showToast }) {
     finally { setUpdating(null); }
   };
 
-  const toggleSuspendre = async (cibleId, estActif, signalementId) => {
-    const action = estActif ? "suspendre" : "réactiver";
-    if (!window.confirm(`Voulez-vous ${action} ce compte ?`)) return;
+  const toggleSuspendre = async (cibleId, estActif, signalementId, nomCible) => {
+    const ok = await confirm({
+      title: estActif ? "Suspendre le compte" : "Réactiver le compte",
+      message: estActif
+        ? `Le compte de ${nomCible || "cet utilisateur"} sera suspendu. Il ne pourra plus se connecter.`
+        : `Le compte de ${nomCible || "cet utilisateur"} sera réactivé.`,
+      confirmLabel: estActif ? "Suspendre" : "Réactiver",
+      variant: estActif ? "danger" : "success",
+    });
+    if (!ok) return;
     try {
       setUpdating(signalementId + "suspend");
       const res = await fetch(`/admin/users/${cibleId}/toggle-actif`, {
@@ -1085,6 +1118,7 @@ function SectionSignalements({ token, showToast }) {
 
   return (
     <>
+      {ConfirmDialog}
       {selectedSignalement && (
         <SignalementDetailModal
           s={selectedSignalement}
@@ -1258,7 +1292,7 @@ function SectionSignalements({ token, showToast }) {
                                 color:      Number(s.cible_avertissements) >= 2 ? "#842029" : "#664d03",
                                 fontSize: "0.72rem", padding: "3px 8px"
                               }}
-                              disabled={!!updating} onClick={() => avertir(s.id)}>
+                              disabled={!!updating} onClick={() => avertir(s.id, Number(s.cible_avertissements) || 0)}>
                               {busy("avertir") ? <span className="spinner-border spinner-border-sm" />
                                 : Number(s.cible_avertissements) >= 2
                                   ? <><i className="bi bi-slash-circle me-1" />Avertir → Ban</>
@@ -1271,7 +1305,7 @@ function SectionSignalements({ token, showToast }) {
                           {s.type === "UTILISATEUR" && s.cible_prenom && (
                             <button className="btn btn-sm rounded-3"
                               style={{ background: estSuspendu ? "#d1e7dd" : "#f8d7da", color: estSuspendu ? "#0f5132" : "#842029", fontSize: "0.72rem", padding: "3px 8px" }}
-                              disabled={!!updating} onClick={() => toggleSuspendre(s.cible_id, !estSuspendu, s.id)}>
+                              disabled={!!updating} onClick={() => toggleSuspendre(s.cible_id, !estSuspendu, s.id, `${s.cible_prenom} ${s.cible_nom}`)}>
                               {busy("suspend") ? <span className="spinner-border spinner-border-sm" />
                                 : estSuspendu
                                   ? <><i className="bi bi-check-circle me-1" />Réactiver</>

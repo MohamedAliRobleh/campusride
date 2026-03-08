@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import { useConfirm } from "../../components/ConfirmModal";
 import { useOutletContext } from "react-router-dom";
 import ModalAjouterVoiture from "./modals/ModalAjouterVoiture.jsx";
 import CropPhotoModal from "../../components/CropPhotoModal.jsx";
 
 export default function ProfilVoitures() {
   const { isDark, reloadUser } = useOutletContext();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [showAdd, setShowAdd] = useState(false);
   const [vehicule, setVehicule] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,13 @@ export default function ProfilVoitures() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer votre véhicule ?")) return;
+    const ok = await confirm({
+      title: "Supprimer le véhicule",
+      message: "Cette action est irréversible. Votre véhicule et sa photo seront définitivement supprimés.",
+      confirmLabel: "Supprimer",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("/vehicules/me", {
@@ -91,6 +99,7 @@ export default function ProfilVoitures() {
 
   return (
     <div>
+      {ConfirmDialog}
       {/* ── Header ── */}
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div>

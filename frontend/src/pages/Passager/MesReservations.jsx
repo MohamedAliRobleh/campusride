@@ -1,6 +1,7 @@
 // src/pages/Passager/MesReservations.jsx
 
 import { useEffect, useState } from "react";
+import { useConfirm } from "../../components/ConfirmModal";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
@@ -85,6 +86,7 @@ const STATUT_CONFIG = {
 
 export default function MesReservations() {
   const navigate = useNavigate();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,6 +160,7 @@ export default function MesReservations() {
 
   return (
     <div className={`d-flex flex-column min-vh-100 ${isDark ? "bg-dark text-light" : "bg-light text-dark"}`}>
+      {ConfirmDialog}
       <HeaderPrivate isDark={isDark} />
 
       <main className="flex-grow-1 py-4">
@@ -402,10 +405,15 @@ export default function MesReservations() {
                       {canCancel && (
                         <button
                           className="btn btn-outline-danger btn-sm rounded-3 fw-semibold"
-                          onClick={() => {
-                            if (window.confirm("Confirmer l'annulation de cette réservation ?")) {
-                              handleAnnuler(r.id);
-                            }
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: "Annuler la réservation",
+                              message: "Cette action est irréversible. Souhaitez-vous vraiment annuler votre réservation pour ce trajet ?",
+                              confirmLabel: "Annuler la réservation",
+                              cancelLabel: "Garder",
+                              variant: "danger",
+                            });
+                            if (ok) handleAnnuler(r.id);
                           }}
                         >
                           <i className="bi bi-x-lg me-1" />
