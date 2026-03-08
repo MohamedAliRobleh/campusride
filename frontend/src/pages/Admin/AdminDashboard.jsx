@@ -929,9 +929,11 @@ function SectionSignalements({ token, showToast }) {
                           <span className="badge rounded-pill px-2" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.62rem" }}>
                             {s.signaleur_role}
                           </span>
-                          <span className="text-muted" style={{ fontSize: "0.62rem" }}>
-                            Membre {new Date(s.signaleur_depuis).toLocaleDateString("fr-CA", { month: "short", year: "numeric" })}
-                          </span>
+                          {s.signaleur_depuis && (
+                            <span className="text-muted" style={{ fontSize: "0.62rem" }}>
+                              Membre {new Date(s.signaleur_depuis).toLocaleDateString("fr-CA", { month: "short", year: "numeric" })}
+                            </span>
+                          )}
                         </div>
                         {s.signaleur_avertissements > 0 && (
                           <div className="mt-1" style={{ fontSize: "0.62rem", color: "#fd7e14" }}>
@@ -954,9 +956,11 @@ function SectionSignalements({ token, showToast }) {
                               <span className="badge rounded-pill px-2" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.62rem" }}>
                                 {s.cible_role}
                               </span>
-                              <span className="text-muted" style={{ fontSize: "0.62rem" }}>
-                                Membre {new Date(s.cible_depuis).toLocaleDateString("fr-CA", { month: "short", year: "numeric" })}
-                              </span>
+                              {s.cible_depuis && (
+                                <span className="text-muted" style={{ fontSize: "0.62rem" }}>
+                                  Membre {new Date(s.cible_depuis).toLocaleDateString("fr-CA", { month: "short", year: "numeric" })}
+                                </span>
+                              )}
                             </div>
                             {/* Barre de progression avertissements */}
                             {(() => {
