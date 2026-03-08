@@ -1413,12 +1413,19 @@ function SectionSignalements({ token, showToast }) {
                         {s.description || <em>—</em>}
                       </td>
 
-                      {/* Statut */}
+                      {/* Statut + indicateur note */}
                       <td className="px-3 py-3 text-center">
-                        <span className="badge rounded-pill px-3 py-1 fw-semibold"
+                        <span className="badge rounded-pill px-3 py-1 fw-semibold d-block mb-1"
                           style={{ background: cfg.light, color: cfg.text, fontSize: "0.7rem" }}>
                           {cfg.label}
                         </span>
+                        {s.note_admin && (
+                          <span className="badge rounded-pill px-2 py-1"
+                            title={s.note_admin}
+                            style={{ background: "#e8ecff", color: "#3b5bdb", fontSize: "0.62rem", cursor: "help" }}>
+                            <i className="bi bi-pencil-fill me-1" />Note
+                          </span>
+                        )}
                       </td>
 
                       {/* Actions */}
