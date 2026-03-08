@@ -807,6 +807,7 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   const [updating, setUpdating] = useState(null);
   const [note, setNote] = useState(s?.note_admin || "");
   const [savingNote, setSavingNote] = useState(false);
+  const [noteSavedAt, setNoteSavedAt] = useState(s?.note_admin_le || null);
   const { confirm, ConfirmDialog } = useConfirm();
   if (!s) return null;
   const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
@@ -816,6 +817,7 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   const barColor = nb === 0 ? "#198754" : nb === 1 ? "#fd7e14" : "#dc3545";
 
   const saveNote = async () => {
+    if (savingNote) return;
     try {
       setSavingNote(true);
       const res = await fetch(`/admin/signalements/${s.id}/note`, {
@@ -823,10 +825,14 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ note }),
       });
-      if (!res.ok) { showToast("Erreur sauvegarde note.", "danger"); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(data.message || `Erreur ${res.status} — sauvegarde note impossible.`, "danger");
+        return;
+      }
+      setNoteSavedAt(new Date().toISOString());
       showToast("Note enregistrée.", "success");
-      onRefresh();
-    } catch { showToast("Erreur réseau.", "danger"); }
+    } catch { showToast("Erreur réseau — impossible de sauvegarder la note.", "danger"); }
     finally { setSavingNote(false); }
   };
 
@@ -979,9 +985,9 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
               <div className="d-flex align-items-center gap-2 mb-2">
                 <i className="bi bi-pencil-fill" style={{ color: "#3b5bdb" }} />
                 <span className="fw-semibold" style={{ fontSize: "0.78rem", color: "#3b5bdb", textTransform: "uppercase", letterSpacing: "0.05em" }}>Note interne (admin uniquement)</span>
-                {s.note_admin_le && (
+                {noteSavedAt && (
                   <span className="text-muted ms-auto" style={{ fontSize: "0.68rem" }}>
-                    Modifiée le {new Date(s.note_admin_le).toLocaleDateString("fr-CA")}
+                    Modifiée le {new Date(noteSavedAt).toLocaleDateString("fr-CA")}
                   </span>
                 )}
               </div>
