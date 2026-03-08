@@ -1,6 +1,6 @@
 // src/pages/Passager/MesReservations.jsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "../../components/ConfirmModal";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
@@ -9,6 +9,7 @@ import UserProfileModal from "../../components/UserProfileModal";
 import TrajetMapModal from "../../components/TrajetMapModal";
 import EmergencyButton from "../../components/EmergencyButton";
 import ReportModal from "../../components/ReportModal";
+import LiveTrackingMap from "../../components/LiveTrackingMap";
 
 
 function EvaluationModal({ trajetId, token, onClose, isDark }) {
@@ -97,6 +98,44 @@ export default function MesReservations() {
   const [profileModal, setProfileModal] = useState(null); // { userId, roleContext, vehicule }
   const [mapReservation, setMapReservation] = useState(null);
   const [reportRes, setReportRes] = useState(null);
+
+  // Live tracking (passager)
+  const [liveResaId, setLiveResaId]       = useState(null);
+  const [conducteurPos, setConducteurPos] = useState(null);
+  const [liveDestCoords, setLiveDestCoords] = useState(null);
+  const pollIntervalRef = useRef(null);
+
+  const stopLiveTracking = () => {
+    if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null; }
+    setLiveResaId(null);
+    setConducteurPos(null);
+    setLiveDestCoords(null);
+  };
+
+  const startLiveTracking = (trajetId, resaId, destCoords) => {
+    stopLiveTracking();
+    setLiveResaId(resaId);
+    setLiveDestCoords(destCoords);
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/trajets/${trajetId}/live`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.statut !== "EN_COURS") { stopLiveTracking(); return; }
+        if (data.conducteur_lat != null && data.conducteur_lng != null) {
+          setConducteurPos({ lat: data.conducteur_lat, lng: data.conducteur_lng });
+        }
+      } catch { /* silencieux */ }
+    };
+
+    poll();
+    pollIntervalRef.current = setInterval(poll, 5000);
+  };
+
+  useEffect(() => () => stopLiveTracking(), []);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -354,6 +393,43 @@ export default function MesReservations() {
                       Vérifié
                     </span>
                   </div>
+
+                  {/* Panel suivi en direct passager */}
+                  {r.statut === "ACCEPTEE" && r.trajet_statut === "EN_COURS" && (
+                    <div className={`rounded-3 p-3 mb-3 ${isDark ? "bg-dark border border-primary border-opacity-25" : "bg-light border border-primary border-opacity-25"}`}>
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span className="fw-semibold small d-flex align-items-center gap-2">
+                          <i className="bi bi-broadcast text-primary" />
+                          Trajet en direct
+                        </span>
+                        {liveResaId === r.id ? (
+                          <button className="btn btn-outline-secondary btn-sm rounded-3" onClick={stopLiveTracking}>
+                            <i className="bi bi-x-lg me-1" />Fermer
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-primary btn-sm rounded-3 fw-semibold"
+                            onClick={() => startLiveTracking(
+                              r.trajet_id,
+                              r.id,
+                              r.dest_lat != null ? { lat: r.dest_lat, lng: r.dest_lng } : null
+                            )}
+                          >
+                            <i className="bi bi-broadcast me-1" />Voir en direct
+                          </button>
+                        )}
+                      </div>
+                      {liveResaId === r.id && (
+                        <LiveTrackingMap
+                          conducteurPos={conducteurPos}
+                          destCoords={liveDestCoords}
+                          destination={r.destination}
+                          isDark={isDark}
+                          height={240}
+                        />
+                      )}
+                    </div>
+                  )}
 
                   {/* Statut + boutons */}
                   <div className="d-flex justify-content-between align-items-center gap-2">

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import Footer from "../../components/Footer";
 import PlacesInput from "../../components/PlacesInput";
 import EmergencyButton from "../../components/EmergencyButton";
+import LiveTrackingMap from "../../components/LiveTrackingMap";
 
 export default function MesTrajets() {
     const [trajets, setTrajets] = useState([]);
@@ -31,6 +32,50 @@ export default function MesTrajets() {
     const [confirmModal, setConfirmModal] = useState(null); // { message, icon, btnLabel, btnClass, onConfirm }
     const askConfirm = (opts) => setConfirmModal(opts);
     const closeConfirm = () => setConfirmModal(null);
+
+    // ===== Live tracking (conducteur) =====
+    const [liveTrajetId, setLiveTrajetId]   = useState(null);
+    const [myPos, setMyPos]                 = useState(null);
+    const [geoError, setGeoError]           = useState(null);
+    const geoWatchRef    = useRef(null);
+    const sendIntervalRef = useRef(null);
+    const currentPosRef  = useRef(null);
+
+    const stopTracking = () => {
+        if (geoWatchRef.current != null)    { navigator.geolocation.clearWatch(geoWatchRef.current); geoWatchRef.current = null; }
+        if (sendIntervalRef.current != null){ clearInterval(sendIntervalRef.current); sendIntervalRef.current = null; }
+        setLiveTrajetId(null);
+        setMyPos(null);
+        currentPosRef.current = null;
+    };
+
+    const startTracking = (trajetId) => {
+        setGeoError(null);
+        if (!("geolocation" in navigator)) { setGeoError("Géolocalisation non supportée."); return; }
+        geoWatchRef.current = navigator.geolocation.watchPosition(
+            (pos) => {
+                const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                currentPosRef.current = coords;
+                setMyPos(coords);
+            },
+            () => setGeoError("Activez la géolocalisation dans votre navigateur."),
+            { enableHighAccuracy: true }
+        );
+        sendIntervalRef.current = setInterval(async () => {
+            if (!currentPosRef.current) return;
+            try {
+                await fetch(`/trajets/${trajetId}/position`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify(currentPosRef.current),
+                });
+            } catch { /* silencieux */ }
+        }, 5000);
+        setLiveTrajetId(trajetId);
+    };
+
+    // Cleanup au démontage
+    useEffect(() => () => stopTracking(), []);
 
     const showToast = (text, variant = "success") => {
         setToast({ show: true, text, variant });
@@ -340,21 +385,60 @@ export default function MesTrajets() {
                             </button>
                         )}
 
-                        {/* Bouton Terminer — visible uniquement si EN_COURS */}
+                        {/* Bouton Terminer + panel live tracking — visible uniquement si EN_COURS */}
                         {trajet.statut === "EN_COURS" && (
-                            <button
-                                className="btn btn-primary fw-semibold rounded-3 py-2"
-                                onClick={() => askConfirm({
-                                    message: "Confirmer la fin du trajet ? Les passagers pourront ensuite laisser un avis.",
-                                    icon: "bi-stop-circle-fill",
-                                    btnLabel: "Terminer",
-                                    btnClass: "btn-primary",
-                                    onConfirm: () => handleTerminer(trajet.id),
-                                })}
-                            >
-                                <i className="bi bi-stop-circle-fill me-2" />
-                                Terminer le trajet
-                            </button>
+                            <>
+                                <button
+                                    className="btn btn-primary fw-semibold rounded-3 py-2"
+                                    onClick={() => askConfirm({
+                                        message: "Confirmer la fin du trajet ? Les passagers pourront ensuite laisser un avis.",
+                                        icon: "bi-stop-circle-fill",
+                                        btnLabel: "Terminer",
+                                        btnClass: "btn-primary",
+                                        onConfirm: () => { stopTracking(); handleTerminer(trajet.id); },
+                                    })}
+                                >
+                                    <i className="bi bi-stop-circle-fill me-2" />
+                                    Terminer le trajet
+                                </button>
+
+                                {/* Panel suivi GPS */}
+                                <div className={`rounded-3 p-3 mt-1 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}>
+                                    <div className="d-flex align-items-center justify-content-between mb-2">
+                                        <span className="fw-semibold small d-flex align-items-center gap-2">
+                                            <i className="bi bi-broadcast text-primary" />
+                                            Suivi en direct
+                                        </span>
+                                        {liveTrajetId === trajet.id ? (
+                                            <button
+                                                className="btn btn-outline-danger btn-sm rounded-3"
+                                                onClick={stopTracking}
+                                            >
+                                                <i className="bi bi-stop-fill me-1" />Arrêter
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn btn-primary btn-sm rounded-3 fw-semibold"
+                                                onClick={() => startTracking(trajet.id)}
+                                            >
+                                                <i className="bi bi-geo-alt-fill me-1" />Partager ma position
+                                            </button>
+                                        )}
+                                    </div>
+                                    {geoError && (
+                                        <div className="alert alert-warning py-2 mb-2 small">{geoError}</div>
+                                    )}
+                                    {liveTrajetId === trajet.id && (
+                                        <LiveTrackingMap
+                                            conducteurPos={myPos}
+                                            destCoords={trajet.dest_lat != null ? { lat: trajet.dest_lat, lng: trajet.dest_lng } : null}
+                                            destination={trajet.destination}
+                                            isDark={isDark}
+                                            height={240}
+                                        />
+                                    )}
+                                </div>
+                            </>
                         )}
 
                         {/* Modifier + Annuler — uniquement si PLANIFIE */}
