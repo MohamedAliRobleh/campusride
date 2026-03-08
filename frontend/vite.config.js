@@ -115,7 +115,27 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      "/admin": {
+      "/admin/users": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/admin/trajets": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/admin/reservations": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/admin/signalements": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/admin/stats": {
         target: "http://localhost:5000",
         changeOrigin: true,
         secure: false,
