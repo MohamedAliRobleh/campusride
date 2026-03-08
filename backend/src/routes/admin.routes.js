@@ -27,7 +27,9 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
         (SELECT COUNT(*) FROM utilisateurs WHERE actif = TRUE AND cree_le >= NOW() - INTERVAL '7 days') AS nouveaux_7j,
         (SELECT COUNT(*) FROM pwa_installs) AS pwa_total,
         (SELECT COUNT(*) FROM pwa_installs WHERE source = 'banniere') AS pwa_banniere,
-        (SELECT COUNT(*) FROM pwa_installs WHERE source = 'profil') AS pwa_profil
+        (SELECT COUNT(*) FROM pwa_installs WHERE source = 'profil') AS pwa_profil,
+        (SELECT COUNT(*) FROM signalements WHERE statut = 'EN_ATTENTE') AS signalements_en_attente,
+        (SELECT COUNT(*) FROM signalements WHERE statut = 'EN_ATTENTE' AND niveau = 3) AS signalements_graves_en_attente
     `);
     return res.json(rows[0]);
   } catch (err) {

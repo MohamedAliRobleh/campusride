@@ -1008,6 +1008,21 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
                   <i className="bi bi-check-lg me-1" />Marquer Traité
                 </button>
               )}
+              {/* Annuler le trajet — TRAJET seulement */}
+              {s.type === "TRAJET" && s.cible_trajet_statut && s.cible_trajet_statut !== "ANNULE" && (
+                <button className="btn btn-sm rounded-3 fw-semibold" disabled={!!updating}
+                  style={{ background: "#f8d7da", color: "#842029" }}
+                  onClick={() => doAction(`/admin/trajets/${s.cible_id}/annuler`, "PATCH", {
+                    title: "Annuler ce trajet",
+                    message: `Le trajet "${s.cible_trajet_depart} → ${s.cible_trajet_dest}" sera annulé. Les passagers seront notifiés.`,
+                    confirmLabel: "Annuler le trajet",
+                    variant: "danger",
+                  })}>
+                  {updating === "Annuler ce trajet"
+                    ? <span className="spinner-border spinner-border-sm" />
+                    : <><i className="bi bi-x-circle me-1" />Annuler le trajet</>}
+                </button>
+              )}
               {s.statut !== "REJETE" && (
                 <button className="btn btn-sm rounded-3 fw-semibold ms-auto" disabled={!!updating}
                   style={{ background: "#e9ecef", color: "#495057" }}
@@ -1375,6 +1390,9 @@ export default function AdminDashboard() {
       finally { setLoadingStats(false); }
     };
     fetchStats();
+    // Rafraîchir les stats toutes les 60s pour mettre à jour le badge signalements
+    const interval = setInterval(fetchStats, 60_000);
+    return () => clearInterval(interval);
   }, [token, navigate, showToast]);
 
   const sectionTitles = {
@@ -1434,6 +1452,8 @@ export default function AdminDashboard() {
         <nav style={{ flex: 1, padding: "0 10px" }}>
           {NAV_ITEMS.map(({ id, icon, label }) => {
             const active = activeSection === id;
+            const pendingCount = id === "signalements" ? Number(stats?.signalements_en_attente || 0) : 0;
+            const hasGrave    = id === "signalements" && Number(stats?.signalements_graves_en_attente || 0) > 0;
             return (
               <button key={id}
                 onClick={() => setActiveSection(id)}
@@ -1448,7 +1468,21 @@ export default function AdminDashboard() {
                   transition: "all .15s",
                 }}
               >
-                <i className={`bi ${icon}`} style={{ fontSize: "1rem", flexShrink: 0 }} />
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <i className={`bi ${icon}`} style={{ fontSize: "1rem" }} />
+                  {pendingCount > 0 && (
+                    <span style={{
+                      position: "absolute", top: -5, right: -8,
+                      background: hasGrave ? "#dc3545" : "#fd7e14",
+                      color: "#fff", borderRadius: "50%",
+                      width: 16, height: 16, fontSize: "0.55rem",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontWeight: 700, lineHeight: 1,
+                    }}>
+                      {pendingCount > 9 ? "9+" : pendingCount}
+                    </span>
+                  )}
+                </div>
                 {label}
                 {active && <i className="bi bi-chevron-right ms-auto" style={{ fontSize: "0.65rem" }} />}
               </button>
@@ -1616,6 +1650,8 @@ export default function AdminDashboard() {
       >
         {NAV_ITEMS.map(({ id, icon, label }) => {
           const active = activeSection === id;
+          const pendingCount = id === "signalements" ? Number(stats?.signalements_en_attente || 0) : 0;
+          const hasGrave    = id === "signalements" && Number(stats?.signalements_graves_en_attente || 0) > 0;
           return (
             <button
               key={id}
@@ -1634,7 +1670,21 @@ export default function AdminDashboard() {
                 transition: "color .15s",
               }}
             >
-              <i className={`bi ${icon}`} style={{ fontSize: "1.15rem" }} />
+              <div style={{ position: "relative" }}>
+                <i className={`bi ${icon}`} style={{ fontSize: "1.15rem" }} />
+                {pendingCount > 0 && (
+                  <span style={{
+                    position: "absolute", top: -4, right: -8,
+                    background: hasGrave ? "#dc3545" : "#fd7e14",
+                    color: "#fff", borderRadius: "50%",
+                    width: 15, height: 15, fontSize: "0.5rem",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 700,
+                  }}>
+                    {pendingCount > 9 ? "9+" : pendingCount}
+                  </span>
+                )}
+              </div>
               {label.replace("Tableau de bord", "Tableau")}
             </button>
           );
