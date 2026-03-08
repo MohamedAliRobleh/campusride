@@ -36,6 +36,7 @@ export default function ReportModal({ type, cible_id, nomCible, onClose, isDark 
   const token = localStorage.getItem("token");
   const [motifObj, setMotifObj] = useState(null);
   const [description, setDescription] = useState("");
+  const [bloquer, setBloquer] = useState(false);
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -62,6 +63,14 @@ export default function ReportModal({ type, cible_id, nomCible, onClose, isDark 
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Erreur lors de l'envoi."); return; }
+      // Bloquer si demandé
+      if (bloquer && type === "UTILISATEUR") {
+        await fetch("/admin/blocages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ bloque_id: cible_id }),
+        }).catch(() => {});
+      }
       setSuccess(true);
     } catch {
       setError("Erreur réseau.");
@@ -193,6 +202,25 @@ export default function ReportModal({ type, cible_id, nomCible, onClose, isDark 
                     maxLength={500}
                   />
                 </div>
+
+                {/* Option blocage — seulement pour UTILISATEUR */}
+                {type === "UTILISATEUR" && (
+                  <div className="form-check rounded-3 p-3" style={{ background: isDark ? "#2b3035" : "#f8f9fa", border: "1.5px solid #e9ecef" }}>
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="bloquerUser"
+                      checked={bloquer}
+                      onChange={(e) => setBloquer(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="bloquerUser" style={{ fontSize: "0.85rem" }}>
+                      <span className="fw-semibold">Bloquer cet utilisateur</span>
+                      <span className={`d-block ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
+                        Empêche {nomCible || "cet utilisateur"} de vous contacter et de voir vos trajets.
+                      </span>
+                    </label>
+                  </div>
+                )}
 
                 <div className={`rounded-3 p-3 d-flex gap-2 align-items-start ${isDark ? "bg-warning bg-opacity-10" : "bg-warning-subtle"}`} style={{ fontSize: "0.78rem" }}>
                   <i className="bi bi-exclamation-triangle-fill text-warning flex-shrink-0 mt-1" />

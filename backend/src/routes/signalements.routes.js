@@ -2,6 +2,7 @@ import { Router } from "express";
 import { randomUUID } from "crypto";
 import { pool } from "../DB/db.js";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
+import { sendSignalementGraveEmail } from "../utils/mailer.js";
 
 const router = Router();
 
@@ -33,12 +34,33 @@ router.post("/", requireAuth, async (req, res) => {
 
     // --- Actions automatiques selon le niveau ---
 
-    // N3 — Grave : suspension préventive immédiate si c'est un utilisateur
+    // N3 — Grave : suspension préventive immédiate si c'est un utilisateur + email admin
     if (niveauVal === 3 && type === "UTILISATEUR") {
       await pool.query(
         `UPDATE utilisateurs SET actif = FALSE WHERE id = $1`,
         [cible_id]
       );
+      // Récupérer les infos pour l'email
+      try {
+        const [signaleurRes, cibleRes] = await Promise.all([
+          pool.query(`SELECT prenom, nom, email FROM utilisateurs WHERE id = $1`, [signaleur_id]),
+          pool.query(`SELECT prenom, nom, email FROM utilisateurs WHERE id = $1`, [cible_id]),
+        ]);
+        const signaleur = signaleurRes.rows[0];
+        const cible = cibleRes.rows[0];
+        if (signaleur && cible) {
+          sendSignalementGraveEmail({
+            motif,
+            cible_prenom: cible.prenom,
+            cible_nom: cible.nom,
+            cible_email: cible.email,
+            signaleur_email: signaleur.email,
+            description: description?.trim() || null,
+          }).catch((err) => console.warn("Email N3 signalement:", err.message));
+        }
+      } catch (emailErr) {
+        console.warn("Fetch info email N3:", emailErr.message);
+      }
     }
 
     // Notifier tous les ADMINs d'un nouveau signalement

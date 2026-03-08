@@ -272,10 +272,14 @@ router.get("/reservations", requireAuth, requireAdmin, async (req, res) => {
 // ── Signalements ──────────────────────────────────────────────
 // GET /admin/signalements
 router.get("/signalements", requireAuth, requireAdmin, async (req, res) => {
-  const { statut } = req.query;
+  const { statut, niveau, date_debut, date_fin } = req.query;
   const params = [];
-  let where = "";
-  if (statut) { params.push(statut); where = `WHERE s.statut = $${params.length}`; }
+  const conditions = [];
+  if (statut)     { params.push(statut);     conditions.push(`s.statut = $${params.length}`); }
+  if (niveau)     { params.push(Number(niveau)); conditions.push(`s.niveau = $${params.length}`); }
+  if (date_debut) { params.push(date_debut); conditions.push(`s.cree_le >= $${params.length}::date`); }
+  if (date_fin)   { params.push(date_fin);   conditions.push(`s.cree_le <  ($${params.length}::date + INTERVAL '1 day')`); }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   try {
     const { rows } = await pool.query(
       `SELECT s.*,
@@ -290,6 +294,7 @@ router.get("/signalements", requireAuth, requireAdmin, async (req, res) => {
               (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR' AND sx.niveau = 3) AS cible_nb_signalements_graves,
               (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR' AND sx.niveau = 2) AS cible_nb_signalements_moderes,
               (SELECT COUNT(*) FROM signalements sx WHERE sx.signaleur_id = s.signaleur_id) AS signaleur_nb_signalements_emis,
+              (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR' AND sx.cree_le >= NOW() - INTERVAL '7 days') AS cible_nb_signalements_7j,
               t.lieu_depart AS cible_trajet_depart,    t.destination AS cible_trajet_dest,
               t.dateheure_depart AS cible_trajet_date, t.statut AS cible_trajet_statut
        FROM signalements s
@@ -385,6 +390,70 @@ router.post("/signalements/:id/avertir", requireAuth, requireAdmin, async (req, 
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// PATCH /admin/signalements/:id/note — ajouter/modifier une note interne
+router.patch("/signalements/:id/note", requireAuth, requireAdmin, async (req, res) => {
+  const { note } = req.body;
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE signalements SET note_admin = $1, note_admin_le = NOW() WHERE id = $2`,
+      [note?.trim() || null, req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ message: "Signalement introuvable." });
+    return res.json({ message: "Note enregistrée." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// POST /blocages — bloquer un utilisateur
+router.post("/blocages", requireAuth, async (req, res) => {
+  const { bloque_id } = req.body;
+  const bloqueur_id = req.user.id;
+  if (!bloque_id) return res.status(400).json({ error: "bloque_id requis." });
+  if (bloque_id === bloqueur_id) return res.status(400).json({ error: "Impossible de se bloquer soi-même." });
+  try {
+    await pool.query(
+      `INSERT INTO blocages (bloqueur_id, bloque_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [bloqueur_id, bloque_id]
+    );
+    return res.status(201).json({ message: "Utilisateur bloqué." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
+// DELETE /blocages/:bloque_id — débloquer
+router.delete("/blocages/:bloque_id", requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      `DELETE FROM blocages WHERE bloqueur_id = $1 AND bloque_id = $2`,
+      [req.user.id, req.params.bloque_id]
+    );
+    return res.json({ message: "Utilisateur débloqué." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
+// GET /blocages/mes — liste des utilisateurs bloqués par l'utilisateur connecté
+router.get("/blocages/mes", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT b.bloque_id, u.prenom, u.nom, u.email, b.cree_le
+       FROM blocages b JOIN utilisateurs u ON u.id = b.bloque_id
+       WHERE b.bloqueur_id = $1`,
+      [req.user.id]
+    );
+    return res.json({ blocages: rows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erreur serveur." });
   }
 });
 

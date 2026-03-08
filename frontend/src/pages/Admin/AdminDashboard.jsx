@@ -805,6 +805,8 @@ function SectionReservations({ token, showToast }) {
 // ─── Section : Signalements ────────────────────────────────────────────────────
 function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   const [updating, setUpdating] = useState(null);
+  const [note, setNote] = useState(s?.note_admin || "");
+  const [savingNote, setSavingNote] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
   if (!s) return null;
   const cfg = SIGNAL_STATUT_CFG[s.statut] || SIGNAL_STATUT_CFG.EN_ATTENTE;
@@ -812,6 +814,21 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
   const estSuspendu = s.cible_actif === false;
   const nb = Number(s.cible_avertissements) || 0;
   const barColor = nb === 0 ? "#198754" : nb === 1 ? "#fd7e14" : "#dc3545";
+
+  const saveNote = async () => {
+    try {
+      setSavingNote(true);
+      const res = await fetch(`/admin/signalements/${s.id}/note`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ note }),
+      });
+      if (!res.ok) { showToast("Erreur sauvegarde note.", "danger"); return; }
+      showToast("Note enregistrée.", "success");
+      onRefresh();
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setSavingNote(false); }
+  };
 
   const doAction = async (url, method, opts) => {
     const ok = await confirm(opts);
@@ -912,6 +929,13 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
                         {" · "}
                         <span className="text-muted">{s.cible_nb_signalements || 0} total</span>
                       </div>
+                      {Number(s.cible_nb_signalements_7j) >= 3 && (
+                        <div className="rounded-3 px-2 py-1 mb-1 d-inline-flex align-items-center gap-1"
+                          style={{ background: "#dc3545", color: "#fff", fontSize: "0.7rem" }}>
+                          <i className="bi bi-lightning-fill" />
+                          <strong>Récidive :</strong> {s.cible_nb_signalements_7j} signalement(s) en 7 jours
+                        </div>
+                      )}
                       {/* Barre progression avertissements */}
                       <div className="mt-1 mb-1">
                         <div className="d-flex justify-content-between mb-1" style={{ fontSize: "0.7rem" }}>
@@ -949,6 +973,35 @@ function SignalementDetailModal({ s, token, showToast, onClose, onRefresh }) {
                 <p className="mb-0" style={{ fontSize: "0.87rem" }}>{s.description}</p>
               </div>
             )}
+
+            {/* Note interne admin */}
+            <div className="mt-3 rounded-3 p-3" style={{ background: "#f0f4ff", border: "1.5px solid #c9d6f5" }}>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <i className="bi bi-pencil-fill" style={{ color: "#3b5bdb" }} />
+                <span className="fw-semibold" style={{ fontSize: "0.78rem", color: "#3b5bdb", textTransform: "uppercase", letterSpacing: "0.05em" }}>Note interne (admin uniquement)</span>
+                {s.note_admin_le && (
+                  <span className="text-muted ms-auto" style={{ fontSize: "0.68rem" }}>
+                    Modifiée le {new Date(s.note_admin_le).toLocaleDateString("fr-CA")}
+                  </span>
+                )}
+              </div>
+              <textarea
+                className="form-control border-0 rounded-3"
+                rows={3}
+                style={{ background: "#fff", fontSize: "0.85rem", resize: "vertical" }}
+                placeholder="Ajouter une note de suivi privée…"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <div className="d-flex justify-content-end mt-2">
+                <button className="btn btn-sm rounded-3 fw-semibold px-3"
+                  style={{ background: "#3b5bdb", color: "#fff" }}
+                  onClick={saveNote}
+                  disabled={savingNote}>
+                  {savingNote ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-floppy me-1" />Enregistrer</>}
+                </button>
+              </div>
+            </div>
 
             {/* N3 : avertissement rouge */}
             {s.niveau === 3 && (
@@ -1049,6 +1102,9 @@ function SectionSignalements({ token, showToast }) {
   const [signalements, setSignalements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatut, setFilterStatut] = useState("");
+  const [filterNiveau, setFilterNiveau] = useState("");
+  const [filterDateDebut, setFilterDateDebut] = useState("");
+  const [filterDateFin, setFilterDateFin] = useState("");
   const [updating, setUpdating] = useState(null);
   const [selectedSignalement, setSelectedSignalement] = useState(null);
   const { confirm, ConfirmDialog } = useConfirm();
@@ -1056,14 +1112,40 @@ function SectionSignalements({ token, showToast }) {
   const fetchSignalements = useCallback(async () => {
     try {
       setLoading(true);
-      const params = filterStatut ? `?statut=${filterStatut}` : "";
-      const res = await fetch(`/admin/signalements${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      const p = new URLSearchParams();
+      if (filterStatut)    p.set("statut", filterStatut);
+      if (filterNiveau)    p.set("niveau", filterNiveau);
+      if (filterDateDebut) p.set("date_debut", filterDateDebut);
+      if (filterDateFin)   p.set("date_fin", filterDateFin);
+      const qs = p.toString() ? `?${p.toString()}` : "";
+      const res = await fetch(`/admin/signalements${qs}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) { showToast(data.message || `Erreur ${res.status}`, "danger"); return; }
       setSignalements(data.signalements || []);
     } catch { showToast("Erreur chargement signalements.", "danger"); }
     finally { setLoading(false); }
-  }, [token, filterStatut, showToast]);
+  }, [token, filterStatut, filterNiveau, filterDateDebut, filterDateFin, showToast]);
+
+  // Export CSV
+  const exportCSV = () => {
+    const headers = ["Date","Signaleur","Email signaleur","Type","Cible","Motif","Niveau","Description","Statut"];
+    const rows = signalements.map(s => [
+      new Date(s.cree_le).toLocaleDateString("fr-CA"),
+      `${s.signaleur_prenom} ${s.signaleur_nom}`,
+      s.signaleur_email,
+      s.type,
+      s.type === "UTILISATEUR" ? `${s.cible_prenom || ""} ${s.cible_nom || ""}`.trim() : `${s.cible_trajet_depart || ""} → ${s.cible_trajet_dest || ""}`,
+      s.motif,
+      `N${s.niveau}`,
+      (s.description || "").replace(/"/g, '""'),
+      s.statut,
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `signalements_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
 
   useEffect(() => { fetchSignalements(); }, [fetchSignalements]);
 
@@ -1143,22 +1225,55 @@ function SectionSignalements({ token, showToast }) {
           onRefresh={fetchSignalements}
         />
       )}
-      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <div>
-          <h5 className="fw-bold mb-0" style={{ fontSize: "1rem" }}>Signalements</h5>
-          <p className="text-muted mb-0" style={{ fontSize: "0.75rem" }}>Signalements soumis — cliquer sur une ligne pour voir le détail</p>
+      <div className="mb-3">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div>
+            <h5 className="fw-bold mb-0" style={{ fontSize: "1rem" }}>Signalements</h5>
+            <p className="text-muted mb-0" style={{ fontSize: "0.75rem" }}>Cliquer sur une ligne pour voir le détail complet</p>
+          </div>
+          <button className="btn btn-outline-secondary btn-sm rounded-3" onClick={exportCSV} title="Exporter en CSV">
+            <i className="bi bi-download me-1" />Export CSV
+          </button>
         </div>
-        <select
-          className="form-select rounded-3"
-          style={{ width: "auto", fontSize: "0.82rem" }}
-          value={filterStatut}
-          onChange={(e) => setFilterStatut(e.target.value)}
-        >
-          <option value="">Tous les statuts</option>
-          <option value="EN_ATTENTE">En attente</option>
-          <option value="TRAITE">Traité</option>
-          <option value="REJETE">Rejeté</option>
-        </select>
+        {/* Filtres avancés */}
+        <div className="d-flex flex-wrap gap-2 align-items-end">
+          <div>
+            <label className="form-label mb-1" style={{ fontSize: "0.72rem", color: "#6c757d" }}>Statut</label>
+            <select className="form-select form-select-sm rounded-3" style={{ fontSize: "0.8rem", minWidth: 120 }}
+              value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}>
+              <option value="">Tous</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="TRAITE">Traité</option>
+              <option value="REJETE">Rejeté</option>
+            </select>
+          </div>
+          <div>
+            <label className="form-label mb-1" style={{ fontSize: "0.72rem", color: "#6c757d" }}>Niveau</label>
+            <select className="form-select form-select-sm rounded-3" style={{ fontSize: "0.8rem", minWidth: 140 }}
+              value={filterNiveau} onChange={(e) => setFilterNiveau(e.target.value)}>
+              <option value="">Tous les niveaux</option>
+              <option value="3">🔴 N3 — Grave</option>
+              <option value="2">🟠 N2 — Modéré</option>
+              <option value="1">🟡 N1 — Mineur</option>
+            </select>
+          </div>
+          <div>
+            <label className="form-label mb-1" style={{ fontSize: "0.72rem", color: "#6c757d" }}>Du</label>
+            <input type="date" className="form-control form-control-sm rounded-3" style={{ fontSize: "0.8rem" }}
+              value={filterDateDebut} onChange={(e) => setFilterDateDebut(e.target.value)} />
+          </div>
+          <div>
+            <label className="form-label mb-1" style={{ fontSize: "0.72rem", color: "#6c757d" }}>Au</label>
+            <input type="date" className="form-control form-control-sm rounded-3" style={{ fontSize: "0.8rem" }}
+              value={filterDateFin} onChange={(e) => setFilterDateFin(e.target.value)} />
+          </div>
+          {(filterStatut || filterNiveau || filterDateDebut || filterDateFin) && (
+            <button className="btn btn-outline-secondary btn-sm rounded-3 align-self-end"
+              onClick={() => { setFilterStatut(""); setFilterNiveau(""); setFilterDateDebut(""); setFilterDateFin(""); }}>
+              <i className="bi bi-x-circle me-1" />Réinitialiser
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -1265,6 +1380,11 @@ function SectionSignalements({ token, showToast }) {
                             {estSuspendu && (
                               <span className="badge rounded-pill px-2 py-1 mt-1 d-inline-block" style={{ background: "#f8d7da", color: "#842029", fontSize: "0.65rem" }}>
                                 <i className="bi bi-slash-circle me-1" />Suspendu
+                              </span>
+                            )}
+                            {Number(s.cible_nb_signalements_7j) >= 3 && !estSuspendu && (
+                              <span className="badge rounded-pill px-2 py-1 mt-1 d-inline-block" style={{ background: "#dc3545", color: "#fff", fontSize: "0.65rem" }}>
+                                <i className="bi bi-lightning-fill me-1" />Récidive 7j
                               </span>
                             )}
                           </div>

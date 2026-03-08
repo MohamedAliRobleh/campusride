@@ -140,6 +140,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/admin/blocages": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/admin/pwa-install": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
       "/evaluations": {
         target: "http://localhost:5000",
         changeOrigin: true,

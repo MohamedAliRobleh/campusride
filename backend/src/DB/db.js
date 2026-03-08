@@ -214,6 +214,28 @@ export async function runMigrations() {
       console.log("Migration signalements.niveau OK");
     } catch (err) { console.error("Migration signalements.niveau:", err.message); }
 
+    // Migration: note interne admin + blocages mutuels
+    try {
+      await pool.query(`
+        ALTER TABLE signalements ADD COLUMN IF NOT EXISTS note_admin TEXT;
+        ALTER TABLE signalements ADD COLUMN IF NOT EXISTS note_admin_le TIMESTAMPTZ;
+      `);
+      console.log("Migration signalements.note_admin OK");
+    } catch (err) { console.error("Migration signalements.note_admin:", err.message); }
+
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS blocages (
+          id           SERIAL PRIMARY KEY,
+          bloqueur_id  UUID NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+          bloque_id    UUID NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+          cree_le      TIMESTAMPTZ DEFAULT NOW(),
+          UNIQUE (bloqueur_id, bloque_id)
+        );
+      `);
+      console.log("Migration blocages OK");
+    } catch (err) { console.error("Migration blocages:", err.message); }
+
     // Migration: colonne avertissements sur utilisateurs
     try {
       await pool.query(`
@@ -222,6 +244,20 @@ export async function runMigrations() {
       `);
       console.log("Migration avertissements OK");
     } catch (err) { console.error("Migration avertissements:", err.message); }
+
+    // Délai auto-traitement : clôturer les signalements N1 EN_ATTENTE depuis + de 30 jours
+    try {
+      const autoClose = await pool.query(`
+        UPDATE signalements
+        SET statut = 'TRAITE'
+        WHERE niveau = 1
+          AND statut = 'EN_ATTENTE'
+          AND cree_le < NOW() - INTERVAL '30 days'
+      `);
+      if (autoClose.rowCount > 0) {
+        console.log(`Auto-clôture: ${autoClose.rowCount} signalement(s) N1 traités automatiquement.`);
+      }
+    } catch (err) { console.error("Auto-clôture signalements N1:", err.message); }
 
     console.log("Migrations OK");
   } catch (err) {
