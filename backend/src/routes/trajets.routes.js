@@ -52,6 +52,10 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "lieu_depart et destination sont requis." });
     }
 
+    if (lieuDepart.toLowerCase() === dest.toLowerCase()) {
+      return res.status(400).json({ message: "Le lieu de départ et la destination doivent être différents." });
+    }
+
     if (!Number.isInteger(placesTotalNum) || placesTotalNum < 1 || placesTotalNum > 8) {
       return res.status(400).json({
         message: "places_total invalide (doit être un entier entre 1 et 8)."
@@ -102,6 +106,10 @@ router.get("/recherche", requireAuth, async (req, res) => {
     const destLng     = req.query.dest_lng    ? parseFloat(req.query.dest_lng)   : null;
     const rayonKm     = req.query.rayon_km    ? parseFloat(req.query.rayon_km)   : 5;
 
+    if (rayonKm < 1 || rayonKm > 50) {
+      return res.status(400).json({ message: "rayon_km doit être entre 1 et 50 km." });
+    }
+
     const trajets = await searchTrajets({
       depart, destination, date, userId,
       departLat, departLng, destLat, destLng, rayonKm
@@ -140,6 +148,15 @@ router.patch("/:id/demarrer", requireAuth, async (req, res) => {
 
     if (trajet.statut !== "PLANIFIE")
       return res.status(400).json({ message: "Le trajet doit être en statut PLANIFIE pour démarrer." });
+
+    // Vérifier qu'aucun autre trajet du conducteur n'est déjà EN_COURS
+    const { rows: enCours } = await pool.query(
+      `SELECT id FROM trajets WHERE conducteur_id = $1 AND statut = 'EN_COURS' AND id != $2`,
+      [conducteurId, trajetId]
+    );
+    if (enCours.length > 0) {
+      return res.status(409).json({ message: "Vous avez déjà un trajet en cours. Terminez-le avant d'en démarrer un autre." });
+    }
 
     // Passer à EN_COURS
     const { rows: updated } = await pool.query(
@@ -276,6 +293,12 @@ router.patch("/:id/position", requireAuth, async (req, res) => {
 
     if (lat == null || lng == null) return res.status(400).json({ message: "lat et lng sont requis." });
 
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    if (isNaN(latNum) || isNaN(lngNum) || latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+      return res.status(400).json({ message: "Coordonnées GPS invalides." });
+    }
+
     const { rows } = await pool.query(
       `SELECT conducteur_id, statut FROM trajets WHERE id = $1`,
       [trajetId]
@@ -286,7 +309,7 @@ router.patch("/:id/position", requireAuth, async (req, res) => {
 
     await pool.query(
       `UPDATE trajets SET conducteur_lat = $1, conducteur_lng = $2 WHERE id = $3`,
-      [parseFloat(lat), parseFloat(lng), trajetId]
+      [latNum, lngNum, trajetId]
     );
 
     return res.json({ ok: true });
@@ -360,6 +383,10 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (!lieuDepart || !dest) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "lieu_depart et destination sont requis." });
+    }
+    if (lieuDepart.toLowerCase() === dest.toLowerCase()) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Le lieu de départ et la destination doivent être différents." });
     }
     if (Number.isNaN(d.getTime())) {
       await client.query("ROLLBACK");

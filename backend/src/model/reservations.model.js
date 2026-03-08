@@ -1,4 +1,3 @@
-
 import { pool } from "../DB/db.js";
 
 
@@ -69,20 +68,50 @@ export async function createReservation(passagerId, trajetId) {
       return { error: "NO_PLACES_AVAILABLE" };
     }
 
-    // Insérer réservation
-    const reservationRes = await client.query(
-      `
-  INSERT INTO reservations (
-  trajet_id,
-  passager_id
-)
-VALUES ($1, $2)
-RETURNING *;
-  `,
-      [trajetId, passagerId]
+    // Max 5 réservations EN_ATTENTE simultanées par passager
+    const pendingCount = await client.query(
+      `SELECT COUNT(*) FROM reservations WHERE passager_id = $1 AND statut = 'EN_ATTENTE'`,
+      [passagerId]
+    );
+    if (parseInt(pendingCount.rows[0].count, 10) >= 5) {
+      await client.query("ROLLBACK");
+      return { error: "MAX_PENDING_REACHED" };
+    }
+
+    // Vérifier si une réservation existe déjà pour ce passager + trajet
+    const existingRes = await client.query(
+      `SELECT id, statut FROM reservations WHERE passager_id = $1 AND trajet_id = $2`,
+      [passagerId, trajetId]
     );
 
-    // Décrémenter places_dispo dès la création de la demande
+    let reservationRes;
+
+    if (existingRes.rows.length > 0) {
+      const existing = existingRes.rows[0];
+      // Déjà EN_ATTENTE ou ACCEPTEE → impossible de re-réserver
+      if (existing.statut === "EN_ATTENTE" || existing.statut === "ACCEPTEE") {
+        await client.query("ROLLBACK");
+        return { error: "ALREADY_RESERVED" };
+      }
+      // REFUSEE ou ANNULEE → réactiver la réservation existante
+      reservationRes = await client.query(
+        `UPDATE reservations
+         SET statut = 'EN_ATTENTE', demande_le = NOW(), reponse_le = NULL
+         WHERE id = $1
+         RETURNING *;`,
+        [existing.id]
+      );
+    } else {
+      // Insérer nouvelle réservation
+      reservationRes = await client.query(
+        `INSERT INTO reservations (trajet_id, passager_id)
+         VALUES ($1, $2)
+         RETURNING *;`,
+        [trajetId, passagerId]
+      );
+    }
+
+    // Décrémenter places_dispo dès la création/réactivation de la demande
     await client.query(
       `UPDATE trajets SET places_dispo = places_dispo - 1 WHERE id = $1`,
       [trajetId]
@@ -115,11 +144,6 @@ RETURNING *;
   } catch (err) {
 
     await client.query("ROLLBACK");
-
-    if (err.code === "23505") {
-      return { error: "ALREADY_RESERVED" };
-    }
-
     throw err;
 
   } finally {
@@ -450,6 +474,13 @@ export async function cancelReservation(passagerId, reservationId) {
     if (new Date(row.dateheure_depart) <= new Date()) {
       await client.query("ROLLBACK");
       return { error: "TRAJET_PAST" };
+    }
+
+    // 4b. Interdire annulation à moins de 30 minutes du départ
+    const minutesUntilDepart = (new Date(row.dateheure_depart) - new Date()) / 60000;
+    if (minutesUntilDepart < 30) {
+      await client.query("ROLLBACK");
+      return { error: "CANCELLATION_TOO_LATE" };
     }
 
     // 5️ Restaurer la place (places_dispo est décrémenté à la création,

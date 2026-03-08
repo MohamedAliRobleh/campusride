@@ -45,6 +45,9 @@ router.post("/", requireAuth, async (req, res) => {
     if (result.error === "ALREADY_RESERVED") {
       return res.status(409).json({ message: "Vous avez déjà réservé ce trajet." });
     }
+    if (result.error === "MAX_PENDING_REACHED") {
+      return res.status(429).json({ message: "Vous avez atteint la limite de 5 demandes en attente simultanées." });
+    }
 
     // Succès
     return res.status(201).json(result);
@@ -147,6 +150,9 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
 
     if (result.error === "TRAJET_PAST")
       return res.status(400).json({ message: "Impossible d'annuler un trajet passé." });
+
+    if (result.error === "CANCELLATION_TOO_LATE")
+      return res.status(400).json({ message: "Annulation impossible à moins de 30 minutes du départ." });
 
     return res.json(result);
 
