@@ -269,7 +269,7 @@ router.get("/reservations", requireAuth, requireAdmin, async (req, res) => {
 
 // ── Signalements ──────────────────────────────────────────────
 // GET /admin/signalements
-router.get("/signalements", requireAdmin, async (req, res) => {
+router.get("/signalements", requireAuth, requireAdmin, async (req, res) => {
   const { statut } = req.query;
   const params = [];
   let where = "";
@@ -293,7 +293,7 @@ router.get("/signalements", requireAdmin, async (req, res) => {
 });
 
 // PATCH /admin/signalements/:id/statut
-router.patch("/signalements/:id/statut", requireAdmin, async (req, res) => {
+router.patch("/signalements/:id/statut", requireAuth, requireAdmin, async (req, res) => {
   const { statut } = req.body;
   if (!["TRAITE", "REJETE", "EN_ATTENTE"].includes(statut)) {
     return res.status(400).json({ message: "Statut invalide." });
