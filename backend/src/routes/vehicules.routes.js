@@ -45,11 +45,12 @@ router.post("/", requireAuth, async (req, res) => {
       });
     }
 
-    // Vérifier annee si fournie
+    // Vérifier annee si fournie (1990 à année courante + 1)
+    const anneeMax = new Date().getFullYear() + 1;
     if (anneeNum !== null &&
-      (!Number.isInteger(anneeNum) || anneeNum < 1900 || anneeNum > 2100)) {
+      (!Number.isInteger(anneeNum) || anneeNum < 1990 || anneeNum > anneeMax)) {
       return res.status(400).json({
-        error: "annee invalide."
+        error: `annee invalide (doit être entre 1990 et ${anneeMax}).`
       });
     }
 
@@ -156,9 +157,10 @@ router.patch("/me", requireAuth, async (req, res) => {
       });
     }
 
-    if (anneeNum !== null && (!Number.isInteger(anneeNum) || anneeNum < 1900 || anneeNum > 2100)) {
+    const anneeMax = new Date().getFullYear() + 1;
+    if (anneeNum !== null && (!Number.isInteger(anneeNum) || anneeNum < 1990 || anneeNum > anneeMax)) {
       return res.status(400).json({
-        message: "annee invalide."
+        message: `annee invalide (doit être entre 1990 et ${anneeMax}).`
       });
     }
 

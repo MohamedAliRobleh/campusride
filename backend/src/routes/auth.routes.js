@@ -23,9 +23,17 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    if (motDePasse.length < 8) {
+    // Longueur nom / prénom
+    if (String(prenom).trim().length < 2 || String(nom).trim().length < 2) {
       return res.status(400).json({
-        error: "Le mot de passe doit contenir au moins 8 caractères.",
+        error: "Prénom et nom doivent contenir au moins 2 caractères.",
+      });
+    }
+
+    // Force mot de passe : min 8 chars, 1 majuscule, 1 chiffre
+    if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(motDePasse)) {
+      return res.status(400).json({
+        error: "Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.",
       });
     }
 
@@ -209,8 +217,8 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ error: "Token et mot de passe obligatoires" });
     }
 
-    if (newPassword.length < 8) {
-      return res.status(400).json({ error: "Mot de passe trop court (min 8 caractères)" });
+    if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(newPassword)) {
+      return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre." });
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -255,4 +263,3 @@ router.post("/reset-password", async (req, res) => {
 
 
 export default router;
-
