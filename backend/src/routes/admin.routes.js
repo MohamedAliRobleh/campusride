@@ -277,10 +277,15 @@ router.get("/signalements", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT s.*,
-              us.prenom  AS signaleur_prenom, us.nom  AS signaleur_nom,  us.email AS signaleur_email,
-              uc.prenom  AS cible_prenom,     uc.nom  AS cible_nom,      uc.email AS cible_email,
-              uc.actif   AS cible_actif,
-              t.lieu_depart AS cible_trajet_depart, t.destination AS cible_trajet_dest
+              us.prenom          AS signaleur_prenom,  us.nom          AS signaleur_nom,
+              us.email           AS signaleur_email,   us.role         AS signaleur_role,
+              us.cree_le         AS signaleur_depuis,  us.avertissements AS signaleur_avertissements,
+              uc.prenom          AS cible_prenom,      uc.nom          AS cible_nom,
+              uc.email           AS cible_email,       uc.role         AS cible_role,
+              uc.actif           AS cible_actif,       uc.cree_le      AS cible_depuis,
+              uc.avertissements  AS cible_avertissements,
+              (SELECT COUNT(*) FROM signalements sx WHERE sx.cible_id = s.cible_id AND sx.type = 'UTILISATEUR') AS cible_nb_signalements,
+              t.lieu_depart AS cible_trajet_depart,    t.destination AS cible_trajet_dest
        FROM signalements s
        JOIN utilisateurs us ON us.id = s.signaleur_id
        LEFT JOIN utilisateurs uc ON uc.id = s.cible_id AND s.type = 'UTILISATEUR'
@@ -316,12 +321,13 @@ router.patch("/signalements/:id/statut", requireAuth, requireAdmin, async (req, 
   }
 });
 
-// POST /admin/signalements/:id/avertir — envoie une notification d'avertissement à l'utilisateur signalé
+// POST /admin/signalements/:id/avertir — escalade automatique (3 niveaux → suspension auto)
 router.post("/signalements/:id/avertir", requireAuth, requireAdmin, async (req, res) => {
+  const LIMITE_BAN = 3;
   try {
     const { rows } = await pool.query(
       `SELECT s.cible_id, s.type, s.motif,
-              uc.prenom AS cible_prenom, uc.actif AS cible_actif
+              uc.prenom AS cible_prenom, uc.actif AS cible_actif, uc.avertissements AS nb_avertissements
        FROM signalements s
        LEFT JOIN utilisateurs uc ON uc.id = s.cible_id AND s.type = 'UTILISATEUR'
        WHERE s.id = $1`,
@@ -330,15 +336,46 @@ router.post("/signalements/:id/avertir", requireAuth, requireAdmin, async (req, 
     if (!rows.length) return res.status(404).json({ message: "Signalement introuvable." });
     const s = rows[0];
     if (s.type !== "UTILISATEUR") return res.status(400).json({ message: "L'avertissement s'applique uniquement aux utilisateurs." });
-    if (!s.cible_actif && s.cible_actif !== null) return res.status(400).json({ message: "Ce compte est déjà suspendu." });
+    if (s.cible_actif === false) return res.status(400).json({ message: "Ce compte est déjà suspendu." });
+
+    // Incrémenter le compteur
+    const { rows: updated } = await pool.query(
+      `UPDATE utilisateurs SET avertissements = avertissements + 1
+       WHERE id = $1 RETURNING avertissements`,
+      [s.cible_id]
+    );
+    const nouveauNb = updated[0].avertissements;
+    const estBanni  = nouveauNb >= LIMITE_BAN;
+
+    // Suspension automatique au 3e avertissement
+    if (estBanni) {
+      await pool.query(`UPDATE utilisateurs SET actif = FALSE WHERE id = $1`, [s.cible_id]);
+    }
+
+    // Message de notification adapté au niveau
+    let message;
+    if (estBanni) {
+      message = `🚫 Votre compte CampusRide a été suspendu automatiquement. Vous avez atteint la limite de ${LIMITE_BAN} avertissements (motif du dernier : ${s.motif}). Pour contester cette décision, contactez campusride@lacitec.on.ca.`;
+    } else if (nouveauNb === LIMITE_BAN - 1) {
+      message = `⚠️ Dernier avertissement (${nouveauNb}/${LIMITE_BAN}). Un prochain manquement entraînera la suspension automatique et définitive de votre compte CampusRide. Motif : ${s.motif}.`;
+    } else {
+      message = `⚠️ Avertissement officiel (${nouveauNb}/${LIMITE_BAN}). Un comportement inapproprié a été signalé sur votre compte (motif : ${s.motif}). Veuillez respecter les règles de la communauté. Tout récidive aggravera votre situation.`;
+    }
 
     await pool.query(
       `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
        VALUES ($1, 'AVERTISSEMENT', $2, NOW())`,
-      [s.cible_id, `⚠️ Votre compte a reçu un avertissement officiel de l'administration CampusRide suite à un signalement (motif : ${s.motif}). Tout comportement répété entraînera la suspension de votre compte.`]
+      [s.cible_id, message]
     );
     await pool.query(`UPDATE signalements SET statut = 'TRAITE' WHERE id = $1`, [req.params.id]);
-    return res.json({ message: "Avertissement envoyé." });
+
+    return res.json({
+      message: estBanni
+        ? `Compte suspendu automatiquement après ${LIMITE_BAN} avertissements.`
+        : `Avertissement ${nouveauNb}/${LIMITE_BAN} envoyé.`,
+      nb_avertissements: nouveauNb,
+      suspendu: estBanni,
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });

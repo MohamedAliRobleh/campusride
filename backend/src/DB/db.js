@@ -204,6 +204,15 @@ export async function runMigrations() {
       console.log("Migration signalements OK");
     } catch (err) { console.error("Migration signalements:", err.message); }
 
+    // Migration: colonne avertissements sur utilisateurs
+    try {
+      await pool.query(`
+        ALTER TABLE utilisateurs
+        ADD COLUMN IF NOT EXISTS avertissements INT NOT NULL DEFAULT 0;
+      `);
+      console.log("Migration avertissements OK");
+    } catch (err) { console.error("Migration avertissements:", err.message); }
+
     console.log("Migrations OK");
   } catch (err) {
     console.error("Erreur migration:", err.message);

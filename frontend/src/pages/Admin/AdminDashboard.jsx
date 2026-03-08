@@ -922,13 +922,26 @@ function SectionSignalements({ token, showToast }) {
                       </td>
 
                       {/* Signaleur */}
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3" style={{ minWidth: 160 }}>
                         <div className="fw-semibold" style={{ fontSize: "0.82rem" }}>{s.signaleur_prenom} {s.signaleur_nom}</div>
-                        <div className="text-muted" style={{ fontSize: "0.72rem" }}>{s.signaleur_email}</div>
+                        <div className="text-muted" style={{ fontSize: "0.7rem" }}>{s.signaleur_email}</div>
+                        <div className="d-flex align-items-center gap-1 mt-1 flex-wrap">
+                          <span className="badge rounded-pill px-2" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.62rem" }}>
+                            {s.signaleur_role}
+                          </span>
+                          <span className="text-muted" style={{ fontSize: "0.62rem" }}>
+                            Membre {new Date(s.signaleur_depuis).toLocaleDateString("fr-CA", { month: "short", year: "numeric" })}
+                          </span>
+                        </div>
+                        {s.signaleur_avertissements > 0 && (
+                          <div className="mt-1" style={{ fontSize: "0.62rem", color: "#fd7e14" }}>
+                            <i className="bi bi-exclamation-triangle me-1" />{s.signaleur_avertissements} avert.
+                          </div>
+                        )}
                       </td>
 
                       {/* Type + Cible */}
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3" style={{ minWidth: 180 }}>
                         <span className="badge rounded-pill px-2 py-1 mb-1 d-inline-block"
                           style={{ background: s.type === "TRAJET" ? "#0d6efd18" : "#dc354518", color: s.type === "TRAJET" ? "#0d6efd" : "#dc3545", fontSize: "0.7rem" }}>
                           <i className={`bi ${s.type === "TRAJET" ? "bi-map" : "bi-person"} me-1`} />{s.type}
@@ -937,6 +950,33 @@ function SectionSignalements({ token, showToast }) {
                           <div>
                             <div className="fw-semibold" style={{ fontSize: "0.8rem" }}>{s.cible_prenom} {s.cible_nom}</div>
                             <div className="text-muted" style={{ fontSize: "0.7rem" }}>{s.cible_email}</div>
+                            <div className="d-flex align-items-center gap-1 mt-1 flex-wrap">
+                              <span className="badge rounded-pill px-2" style={{ background: "#e9ecef", color: "#495057", fontSize: "0.62rem" }}>
+                                {s.cible_role}
+                              </span>
+                              <span className="text-muted" style={{ fontSize: "0.62rem" }}>
+                                Membre {new Date(s.cible_depuis).toLocaleDateString("fr-CA", { month: "short", year: "numeric" })}
+                              </span>
+                            </div>
+                            {/* Barre de progression avertissements */}
+                            {(() => {
+                              const nb = Number(s.cible_avertissements) || 0;
+                              const total = Number(s.cible_nb_signalements) || 0;
+                              const barColor = nb === 0 ? "#198754" : nb === 1 ? "#fd7e14" : "#dc3545";
+                              return (
+                                <div className="mt-2">
+                                  <div className="d-flex justify-content-between mb-1" style={{ fontSize: "0.62rem" }}>
+                                    <span style={{ color: barColor, fontWeight: 600 }}>
+                                      <i className="bi bi-exclamation-triangle me-1" />{nb}/3 avertissements
+                                    </span>
+                                    <span className="text-muted">{total} signalement(s)</span>
+                                  </div>
+                                  <div className="rounded-pill overflow-hidden" style={{ height: 5, background: "#e9ecef" }}>
+                                    <div style={{ width: `${Math.min((nb / 3) * 100, 100)}%`, height: "100%", background: barColor, transition: "width 0.3s" }} />
+                                  </div>
+                                </div>
+                              );
+                            })()}
                             {estSuspendu && (
                               <span className="badge rounded-pill px-2 py-1 mt-1 d-inline-block" style={{ background: "#f8d7da", color: "#842029", fontSize: "0.65rem" }}>
                                 <i className="bi bi-slash-circle me-1" />Suspendu
@@ -971,10 +1011,17 @@ function SectionSignalements({ token, showToast }) {
                           {/* Avertir — UTILISATEUR actif seulement */}
                           {s.type === "UTILISATEUR" && !estSuspendu && s.cible_prenom && (
                             <button className="btn btn-sm rounded-3"
-                              style={{ background: "#fff3cd", color: "#664d03", fontSize: "0.72rem", padding: "3px 8px" }}
+                              style={{
+                                background: Number(s.cible_avertissements) >= 2 ? "#f8d7da" : "#fff3cd",
+                                color:      Number(s.cible_avertissements) >= 2 ? "#842029" : "#664d03",
+                                fontSize: "0.72rem", padding: "3px 8px"
+                              }}
                               disabled={!!updating} onClick={() => avertir(s.id)}>
                               {busy("avertir") ? <span className="spinner-border spinner-border-sm" />
-                                : <><i className="bi bi-exclamation-triangle me-1" />Avertir</>}
+                                : Number(s.cible_avertissements) >= 2
+                                  ? <><i className="bi bi-slash-circle me-1" />Avertir → Ban</>
+                                  : <><i className="bi bi-exclamation-triangle me-1" />Avertir ({Number(s.cible_avertissements) + 1}/3)</>
+                              }
                             </button>
                           )}
 
