@@ -10,6 +10,9 @@ const router = Router();
 
 router.post("/", requireAuth, async (req, res) => {
   try {
+    if (req.user.role === "ADMIN") {
+      return res.status(403).json({ message: "Les administrateurs ne peuvent pas enregistrer de véhicule." });
+    }
     const userId = req.user.id;
 
     const {

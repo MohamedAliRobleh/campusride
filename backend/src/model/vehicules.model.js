@@ -162,22 +162,57 @@ export async function supprimerVehiculeEtRevertRole(userId) {
   try {
     await client.query("BEGIN");
 
+    // Annuler les trajets PLANIFIE du conducteur et restaurer les places des passagers EN_ATTENTE/ACCEPTEE
+    // 1. Remettre places_dispo pour chaque réservation active
+    await client.query(
+      `UPDATE trajets
+       SET places_dispo = places_dispo + (
+         SELECT COUNT(*) FROM reservations
+         WHERE trajet_id = trajets.id AND statut IN ('EN_ATTENTE', 'ACCEPTEE')
+       )
+       WHERE conducteur_id = $1 AND statut = 'PLANIFIE'`,
+      [userId]
+    );
+
+    // 2. Annuler les réservations EN_ATTENTE et ACCEPTEE liées à ces trajets
+    await client.query(
+      `UPDATE reservations SET statut = 'ANNULEE', reponse_le = NOW()
+       WHERE trajet_id IN (
+         SELECT id FROM trajets WHERE conducteur_id = $1 AND statut = 'PLANIFIE'
+       ) AND statut IN ('EN_ATTENTE', 'ACCEPTEE')`,
+      [userId]
+    );
+
+    // 3. Notifier les passagers affectés
+    await client.query(
+      `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+       SELECT r.passager_id, 'RESERVATION_ANNULEE',
+              'Le conducteur a supprimé son véhicule. Votre réservation pour le trajet '
+              || t.lieu_depart || ' → ' || t.destination || ' a été annulée.',
+              NOW()
+       FROM reservations r
+       JOIN trajets t ON t.id = r.trajet_id
+       WHERE t.conducteur_id = $1 AND t.statut = 'PLANIFIE' AND r.statut = 'ANNULEE'
+         AND r.reponse_le >= NOW() - INTERVAL '5 seconds'`,
+      [userId]
+    );
+
+    // 4. Annuler les trajets PLANIFIE eux-mêmes
+    await client.query(
+      `UPDATE trajets SET statut = 'ANNULE', maj_le = NOW()
+       WHERE conducteur_id = $1 AND statut = 'PLANIFIE'`,
+      [userId]
+    );
+
     // Supprimer le véhicule
     await client.query(
-      `
-      DELETE FROM vehicules
-      WHERE utilisateur_id = $1
-      `,
+      `DELETE FROM vehicules WHERE utilisateur_id = $1`,
       [userId]
     );
 
     // Remettre le rôle PASSAGER
     await client.query(
-      `
-      UPDATE utilisateurs
-      SET role = 'PASSAGER'
-      WHERE id = $1
-      `,
+      `UPDATE utilisateurs SET role = 'PASSAGER' WHERE id = $1`,
       [userId]
     );
 

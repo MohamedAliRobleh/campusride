@@ -223,7 +223,7 @@ export async function getTrajetsPopulaires() {
     JOIN utilisateurs u ON u.id = t.conducteur_id
     LEFT JOIN profils p ON p.utilisateur_id = t.conducteur_id
     LEFT JOIN vehicules v ON v.utilisateur_id = t.conducteur_id
-    WHERE t.statut IN ('PLANIFIE','EN_COURS')
+    WHERE t.statut = 'PLANIFIE'
       AND t.dateheure_depart >= NOW()
     ORDER BY t.dateheure_depart ASC
     LIMIT 5;

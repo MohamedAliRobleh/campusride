@@ -125,8 +125,8 @@ router.patch("/me/password", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Les deux mots de passe sont requis." });
     }
 
-    if (nouveau_mot_de_passe.length < 6) {
-      return res.status(400).json({ message: "Le nouveau mot de passe doit contenir au moins 6 caractères." });
+    if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(nouveau_mot_de_passe)) {
+      return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre." });
     }
 
     const { rows } = await pool.query(
