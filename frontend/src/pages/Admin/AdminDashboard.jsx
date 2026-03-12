@@ -1626,19 +1626,6 @@ export default function AdminDashboard() {
         {/* Footer sidebar */}
         <div style={{ padding: "12px 10px 20px" }}>
           <div style={{ height: 1, background: "rgba(255,255,255,.15)", marginBottom: 12 }} />
-          {/* Retour à l'app — session conservée */}
-          <button
-            onClick={() => navigate("/passager")}
-            className="w-100 border-0 d-flex align-items-center gap-3 rounded-3 mb-2"
-            style={{ padding: "9px 14px", background: "rgba(255,255,255,.12)", color: "rgba(255,255,255,.82)", fontSize: "0.82rem", cursor: "pointer" }}
-            title="Revenir à l'application sans se déconnecter"
-          >
-            <i className="bi bi-box-arrow-left" style={{ fontSize: "0.9rem" }} />
-            <div className="text-start">
-              <div style={{ lineHeight: 1.1 }}>Quitter l'admin</div>
-              <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,.5)", marginTop: 1 }}>Session conservée</div>
-            </div>
-          </button>
           {/* Se déconnecter — efface la session */}
           <button
             onClick={() => {
@@ -1688,15 +1675,6 @@ export default function AdminDashboard() {
                 <span className="text-white fw-semibold" style={{ fontSize: "0.75rem" }}>{currentUser.prenom}</span>
               </div>
             )}
-            <button
-              onClick={() => navigate("/passager")}
-              className="btn btn-sm border-0 d-flex align-items-center gap-1"
-              style={{ background: "rgba(255,255,255,.15)", color: "#fff", borderRadius: 8, fontSize: "0.75rem", padding: "5px 10px" }}
-              title="Quitter l'admin"
-            >
-              <i className="bi bi-box-arrow-left" />
-              <span className="d-none d-sm-inline">Quitter</span>
-            </button>
             <button
               onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); navigate("/login"); }}
               className="btn btn-sm border-0 d-flex align-items-center"
