@@ -152,10 +152,6 @@ export default function Post() {
                           onPlaceSelect={(p) => { setFormData((prev) => ({ ...prev, depart: p.address })); setDepartCoords({ lat: p.lat, lng: p.lng }); }}
                         />
                       </div>
-                      <div className={`mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.72rem" }}>
-                        <i className="bi bi-chat-dots me-1 text-success" />
-                        Le point de rendez-vous précis sera convenu avec les passagers via la messagerie.
-                      </div>
                     </div>
                     <div>
                       <label className="form-label" style={{ color: "#198754", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Destination</label>

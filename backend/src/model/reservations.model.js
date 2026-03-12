@@ -413,6 +413,7 @@ LEFT JOIN profils p ON p.utilisateur_id = u.id
 LEFT JOIN vehicules v ON v.utilisateur_id = u.id
 
 WHERE r.passager_id = $1
+  AND r.statut != 'ANNULEE'
 ORDER BY r.demande_le DESC
 
     `,
@@ -442,7 +443,11 @@ export async function cancelReservation(passagerId, reservationId) {
         r.trajet_id,
         r.passager_id,
         t.places_dispo,
-        t.dateheure_depart
+        t.dateheure_depart,
+        t.statut AS trajet_statut,
+        t.conducteur_id,
+        t.lieu_depart,
+        t.destination
       FROM reservations r
       JOIN trajets t ON t.id = r.trajet_id
       WHERE r.id = $1
@@ -464,10 +469,16 @@ export async function cancelReservation(passagerId, reservationId) {
       return { error: "NOT_OWNER" };
     }
 
-    // 3️ Interdire annulation déjà REFUSEE ou ANNULEE
-    if (row.statut === "REFUSEE" || row.statut === "ANNULEE") {
+    // 3️ Interdire annulation déjà REFUSEE, ANNULEE ou TERMINEE
+    if (row.statut === "REFUSEE" || row.statut === "ANNULEE" || row.statut === "TERMINEE") {
       await client.query("ROLLBACK");
       return { error: "ALREADY_CLOSED" };
+    }
+
+    // 3b. Interdire annulation si le trajet est EN_COURS ou TERMINE
+    if (row.trajet_statut === "EN_COURS" || row.trajet_statut === "TERMINE") {
+      await client.query("ROLLBACK");
+      return { error: "TRAJET_ALREADY_STARTED" };
     }
 
     // 4️ Interdire annulation si trajet passé
@@ -501,21 +512,19 @@ export async function cancelReservation(passagerId, reservationId) {
       [reservationId]
     );
 
-// Notification pour le passager (annulation volontaire)
-await client.query(
-  `
-  INSERT INTO notifications (utilisateur_id, type, message, cree_le)
-  SELECT
-    r.passager_id,
-    'RESERVATION_ANNULEE',
-    'Vous avez annulé votre réservation pour le trajet ' || t.lieu_depart || ' → ' || t.destination,
-    NOW()
-  FROM reservations r
-  JOIN trajets t ON t.id = r.trajet_id
-  WHERE r.id = $1;
-  `,
-  [reservationId]
-);
+    // Notification pour le passager (annulation volontaire)
+    await client.query(
+      `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+       VALUES ($1, 'RESERVATION_ANNULEE', $2, NOW())`,
+      [row.passager_id, `Vous avez annulé votre réservation pour le trajet ${row.lieu_depart} → ${row.destination}`]
+    );
+
+    // Notification pour le conducteur
+    await client.query(
+      `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
+       VALUES ($1, 'RESERVATION_ANNULEE', $2, NOW())`,
+      [row.conducteur_id, `Un passager a annulé sa réservation pour votre trajet ${row.lieu_depart} → ${row.destination}`]
+    );
     await client.query("COMMIT");
 
     return {

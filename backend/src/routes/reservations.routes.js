@@ -15,6 +15,9 @@ const router = Router();
 
 router.post("/", requireAuth, async (req, res) => {
   try {
+    if (req.user.role === "ADMIN") {
+      return res.status(403).json({ message: "Les administrateurs ne peuvent pas effectuer de réservations." });
+    }
     // L'utilisateur connecté (peut être PASSAGER ou CONDUCTEUR)
     const passagerId = req.user.id;
 
@@ -147,6 +150,9 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
 
     if (result.error === "ALREADY_CLOSED")
       return res.status(409).json({ message: "Réservation déjà fermée." });
+
+    if (result.error === "TRAJET_ALREADY_STARTED")
+      return res.status(400).json({ message: "Impossible d'annuler : le trajet est déjà en cours ou terminé." });
 
     if (result.error === "TRAJET_PAST")
       return res.status(400).json({ message: "Impossible d'annuler un trajet passé." });

@@ -337,6 +337,14 @@ router.get("/:id/live", requireAuth, async (req, res) => {
     if (!rows.length) return res.status(404).json({ message: "Trajet introuvable." });
     const t = rows[0];
 
+    // Le suivi n'est disponible que pour un trajet EN_COURS
+    if (t.statut === "TERMINE") {
+      return res.status(410).json({ message: "Le trajet est terminé.", statut: "TERMINE" });
+    }
+    if (t.statut !== "EN_COURS") {
+      return res.status(400).json({ message: "Le trajet n'est pas en cours.", statut: t.statut });
+    }
+
     const isConducteur = t.conducteur_id === userId;
     if (!isConducteur) {
       const { rows: resas } = await pool.query(
