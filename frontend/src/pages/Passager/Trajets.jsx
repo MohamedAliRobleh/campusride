@@ -16,9 +16,15 @@ export default function Trajets() {
   const [profileUserId, setProfileUserId] = useState(null);
   const [mapTrajet, setMapTrajet] = useState(null);
   const [reportTrajet, setReportTrajet] = useState(null);
+  const [toast, setToast] = useState({ show: false, text: "" });
   const token = localStorage.getItem("token");
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
+
+  const showToast = (text) => {
+    setToast({ show: true, text });
+    setTimeout(() => setToast((p) => ({ ...p, show: false })), 3000);
+  };
 
   useEffect(() => {
     document.body.dataset.bsTheme = theme;
@@ -90,14 +96,16 @@ export default function Trajets() {
             const voitureLabel = hasVoiture
               ? `${t.voiture_marque} ${t.voiture_modele}${t.voiture_couleur ? ` · ${t.voiture_couleur}` : ""}${t.voiture_annee ? ` · ${t.voiture_annee}` : ""}`
               : null;
+            const isFull = t.places_dispo <= 0;
 
             return (
               <div
                 key={t.id}
                 className={`rounded-4 shadow-sm mb-3 overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}
+                style={isFull ? { opacity: 0.85 } : {}}
               >
                 {/* Top accent */}
-                <div style={{ height: 3, background: "linear-gradient(90deg, #198754, #20c374)" }} />
+                <div style={{ height: 3, background: isFull ? "linear-gradient(90deg, #6c757d, #adb5bd)" : "linear-gradient(90deg, #198754, #20c374)" }} />
 
                 <div className="p-3 p-md-4">
                   {/* Route + heure */}
@@ -182,10 +190,17 @@ export default function Trajets() {
 
                     {/* Places dispo */}
                     <div className="flex-shrink-0 d-flex align-items-center gap-2">
-                      <span className="badge rounded-pill bg-success-subtle text-success px-3 py-2 fw-semibold">
-                        <i className="bi bi-people-fill me-1" />
-                        {t.places_dispo} place{t.places_dispo > 1 ? "s" : ""}
-                      </span>
+                      {isFull ? (
+                        <span className="badge rounded-pill px-3 py-2 fw-semibold" style={{ background: "#dc354520", color: "#dc3545", border: "1px solid #dc354540" }}>
+                          <i className="bi bi-lock-fill me-1" />
+                          Complet
+                        </span>
+                      ) : (
+                        <span className="badge rounded-pill bg-success-subtle text-success px-3 py-2 fw-semibold">
+                          <i className="bi bi-people-fill me-1" />
+                          {t.places_dispo} place{t.places_dispo > 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -201,12 +216,18 @@ export default function Trajets() {
                     </button>
                     <button
                       type="button"
-                      className="btn btn-success flex-grow-1 rounded-3 fw-semibold py-2"
-                      style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none" }}
-                      onClick={() => navigate("/passager/search", { state: { trajetId: t.id } })}
+                      className={`btn flex-grow-1 rounded-3 fw-semibold py-2 ${isFull ? "btn-secondary" : "btn-success"}`}
+                      style={isFull ? {} : { background: "linear-gradient(135deg, #198754, #20c374)", border: "none" }}
+                      onClick={() => isFull
+                        ? showToast("Ce trajet est complet, toutes les places ont été réservées.")
+                        : navigate("/passager/search", { state: { trajetId: t.id } })
+                      }
                     >
-                      <i className="bi bi-check-circle me-2" />
-                      Réserver ce trajet
+                      {isFull ? (
+                        <><i className="bi bi-lock-fill me-2" />Trajet complet</>
+                      ) : (
+                        <><i className="bi bi-check-circle me-2" />Réserver ce trajet</>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -226,6 +247,22 @@ export default function Trajets() {
       </main>
 
       <Footer isDark={isDark} />
+
+      {/* Toast complet */}
+      <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 9999 }}>
+        <div
+          className={`toast align-items-center border-0 shadow-lg rounded-3 text-bg-danger ${toast.show ? "show" : ""}`}
+          role="alert"
+        >
+          <div className="d-flex">
+            <div className="toast-body fw-semibold" style={{ fontSize: "0.88rem" }}>
+              <i className="bi bi-lock-fill me-2" />
+              {toast.text}
+            </div>
+            <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setToast((p) => ({ ...p, show: false }))} />
+          </div>
+        </div>
+      </div>
 
       {profileUserId && (
         <UserProfileModal
