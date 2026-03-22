@@ -261,11 +261,5 @@ CREATE INDEX IF NOT EXISTS idx_blocages_bloque_id ON blocages(bloque_id);
 -- ==========================================================
 -- 15) Colonnes Live Tracking (suivi GPS conducteur en direct)
 -- ==========================================================
--- EXECUTER CETTE LIGNE DANS VOTRE BASE DE DONNÉES LOCALE
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS conducteur_lat DOUBLE PRECISION;
--- EXECUTER CETTE LIGNE DANS VOTRE BASE DE DONNÉES LOCALE
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS conducteur_lng DOUBLE PRECISION;
-
--- ==========================================================
--- Fin
--- ==========================================================
