@@ -296,13 +296,16 @@ export default function Search() {
                       )}
                       <button
                         className={`btn fw-semibold rounded-3 px-3 flex-shrink-0 ${isFull ? "btn-secondary" : "btn-success"}`}
-                        disabled={isFull || loadingId === trajet.id}
-                        onClick={() => handleReservation(trajet.id)}
+                        disabled={loadingId === trajet.id}
+                        onClick={() => isFull
+                          ? showToast("Ce trajet est complet, toutes les places ont été réservées.", "danger")
+                          : handleReservation(trajet.id)
+                        }
                         style={{ fontSize: "0.88rem" }}
                       >
                         {loadingId === trajet.id
                           ? <><span className="spinner-border spinner-border-sm me-1" />Envoi...</>
-                          : isFull ? "Complet"
+                          : isFull ? <><i className="bi bi-lock-fill me-1" />Complet</>
                           : <><i className="bi bi-check-circle me-1" />Réserver</>
                         }
                       </button>
