@@ -152,6 +152,7 @@ export async function createReservation(passagerId, trajetId) {
   }
 }
 
+// Récupère les réservations associées aux trajets d’un conducteur avec les infos du passager et du trajet
 export async function listReservationsForConducteur(conducteurId) {
   const { rows } = await pool.query(
     `
@@ -184,7 +185,7 @@ LIMIT 200;
 
   return rows;
 }
-
+// Accepte une réservation si le conducteur est autorisé, met à jour le statut et notifie le passager
 export async function acceptReservation(conducteurId, reservationId) {
 
   const client = await pool.connect();
@@ -245,12 +246,8 @@ export async function acceptReservation(conducteurId, reservationId) {
 
     // places_dispo a déjà été décrémenté à la création de la réservation
     const newPlaces = row.places_dispo;
-    // Le statut ne change PAS automatiquement :
-    // le conducteur clique "Démarrer" → EN_COURS, puis "Terminer" → TERMINE
 
-    // ===============================
     // Notifier le passager : réservation acceptée
-    // ===============================
     await client.query(
       `
   INSERT INTO notifications (utilisateur_id, type, message, cree_le)
