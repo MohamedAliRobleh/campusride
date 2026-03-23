@@ -55,6 +55,12 @@ export default function Dashboard() {
   };
 
   const [trips, setTrips] = useState([]);
+  const [toast, setToast] = useState({ show: false, text: "" });
+
+  const showToast = (text) => {
+    setToast({ show: true, text });
+    setTimeout(() => setToast((p) => ({ ...p, show: false })), 3000);
+  };
 
   useEffect(() => {
     const fetchPopulaires = async () => {
@@ -435,13 +441,15 @@ export default function Dashboard() {
                     const voitureLabel = trajet.voiture_marque
                       ? `${trajet.voiture_marque} ${trajet.voiture_modele ?? ""}${trajet.voiture_couleur ? ` · ${trajet.voiture_couleur}` : ""}`
                       : null;
+                    const isFull = trajet.places_dispo <= 0;
 
                     return (
                       <div
                         key={trajet.id}
                         className={`rounded-4 shadow-sm overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white border"}`}
+                        style={isFull ? { opacity: 0.85 } : {}}
                       >
-                        <div style={{ height: 3, background: "linear-gradient(90deg, #198754, #20c374)" }} />
+                        <div style={{ height: 3, background: isFull ? "linear-gradient(90deg, #6c757d, #adb5bd)" : "linear-gradient(90deg, #198754, #20c374)" }} />
                         <div className="p-3">
                           {/* Route */}
                           <div className="d-flex align-items-start gap-2 mb-2">
@@ -493,17 +501,27 @@ export default function Dashboard() {
                               )}
                             </div>
                             <div className="d-flex align-items-center gap-2 flex-shrink-0">
-                              <span className="badge rounded-pill bg-success-subtle text-success px-2 py-1" style={{ fontSize: "0.72rem" }}>
-                                <i className="bi bi-people-fill me-1" />
-                                {trajet.places_dispo}
-                              </span>
+                              {isFull ? (
+                                <span className="badge rounded-pill px-2 py-1 fw-semibold" style={{ fontSize: "0.72rem", background: "#dc354520", color: "#dc3545", border: "1px solid #dc354540" }}>
+                                  <i className="bi bi-lock-fill me-1" />
+                                  Complet
+                                </span>
+                              ) : (
+                                <span className="badge rounded-pill bg-success-subtle text-success px-2 py-1" style={{ fontSize: "0.72rem" }}>
+                                  <i className="bi bi-people-fill me-1" />
+                                  {trajet.places_dispo}
+                                </span>
+                              )}
                               <button
                                 type="button"
-                                className="btn btn-success btn-sm fw-semibold rounded-3 px-3"
-                                style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none", fontSize: "0.8rem" }}
-                                onClick={() => navigate("/passager/search")}
+                                className={`btn btn-sm fw-semibold rounded-3 px-3 ${isFull ? "btn-secondary" : "btn-success"}`}
+                                style={isFull ? { fontSize: "0.8rem" } : { background: "linear-gradient(135deg, #198754, #20c374)", border: "none", fontSize: "0.8rem" }}
+                                onClick={() => isFull
+                                  ? showToast("Ce trajet est complet, toutes les places ont été réservées.")
+                                  : navigate("/passager/search")
+                                }
                               >
-                                Réserver
+                                {isFull ? <><i className="bi bi-lock-fill me-1" />Complet</> : "Réserver"}
                               </button>
                             </div>
                           </div>
@@ -522,6 +540,22 @@ export default function Dashboard() {
 
       <Footer isDark={isDark} style={{ backgroundColor: "#8ac55a" }} />
       <EmergencyButton />
+
+      {/* Toast trajet complet */}
+      <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 9999 }}>
+        <div
+          className={`toast align-items-center border-0 shadow-lg rounded-3 text-bg-danger ${toast.show ? "show" : ""}`}
+          role="alert"
+        >
+          <div className="d-flex">
+            <div className="toast-body fw-semibold" style={{ fontSize: "0.88rem" }}>
+              <i className="bi bi-lock-fill me-2" />
+              {toast.text}
+            </div>
+            <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setToast((p) => ({ ...p, show: false }))} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
