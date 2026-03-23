@@ -367,8 +367,8 @@ export default function MesTrajets() {
 
                 {showActionsRow && (
                     <div className="d-flex flex-column gap-2 mb-2">
-                        {/* Bouton Démarrer — visible uniquement si PLANIFIE */}
-                        {trajet.statut === "PLANIFIE" && (
+                        {/* Bouton Démarrer — visible uniquement si PLANIFIE et au moins 1 réservation acceptée */}
+                        {trajet.statut === "PLANIFIE" && parseInt(trajet.places_reservees) > 0 && (
                             <button
                                 className="btn btn-success fw-semibold rounded-3 py-2"
                                 style={{ background: "linear-gradient(135deg,#198754,#20c374)", border: "none" }}
@@ -383,6 +383,12 @@ export default function MesTrajets() {
                                 <i className="bi bi-play-circle-fill me-2" />
                                 Démarrer le trajet
                             </button>
+                        )}
+                        {trajet.statut === "PLANIFIE" && parseInt(trajet.places_reservees) === 0 && (
+                            <div className="d-flex align-items-center gap-2 px-2 py-2 rounded-3" style={{ background: isDark ? "#1a2a1a" : "#f0faf4", border: "1px solid #19875430" }}>
+                                <i className="bi bi-info-circle text-success" style={{ fontSize: "0.9rem" }} />
+                                <span className="small text-success fw-semibold">Acceptez au moins une réservation pour démarrer</span>
+                            </div>
                         )}
 
                         {/* Bouton Terminer + panel live tracking — visible uniquement si EN_COURS */}
