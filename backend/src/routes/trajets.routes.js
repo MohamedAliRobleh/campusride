@@ -149,6 +149,15 @@ router.patch("/:id/demarrer", requireAuth, async (req, res) => {
     if (trajet.statut !== "PLANIFIE")
       return res.status(400).json({ message: "Le trajet doit être en statut PLANIFIE pour démarrer." });
 
+    // Vérifier qu'au moins une réservation est acceptée
+    const { rows: acceptees } = await pool.query(
+      `SELECT COUNT(*) AS nb FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`,
+      [trajetId]
+    );
+    if (parseInt(acceptees[0].nb) === 0) {
+      return res.status(400).json({ message: "Vous devez accepter au moins une réservation avant de démarrer le trajet." });
+    }
+
     // Vérifier qu'aucun autre trajet du conducteur n'est déjà EN_COURS
     const { rows: enCours } = await pool.query(
       `SELECT id FROM trajets WHERE conducteur_id = $1 AND statut = 'EN_COURS' AND id != $2`,
