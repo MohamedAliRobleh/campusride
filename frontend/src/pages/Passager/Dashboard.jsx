@@ -502,7 +502,11 @@ export default function Dashboard() {
                             </div>
                             <div className="d-flex align-items-center gap-2 flex-shrink-0">
                               {isFull ? (
-                                <span className="badge rounded-pill px-2 py-1 fw-semibold" style={{ fontSize: "0.72rem", background: "#dc354520", color: "#dc3545", border: "1px solid #dc354540" }}>
+                                <span
+                                  className="badge rounded-pill px-2 py-1 fw-semibold"
+                                  style={{ fontSize: "0.72rem", background: "#dc354520", color: "#dc3545", border: "1px solid #dc354540", cursor: "pointer" }}
+                                  onClick={() => showToast("Ce trajet est complet, toutes les places ont été réservées.")}
+                                >
                                   <i className="bi bi-lock-fill me-1" />
                                   Complet
                                 </span>
@@ -512,17 +516,16 @@ export default function Dashboard() {
                                   {trajet.places_dispo}
                                 </span>
                               )}
-                              <button
-                                type="button"
-                                className={`btn btn-sm fw-semibold rounded-3 px-3 ${isFull ? "btn-secondary" : "btn-success"}`}
-                                style={isFull ? { fontSize: "0.8rem" } : { background: "linear-gradient(135deg, #198754, #20c374)", border: "none", fontSize: "0.8rem" }}
-                                onClick={() => isFull
-                                  ? showToast("Ce trajet est complet, toutes les places ont été réservées.")
-                                  : navigate("/passager/search")
-                                }
-                              >
-                                {isFull ? <><i className="bi bi-lock-fill me-1" />Complet</> : "Réserver"}
-                              </button>
+                              {!isFull && (
+                                <button
+                                  type="button"
+                                  className="btn btn-success btn-sm fw-semibold rounded-3 px-3"
+                                  style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none", fontSize: "0.8rem" }}
+                                  onClick={() => navigate("/passager/search")}
+                                >
+                                  Réserver
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
