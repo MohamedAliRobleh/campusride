@@ -117,6 +117,14 @@ export default function MesTrajets() {
         fetchMesTrajets();
     }, [token]);
 
+    // Démarrer le GPS automatiquement si un trajet est déjà EN_COURS au chargement
+    useEffect(() => {
+        const trajetEnCours = trajets.find((t) => t.statut === "EN_COURS");
+        if (trajetEnCours && liveTrajetId !== trajetEnCours.id) {
+            startTracking(trajetEnCours.id);
+        }
+    }, [trajets]);
+
     // Filtres
     const trajetsActifs = trajets.filter(
         (t) => t.statut === "PLANIFIE" || t.statut === "EN_COURS"
