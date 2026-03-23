@@ -245,17 +245,7 @@ export async function acceptReservation(conducteurId, reservationId) {
 
     // places_dispo a déjà été décrémenté à la création de la réservation
     const newPlaces = row.places_dispo;
-
-    // Si le trajet est complet (plus de places dispo), passer en EN_COURS
-    // pour le retirer des listings publics dès qu'une réservation est acceptée
-    let nouveauStatutTrajet = "PLANIFIE";
-    if (newPlaces <= 0) {
-      await client.query(
-        `UPDATE trajets SET statut = 'EN_COURS' WHERE id = $1 AND statut = 'PLANIFIE'`,
-        [row.trajet_id]
-      );
-      nouveauStatutTrajet = "EN_COURS";
-    }
+    const nouveauStatutTrajet = "PLANIFIE";
 
     // ===============================
     // Notifier le passager : réservation acceptée

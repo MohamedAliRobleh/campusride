@@ -225,6 +225,13 @@ export async function getTrajetsPopulaires() {
     LEFT JOIN vehicules v ON v.utilisateur_id = t.conducteur_id
     WHERE t.statut = 'PLANIFIE'
       AND t.dateheure_depart >= NOW()
+      AND (
+        t.places_dispo > 0
+        OR NOT EXISTS (
+          SELECT 1 FROM reservations r
+          WHERE r.trajet_id = t.id AND r.statut = 'ACCEPTEE'
+        )
+      )
     ORDER BY t.dateheure_depart ASC
     LIMIT 5;
     `
