@@ -136,7 +136,8 @@ export default function MesTrajets() {
             setTrajets((prev) =>
                 prev.map((t) => (t.id === id ? { ...t, statut: "EN_COURS" } : t))
             );
-            showToast("Trajet démarré ! Bonne route 🚗", "success");
+            startTracking(id);
+            showToast("Trajet démarré ! Partage de position activé 🚗", "success");
         } catch (err) {
             showToast(err.message || "Impossible de démarrer ce trajet.", "danger");
         }
@@ -155,7 +156,7 @@ export default function MesTrajets() {
             setTrajets((prev) =>
                 prev.map((t) => (t.id === id ? { ...t, statut: "TERMINE" } : t))
             );
-
+            stopTracking();
             showToast("Trajet terminé ✅", "success");
         } catch (err) {
             showToast(err.message || "Impossible de terminer ce trajet.", "danger");
