@@ -149,11 +149,11 @@ export async function searchTrajets({
 
 
 /**
- * Termine un trajet (seulement conducteur) + notifie les passagers acceptés
- * Retourne le trajet terminé ou null si pas autorisé / pas trouvable
+ * Termine un trajet (seulement conducteur) + notifie les passagers acceptés.
+ * Retourne le trajet terminé ou null si pas autorisé / pas trouvable.
  */
 export async function terminerTrajetEtNotifier({ client, trajetId, conducteurId }) {
-  // 1) terminer + récupérer infos utiles
+  // 1) terminer + récupérer les infos utiles.
   const res = await client.query(
     `
     UPDATE trajets
@@ -240,7 +240,7 @@ export async function getTrajetsPopulaires() {
 }
 
 /**
- * Lock + lecture trajet (utile pour annulation/modif)
+ * Lock + lecture trajet (utile pour annulation/modif).
  */
 export async function getTrajetByIdForUpdate({ client, trajetId }) {
   const res = await client.query(
@@ -276,7 +276,7 @@ export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
 
   const trajet = upd.rows[0];
 
-  // Annuler réservations actives + récupérer passagers touchés
+  // Annuler réservations actives + récupérer passagers touchés.
   const annuleResa = await client.query(
     `
     UPDATE reservations
@@ -289,7 +289,7 @@ export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
     [trajetId]
   );
 
-  // Notif batch — utilise uniquement les passagers des réservations qu'on vient d'annuler
+  // Notif batch — utilise uniquement les passagers des réservations qu'on vient d'annuler.
   if (annuleResa.rows.length > 0) {
     const passagerIds = [...new Set(annuleResa.rows.map(r => r.passager_id))];
     await client.query(
@@ -308,7 +308,7 @@ export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
 }
 
 /**
- * Modifier trajet et notfier passages accepetes (seulement conducteur + statut PLANIFIE)
+ * Modifier trajet et notfier passages accepetes (seulement conducteur + statut PLANIFIE).
  */
 export async function modifierTrajetEtNotifier({ client, trajetId, conducteurId, lieuDepart, dest, dateIso }) {
   // ancien trajet
@@ -349,7 +349,7 @@ export async function modifierTrajetEtNotifier({ client, trajetId, conducteurId,
     `Le trajet ${oldTrajet.lieu_depart} → ${oldTrajet.destination} a été modifié ` +
     `(nouveau: ${trajet.lieu_depart} → ${trajet.destination}, départ: ${new Date(trajet.dateheure_depart).toLocaleString("fr-CA")}).`;
 
-  // Notifier les passagers acceptés ET en attente
+  // Notifier les passagers acceptés ET en attente.
   await client.query(
     `
     INSERT INTO notifications (utilisateur_id, type, message, cree_le)

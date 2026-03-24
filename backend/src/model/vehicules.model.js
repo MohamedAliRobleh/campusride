@@ -10,7 +10,7 @@ export async function ajouterVehiculeEtMajConducteur({
 
     await client.query("BEGIN");
 
-    // Insérer véhicule
+    // Insérer  véhicule
     const insertVehiculeQuery = `
       INSERT INTO vehicules (
         utilisateur_id,
@@ -36,7 +36,7 @@ export async function ajouterVehiculeEtMajConducteur({
       nb_places
     ]);
 
-    // Mettre à jour rôle
+    // Mettre à jour rôle .
     const updateRoleQuery = `
       UPDATE utilisateurs
       SET role = 'CONDUCTEUR'
