@@ -95,27 +95,42 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
       </div>
     );
 
-  /* ── Notifications dropdown ── */
+  /* ── Bouton cloche partagé ── */
+  const BellButton = ({ extraClass = "", onClick, toggleProps = {} }) => (
+    <button
+      className={`btn btn-link p-1 position-relative text-decoration-none ${isDark ? "text-light" : "text-dark"} ${extraClass}`}
+      type="button"
+      aria-label="Notifications"
+      onClick={onClick}
+      {...toggleProps}
+    >
+      <i className="bi bi-bell" style={{ fontSize: "1.2rem" }} />
+      {unreadCount > 0 && (
+        <span
+          className="position-absolute badge rounded-pill bg-danger"
+          style={{ fontSize: "0.55rem", top: 1, right: 1, minWidth: 15, height: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}
+        >
+          {unreadCount}
+        </span>
+      )}
+    </button>
+  );
+
+  /* ── Mobile : cloche → page notifications directement ── */
+  const NotifMobile = () => (
+    <BellButton
+      extraClass="d-md-none"
+      onClick={() => navigate("/passager/notifications")}
+    />
+  );
+
+  /* ── Desktop : cloche → dropdown ── */
   const NotifDropdown = () => (
-    <div className="dropdown">
-      <button
-        className={`btn btn-link p-1 position-relative text-decoration-none ${isDark ? "text-light" : "text-dark"}`}
-        data-bs-toggle="dropdown"
-        data-bs-auto-close="true"
-        type="button"
-        aria-label="Notifications"
-      >
-        <i className="bi bi-bell" style={{ fontSize: "1.2rem" }} />
-        {unreadCount > 0 && (
-          <span
-            className="position-absolute badge rounded-pill bg-danger"
-            style={{ fontSize: "0.55rem", top: 1, right: 1, minWidth: 15, height: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}
-          >
-            {unreadCount}
-          </span>
-        )}
-      </button>
-      <ul className="dropdown-menu dropdown-menu-end" style={{ maxWidth: "calc(100vw - 16px)", width: 320 }}>
+    <div className="dropdown d-none d-md-block">
+      <BellButton
+        toggleProps={{ "data-bs-toggle": "dropdown", "data-bs-auto-close": "true" }}
+      />
+      <ul className="dropdown-menu dropdown-menu-end" style={{ width: 320 }}>
         <li className="px-3 pt-2 pb-1">
           <div className="fw-bold" style={{ fontSize: "0.85rem" }}>
             <i className="bi bi-bell-fill text-success me-2" />
@@ -377,7 +392,8 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
 
           {/* ── Right actions — desktop: full dropdown / mobile: icons ── */}
 
-          {/* Notifications (always) */}
+          {/* Notifications : page directe sur mobile, dropdown sur desktop */}
+          <NotifMobile />
           <NotifDropdown />
 
           {/* Avatar dropdown (always visible) */}
