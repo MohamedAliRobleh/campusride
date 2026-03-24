@@ -28,6 +28,7 @@ export default function Search() {
 
   useEffect(() => {
     document.body.dataset.bsTheme = theme;
+    window.scrollTo(0, 0);
   }, [theme]);
 
   useEffect(() => {
