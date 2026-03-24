@@ -78,7 +78,7 @@ export async function createReservation(passagerId, trajetId) {
       return { error: "MAX_PENDING_REACHED" };
     }
 
-    // Vérifier si une réservation existe déjà pour ce passager + trajet
+    // Vérifier si une réservation si elle existe déjà pour ce passager + trajet.
     const existingRes = await client.query(
       `SELECT id, statut FROM reservations WHERE passager_id = $1 AND trajet_id = $2`,
       [passagerId, trajetId]
@@ -88,12 +88,12 @@ export async function createReservation(passagerId, trajetId) {
 
     if (existingRes.rows.length > 0) {
       const existing = existingRes.rows[0];
-      // Déjà EN_ATTENTE ou ACCEPTEE → impossible de re-réserver
+      // Déjà EN_ATTENTE ou ACCEPTEE → impossible de re-réserver.
       if (existing.statut === "EN_ATTENTE" || existing.statut === "ACCEPTEE") {
         await client.query("ROLLBACK");
         return { error: "ALREADY_RESERVED" };
       }
-      // REFUSEE ou ANNULEE → réactiver la réservation existante
+      // REFUSÉE ou ANNULEE → réactiver la réservation existante.
       reservationRes = await client.query(
         `UPDATE reservations
          SET statut = 'EN_ATTENTE', demande_le = NOW(), reponse_le = NULL
@@ -102,7 +102,7 @@ export async function createReservation(passagerId, trajetId) {
         [existing.id]
       );
     } else {
-      // Insérer nouvelle réservation
+      // Insérer une nouvelle réservation.
       reservationRes = await client.query(
         `INSERT INTO reservations (trajet_id, passager_id)
          VALUES ($1, $2)
@@ -111,15 +111,15 @@ export async function createReservation(passagerId, trajetId) {
       );
     }
 
-    // Décrémenter places_dispo dès la création/réactivation de la demande
+    // Décrémenter places_dispo dès la création/réactivation de la demande.
     await client.query(
       `UPDATE trajets SET places_dispo = places_dispo - 1 WHERE id = $1`,
       [trajetId]
     );
 
-    // ===============================
-    // Créer notification pour le conducteur
-    // ===============================
+    // ======================================
+    // Créer notification pour le conducteur.
+    // ======================================
     await client.query(
       `
   INSERT INTO notifications (
@@ -243,13 +243,13 @@ export async function acceptReservation(conducteurId, reservationId) {
     );
 
 
-    // places_dispo a déjà été décrémenté à la création de la réservation
+    // places_dispo a déjà été décrémenté à la création de la réservation .
     const newPlaces = row.places_dispo;
     const nouveauStatutTrajet = "PLANIFIE";
 
-    // ===============================
+    // ============================================
     // Notifier le passager : réservation acceptée
-    // ===============================
+    // ============================================
     await client.query(
       `
   INSERT INTO notifications (utilisateur_id, type, message, cree_le)

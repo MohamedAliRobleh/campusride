@@ -12,7 +12,7 @@ export default function MesTrajets() {
     const isDark = theme === "dark";
     const token = localStorage.getItem("token");
 
-    // ===== Edition inline =====
+    // ========== Edition inline =============
     const [editId, setEditId] = useState(null);
     const [draft, setDraft] = useState({
         lieu_depart: "",
@@ -21,7 +21,7 @@ export default function MesTrajets() {
     });
     const [loadingSave, setLoadingSave] = useState(false);
 
-    // ===== Toast (popup) =====
+    // ========== Toast (popup) ============
     const [toast, setToast] = useState({
         show: false,
         text: "",
@@ -354,7 +354,7 @@ export default function MesTrajets() {
                     </div>
                 </div>
 
-                {/* ===== Actions ===== */}
+                {/* ====== Actions ====== */}
                 {trajet.statut === "PLANIFIE" && isEditing && (
                     <div className="d-flex gap-2 mb-2">
                         <button

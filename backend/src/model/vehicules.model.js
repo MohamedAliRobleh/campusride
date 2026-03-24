@@ -10,7 +10,7 @@ export async function ajouterVehiculeEtMajConducteur({
 
     await client.query("BEGIN");
 
-    // Insérer véhicule
+    // Insérer le  véhicule
     const insertVehiculeQuery = `
       INSERT INTO vehicules (
         utilisateur_id,
@@ -36,7 +36,7 @@ export async function ajouterVehiculeEtMajConducteur({
       nb_places
     ]);
 
-    // Mettre à jour rôle
+    // Mettre à jour rôle .
     const updateRoleQuery = `
       UPDATE utilisateurs
       SET role = 'CONDUCTEUR'
@@ -163,7 +163,7 @@ export async function supprimerVehiculeEtRevertRole(userId) {
     await client.query("BEGIN");
 
     // Annuler les trajets PLANIFIE du conducteur et restaurer les places des passagers EN_ATTENTE/ACCEPTEE
-    // 1. Remettre places_dispo pour chaque réservation active
+    // 1. Remettre places_dispo pour chaque réservation active.
     await client.query(
       `UPDATE trajets
        SET places_dispo = places_dispo + (
@@ -174,7 +174,7 @@ export async function supprimerVehiculeEtRevertRole(userId) {
       [userId]
     );
 
-    // 2. Annuler les réservations EN_ATTENTE et ACCEPTEE liées à ces trajets
+    // 2. Annuler les réservations EN_ATTENTE et ACCEPTEE liées à ces trajets.
     await client.query(
       `UPDATE reservations SET statut = 'ANNULEE', reponse_le = NOW()
        WHERE trajet_id IN (
@@ -183,7 +183,7 @@ export async function supprimerVehiculeEtRevertRole(userId) {
       [userId]
     );
 
-    // 3. Notifier les passagers affectés
+    // 3. Notifier les passagers affectés.
     await client.query(
       `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
        SELECT r.passager_id, 'RESERVATION_ANNULEE',
@@ -197,20 +197,20 @@ export async function supprimerVehiculeEtRevertRole(userId) {
       [userId]
     );
 
-    // 4. Annuler les trajets PLANIFIE eux-mêmes
+    // 4. Annuler les trajets PLANIFIE eux-mêmes.
     await client.query(
       `UPDATE trajets SET statut = 'ANNULE', maj_le = NOW()
        WHERE conducteur_id = $1 AND statut = 'PLANIFIE'`,
       [userId]
     );
 
-    // Supprimer le véhicule
+    // Supprimer le véhicule.
     await client.query(
       `DELETE FROM vehicules WHERE utilisateur_id = $1`,
       [userId]
     );
 
-    // Remettre le rôle PASSAGER
+    // Remettre le rôle PASSAGER.
     await client.query(
       `UPDATE utilisateurs SET role = 'PASSAGER' WHERE id = $1`,
       [userId]

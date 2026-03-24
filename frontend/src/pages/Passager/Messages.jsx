@@ -1,11 +1,11 @@
-// src/pages/Passager/Messages.jsx
+//  src/pages/Passager/Messages.jsx
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate";
 import ReportModal from "../../components/ReportModal";
 import EmergencyButton from "../../components/EmergencyButton";
 
-// Messages rapides prédéfinis — covoiturage
+//  messages rapides prédéfinis — covoiturage.
 const QUICK_REPLIES = [
   { label: "🚗 En route",            text: "Je suis en route !" },
   { label: "📍 Au point RV",         text: "Je suis arrivé au point de rendez-vous." },
@@ -263,7 +263,7 @@ export default function Messages() {
           className="d-flex flex-column flex-grow-1 overflow-hidden py-2 py-md-3"
           style={{ maxWidth: 1000, width: "100%", margin: "0 auto", padding: "0 12px" }}
         >
-          {/* Titre — masqué sur mobile quand on est en vue chat */}
+          {/* Titre — masqué sur mobile quand on est en vue sur chat */}
           <div className={`mb-2 d-flex align-items-center gap-2 flex-shrink-0 ${mobileView === "chat" ? "d-none d-md-flex" : "d-flex"}`}>
             <h4 className="fw-bold mb-0" style={{ fontSize: "1.1rem" }}>Messagerie</h4>
             {totalNonLus > 0 && (
@@ -458,7 +458,7 @@ export default function Messages() {
                     })}
                   </div>
 
-                  {/* Quick replies */}
+                  {/*  Quick replies  */}
                   {showQuickReplies && (
                     <div
                       className={`px-3 py-2 border-top d-flex gap-2 overflow-auto ${isDark ? "border-secondary" : ""}`}
@@ -479,7 +479,7 @@ export default function Messages() {
                     </div>
                   )}
 
-                  {/* Input message */}
+                  {/*  Input message  */}
                   <form
                     onSubmit={handleSend}
                     className={`px-3 py-2 border-top d-flex gap-2 align-items-center ${isDark ? "border-secondary" : ""}`}
