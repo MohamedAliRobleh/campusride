@@ -1,5 +1,6 @@
 import { pool } from "../DB/db.js";
 
+// Récupère les notifications d’un utilisateur triées par date décroissante
 export async function listNotificationsByUser(userId) {
   const { rows } = await pool.query(
     `
@@ -20,7 +21,7 @@ export async function listNotificationsByUser(userId) {
   return rows;
 }
 
-
+// Envoie une notification au conducteur lorsqu’une réservation est annulée
 export async function notifierConducteurReservationAnnulee({ client, conducteurId, trajet }) {
   await client.query(
     `

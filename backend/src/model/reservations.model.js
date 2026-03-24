@@ -161,6 +161,7 @@ export async function createReservation(passagerId, trajetId) {
   }
 }
 
+// Récupère les réservations associées aux trajets d’un conducteur avec les infos du passager et du trajet
 export async function listReservationsForConducteur(conducteurId) {
   const { rows } = await pool.query(
     `
@@ -193,7 +194,7 @@ LIMIT 200;
 
   return rows;
 }
-
+// Accepte une réservation si le conducteur est autorisé, met à jour le statut et notifie le passager
 export async function acceptReservation(conducteurId, reservationId) {
 
   const client = await pool.connect();
