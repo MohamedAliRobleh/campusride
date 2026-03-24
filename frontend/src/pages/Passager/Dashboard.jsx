@@ -47,8 +47,11 @@ export default function Dashboard() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!depart.trim() || !destination.trim() || !date) return;
-
+    if (!depart.trim() || !destination.trim() || !date) {
+      setFormError("Veuillez remplir le départ, la destination et la date.");
+      return;
+    }
+    setFormError("");
     navigate("/passager/search", {
       state: { depart, destination, date, departCoords, destCoords },
     });
@@ -56,6 +59,7 @@ export default function Dashboard() {
 
   const [trips, setTrips] = useState([]);
   const [toast, setToast] = useState({ show: false, text: "" });
+  const [formError, setFormError] = useState("");
 
   const showToast = (text) => {
     setToast({ show: true, text });
@@ -339,7 +343,7 @@ export default function Dashboard() {
                                 type="date"
                                 className={`border-0 bg-transparent form-control p-0 shadow-none ${isDark ? "text-light" : ""}`}
                                 value={date}
-                                onChange={(e) => setDate(e.target.value)}
+                                onChange={(e) => { setDate(e.target.value); setFormError(""); }}
                               />
                             </div>
                             <button
@@ -351,6 +355,12 @@ export default function Dashboard() {
                               <span className="d-none d-sm-inline">Rechercher</span>
                             </button>
                           </div>
+                          {formError && (
+                            <div className="d-flex align-items-center gap-1 mt-2" style={{ fontSize: "0.78rem", color: "#dc3545" }}>
+                              <i className="bi bi-exclamation-circle-fill" />
+                              {formError}
+                            </div>
+                          )}
                         </div>
                       </form>
                     </div>
@@ -521,7 +531,13 @@ export default function Dashboard() {
                                   type="button"
                                   className="btn btn-success btn-sm fw-semibold rounded-3 px-3"
                                   style={{ background: "linear-gradient(135deg, #198754, #20c374)", border: "none", fontSize: "0.8rem" }}
-                                  onClick={() => navigate("/passager/search")}
+                                  onClick={() => navigate("/passager/search", {
+                                    state: {
+                                      depart: trajet.lieu_depart,
+                                      destination: trajet.destination,
+                                      date: trajet.dateheure_depart.split("T")[0],
+                                    },
+                                  })}
                                 >
                                   Réserver
                                 </button>

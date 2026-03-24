@@ -13,6 +13,7 @@ export default function Aide() {
 
     useEffect(() => {
         document.body.dataset.bsTheme = theme;
+        window.scrollTo(0, 0);
     }, [theme]);
 
     return (
