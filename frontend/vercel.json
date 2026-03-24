@@ -13,6 +13,7 @@
     { "source": "/messages/:path*",      "destination": "https://campusride-api.onrender.com/messages/:path*" },
     { "source": "/signalements",         "destination": "https://campusride-api.onrender.com/signalements" },
     { "source": "/signalements/:path*",  "destination": "https://campusride-api.onrender.com/signalements/:path*" },
+    { "source": "/push/:path*",          "destination": "https://campusride-api.onrender.com/push/:path*" },
     { "source": "/(.*)",                 "destination": "/index.html" }
   ]
 }
