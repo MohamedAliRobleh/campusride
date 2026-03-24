@@ -101,6 +101,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
       <button
         className={`btn btn-link p-1 position-relative text-decoration-none ${isDark ? "text-light" : "text-dark"}`}
         data-bs-toggle="dropdown"
+        data-bs-auto-close="true"
         type="button"
         aria-label="Notifications"
       >
@@ -114,7 +115,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
           </span>
         )}
       </button>
-      <ul className="dropdown-menu dropdown-menu-end" style={{ width: "min(320px, calc(100vw - 16px))", right: 0, left: "auto" }}>
+      <ul className="dropdown-menu dropdown-menu-end" style={{ maxWidth: "calc(100vw - 16px)", width: 320 }}>
         <li className="px-3 pt-2 pb-1">
           <div className="fw-bold" style={{ fontSize: "0.85rem" }}>
             <i className="bi bi-bell-fill text-success me-2" />
