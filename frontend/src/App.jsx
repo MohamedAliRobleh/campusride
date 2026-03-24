@@ -14,6 +14,7 @@ import Trajets from "./pages/Passager/Trajets.jsx";
 import Aide from "./pages/Passager/Aide.jsx";
 import MesReservations from "./pages/Passager/MesReservations.jsx";
 import Messages from "./pages/Passager/Messages.jsx";
+import Notifications from "./pages/Passager/Notifications.jsx";
 
 
 //Conducteur
@@ -62,6 +63,7 @@ export default function App() {
       <Route path="/passager/aide" element={<Aide />} />
       <Route path="/passager/mes-reservations" element={<MesReservations />} />
       <Route path="/passager/messages" element={<Messages />} />
+      <Route path="/passager/notifications" element={<Notifications />} />
 
     
       <Route path="/conducteur/mes-trajets" element={<MesTrajets />} />
