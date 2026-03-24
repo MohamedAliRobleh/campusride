@@ -413,7 +413,6 @@ LEFT JOIN profils p ON p.utilisateur_id = u.id
 LEFT JOIN vehicules v ON v.utilisateur_id = u.id
 
 WHERE r.passager_id = $1
-  AND r.statut != 'ANNULEE'
 ORDER BY r.demande_le DESC
 
     `,

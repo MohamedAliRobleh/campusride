@@ -152,6 +152,16 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
             </li>
           ))
         )}
+        <li><hr className="dropdown-divider my-1" /></li>
+        <li>
+          <button
+            className="dropdown-item text-center fw-semibold text-success"
+            style={{ fontSize: "0.82rem" }}
+            onClick={() => navigate("/passager/notifications")}
+          >
+            Voir toutes les notifications
+          </button>
+        </li>
       </ul>
     </div>
   );
