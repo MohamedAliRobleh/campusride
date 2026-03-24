@@ -76,208 +76,6 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
   const isTabActive = (paths) =>
     paths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  /* ── Avatar ── */
-  const Avatar = ({ size = 34 }) =>
-    photoUrl ? (
-      <img
-        src={photoUrl}
-        alt="Photo de profil"
-        className="rounded-circle flex-shrink-0"
-        style={{ width: size, height: size, objectFit: "cover" }}
-        onError={(e) => { e.target.style.display = "none"; }}
-      />
-    ) : (
-      <div
-        className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-        style={{ width: size, height: size, background: "linear-gradient(135deg, #198754, #20c374)", fontSize: size * 0.24 }}
-      >
-        {initials}
-      </div>
-    );
-
-  /* ── Bouton cloche partagé ── */
-  const BellButton = ({ extraClass = "", onClick, toggleProps = {} }) => (
-    <button
-      className={`btn btn-link p-1 position-relative text-decoration-none ${isDark ? "text-light" : "text-dark"} ${extraClass}`}
-      type="button"
-      aria-label="Notifications"
-      onClick={onClick}
-      {...toggleProps}
-    >
-      <i className="bi bi-bell" style={{ fontSize: "1.2rem" }} />
-      {unreadCount > 0 && (
-        <span
-          className="position-absolute badge rounded-pill bg-danger"
-          style={{ fontSize: "0.55rem", top: 1, right: 1, minWidth: 15, height: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}
-        >
-          {unreadCount}
-        </span>
-      )}
-    </button>
-  );
-
-  /* ── Mobile : cloche → page notifications directement ── */
-  const NotifMobile = () => (
-    <BellButton
-      extraClass="d-md-none"
-      onClick={() => navigate("/passager/notifications")}
-    />
-  );
-
-  /* ── Desktop : cloche → dropdown ── */
-  const NotifDropdown = () => (
-    <div className="dropdown d-none d-md-block">
-      <BellButton
-        toggleProps={{ "data-bs-toggle": "dropdown", "data-bs-auto-close": "true" }}
-      />
-      <ul className="dropdown-menu dropdown-menu-end" style={{ width: 320 }}>
-        <li className="px-3 pt-2 pb-1">
-          <div className="fw-bold" style={{ fontSize: "0.85rem" }}>
-            <i className="bi bi-bell-fill text-success me-2" />
-            Notifications
-            {unreadCount > 0 && (
-              <span className="badge bg-success ms-2 rounded-pill" style={{ fontSize: "0.65rem" }}>
-                {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-        </li>
-        <li><hr className="dropdown-divider my-1" /></li>
-        {notifications.length === 0 ? (
-          <li className="px-3 py-3 text-center">
-            <i className="bi bi-bell-slash text-muted d-block mb-1" style={{ fontSize: "1.3rem" }} />
-            <span className="text-muted small">Aucune notification</span>
-          </li>
-        ) : (
-          notifications.slice(0, 5).map((notif) => (
-            <li key={notif.id}>
-              <button
-                className="dropdown-item d-flex align-items-start gap-2 py-2"
-                onClick={() => markAllRead(notif)}
-              >
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1"
-                  style={{ width: 28, height: 28, background: "rgba(25,135,84,0.12)" }}
-                >
-                  <i className="bi bi-bell-fill text-success" style={{ fontSize: "0.7rem" }} />
-                </div>
-                <span className="fw-semibold" style={{ fontSize: "0.82rem", lineHeight: 1.35, whiteSpace: "normal", wordBreak: "break-word", minWidth: 0 }}>
-                  {notif.message}
-                </span>
-              </button>
-            </li>
-          ))
-        )}
-        <li><hr className="dropdown-divider my-1" /></li>
-        <li>
-          <button
-            className="dropdown-item text-center fw-semibold text-success"
-            style={{ fontSize: "0.82rem" }}
-            onClick={() => navigate("/passager/notifications")}
-          >
-            Voir toutes les notifications
-          </button>
-        </li>
-      </ul>
-    </div>
-  );
-
-  /* ── User dropdown (desktop) ── */
-  const UserDropdown = () => (
-    <div className="dropdown">
-      <button
-        className="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2"
-        data-bs-toggle="dropdown"
-        type="button"
-      >
-        <Avatar size={34} />
-        <div className="text-start d-none d-md-block">
-          <div className={`fw-semibold lh-1 mb-1 ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.85rem" }}>
-            {userName}
-          </div>
-          {isAdmin && (
-            <span className="badge rounded-pill px-2" style={{ fontSize: "0.62rem", background: "rgba(25,135,84,0.15)", color: "#198754" }}>
-              Admin
-            </span>
-          )}
-          {isDriver && !isAdmin && (
-            <span className="badge rounded-pill px-2" style={{ fontSize: "0.62rem", background: "rgba(25,135,84,0.12)", color: "#198754" }}>
-              Conducteur
-            </span>
-          )}
-        </div>
-        <i className={`bi bi-chevron-down small opacity-50 d-none d-md-inline ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.7rem" }} />
-      </button>
-      <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 240 }}>
-        <li className="px-3 py-2">
-          <div className="d-flex align-items-center gap-2">
-            <Avatar size={40} />
-            <div className="min-w-0">
-              <div className="fw-bold text-truncate" style={{ fontSize: "0.88rem", maxWidth: 150 }}>{userName}</div>
-              <div className="text-muted text-truncate" style={{ fontSize: "0.73rem", maxWidth: 150 }}>{user?.email || ""}</div>
-              {isAdmin && (
-                <span className="badge rounded-pill mt-1" style={{ fontSize: "0.6rem", background: "rgba(25,135,84,0.15)", color: "#198754" }}>
-                  Administrateur
-                </span>
-              )}
-              {isDriver && !isAdmin && (
-                <span className="badge rounded-pill mt-1" style={{ fontSize: "0.6rem", background: "rgba(25,135,84,0.12)", color: "#198754" }}>
-                  Conducteur
-                </span>
-              )}
-            </div>
-          </div>
-        </li>
-        <li><hr className="dropdown-divider my-1" /></li>
-        {isAdmin && (
-          <>
-            <li>
-              <button
-                className="dropdown-item d-flex align-items-center gap-2 fw-semibold"
-                onClick={() => navigate("/admin")}
-                style={{ color: "#198754" }}
-              >
-                <div
-                  className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
-                  style={{ width: 22, height: 22, background: "linear-gradient(135deg, #198754, #20c374)" }}
-                >
-                  <i className="bi bi-shield-fill text-white" style={{ fontSize: "0.65rem" }} />
-                </div>
-                Panneau Admin
-              </button>
-            </li>
-            <li><hr className="dropdown-divider my-1" /></li>
-          </>
-        )}
-        <li>
-          <button className="dropdown-item" onClick={() => navigate("/profil")}>
-            <i className="bi bi-person-circle me-2 text-success" />Mon profil
-          </button>
-        </li>
-        <li>
-          <button className="dropdown-item" onClick={() => navigate("/profil/voitures")}>
-            <i className="bi bi-car-front me-2 text-success" />Mon véhicule
-          </button>
-        </li>
-        <li>
-          <button className="dropdown-item" onClick={() => navigate("/passager/messages")}>
-            <i className="bi bi-chat-dots me-2 text-success" />Messages
-          </button>
-        </li>
-        <li>
-          <button className="dropdown-item" onClick={() => navigate("/profil/parametres")}>
-            <i className="bi bi-gear me-2 text-success" />Paramètres
-          </button>
-        </li>
-        <li><hr className="dropdown-divider my-1" /></li>
-        <li>
-          <button className="dropdown-item text-danger" onClick={() => logout(navigate)}>
-            <i className="bi bi-box-arrow-right me-2" />Déconnexion
-          </button>
-        </li>
-      </ul>
-    </div>
-  );
 
   /* ════════════════════════════════════════════════════════════ */
 
@@ -392,12 +190,142 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
 
           {/* ── Right actions — desktop: full dropdown / mobile: icons ── */}
 
-          {/* Notifications : page directe sur mobile, dropdown sur desktop */}
-          <NotifMobile />
-          <NotifDropdown />
+          {/* Cloche mobile → page notifications directement */}
+          <button
+            type="button"
+            className={`btn btn-link p-1 position-relative text-decoration-none d-md-none ${isDark ? "text-light" : "text-dark"}`}
+            aria-label="Notifications"
+            onClick={() => navigate("/passager/notifications")}
+          >
+            <i className="bi bi-bell" style={{ fontSize: "1.2rem" }} />
+            {unreadCount > 0 && (
+              <span className="position-absolute badge rounded-pill bg-danger"
+                style={{ fontSize: "0.55rem", top: 1, right: 1, minWidth: 15, height: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                {unreadCount}
+              </span>
+            )}
+          </button>
 
-          {/* Avatar dropdown (always visible) */}
-          <UserDropdown />
+          {/* Cloche desktop → dropdown */}
+          <div className="dropdown d-none d-md-block">
+            <button
+              type="button"
+              className={`btn btn-link p-1 position-relative text-decoration-none ${isDark ? "text-light" : "text-dark"}`}
+              data-bs-toggle="dropdown"
+              aria-label="Notifications"
+            >
+              <i className="bi bi-bell" style={{ fontSize: "1.2rem" }} />
+              {unreadCount > 0 && (
+                <span className="position-absolute badge rounded-pill bg-danger"
+                  style={{ fontSize: "0.55rem", top: 1, right: 1, minWidth: 15, height: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            <ul className="dropdown-menu dropdown-menu-end" style={{ width: 320 }}>
+              <li className="px-3 pt-2 pb-1">
+                <div className="fw-bold" style={{ fontSize: "0.85rem" }}>
+                  <i className="bi bi-bell-fill text-success me-2" />Notifications
+                  {unreadCount > 0 && (
+                    <span className="badge bg-success ms-2 rounded-pill" style={{ fontSize: "0.65rem" }}>
+                      {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+              </li>
+              <li><hr className="dropdown-divider my-1" /></li>
+              {notifications.length === 0 ? (
+                <li className="px-3 py-3 text-center">
+                  <i className="bi bi-bell-slash text-muted d-block mb-1" style={{ fontSize: "1.3rem" }} />
+                  <span className="text-muted small">Aucune notification</span>
+                </li>
+              ) : notifications.slice(0, 5).map((notif) => (
+                <li key={notif.id}>
+                  <button className="dropdown-item d-flex align-items-start gap-2 py-2" onClick={() => markAllRead(notif)}>
+                    <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1"
+                      style={{ width: 28, height: 28, background: "rgba(25,135,84,0.12)" }}>
+                      <i className="bi bi-bell-fill text-success" style={{ fontSize: "0.7rem" }} />
+                    </div>
+                    <span className="fw-semibold" style={{ fontSize: "0.82rem", lineHeight: 1.35, whiteSpace: "normal", wordBreak: "break-word", minWidth: 0 }}>
+                      {notif.message}
+                    </span>
+                  </button>
+                </li>
+              ))}
+              <li><hr className="dropdown-divider my-1" /></li>
+              <li>
+                <button className="dropdown-item text-center fw-semibold text-success" style={{ fontSize: "0.82rem" }}
+                  onClick={() => navigate("/passager/notifications")}>
+                  Voir toutes les notifications
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Avatar dropdown */}
+          <div className="dropdown">
+            <button className="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2 flex-shrink-0"
+              data-bs-toggle="dropdown" type="button">
+              {photoUrl ? (
+                <img src={photoUrl} alt="avatar" className="rounded-circle flex-shrink-0"
+                  style={{ width: 34, height: 34, objectFit: "cover" }}
+                  onError={(e) => { e.target.style.display = "none"; }} />
+              ) : (
+                <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                  style={{ width: 34, height: 34, background: "linear-gradient(135deg,#198754,#20c374)", fontSize: "0.82rem" }}>
+                  {initials}
+                </div>
+              )}
+              <div className="text-start d-none d-md-block">
+                <div className={`fw-semibold lh-1 mb-1 ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.85rem" }}>{userName}</div>
+                {isAdmin && <span className="badge rounded-pill px-2" style={{ fontSize: "0.62rem", background: "rgba(25,135,84,0.15)", color: "#198754" }}>Admin</span>}
+                {isDriver && !isAdmin && <span className="badge rounded-pill px-2" style={{ fontSize: "0.62rem", background: "rgba(25,135,84,0.12)", color: "#198754" }}>Conducteur</span>}
+              </div>
+              <i className={`bi bi-chevron-down opacity-50 d-none d-md-inline ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.7rem" }} />
+            </button>
+            <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 240 }}>
+              <li className="px-3 py-2">
+                <div className="d-flex align-items-center gap-2">
+                  {photoUrl ? (
+                    <img src={photoUrl} alt="avatar" className="rounded-circle flex-shrink-0"
+                      style={{ width: 40, height: 40, objectFit: "cover" }} />
+                  ) : (
+                    <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                      style={{ width: 40, height: 40, background: "linear-gradient(135deg,#198754,#20c374)", fontSize: "0.95rem" }}>
+                      {initials}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="fw-bold text-truncate" style={{ fontSize: "0.88rem", maxWidth: 150 }}>{userName}</div>
+                    <div className="text-muted text-truncate" style={{ fontSize: "0.73rem", maxWidth: 150 }}>{user?.email || ""}</div>
+                    {isAdmin && <span className="badge rounded-pill mt-1" style={{ fontSize: "0.6rem", background: "rgba(25,135,84,0.15)", color: "#198754" }}>Administrateur</span>}
+                    {isDriver && !isAdmin && <span className="badge rounded-pill mt-1" style={{ fontSize: "0.6rem", background: "rgba(25,135,84,0.12)", color: "#198754" }}>Conducteur</span>}
+                  </div>
+                </div>
+              </li>
+              <li><hr className="dropdown-divider my-1" /></li>
+              {isAdmin && (
+                <>
+                  <li>
+                    <button className="dropdown-item d-flex align-items-center gap-2 fw-semibold" onClick={() => navigate("/admin")} style={{ color: "#198754" }}>
+                      <div className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                        style={{ width: 22, height: 22, background: "linear-gradient(135deg,#198754,#20c374)" }}>
+                        <i className="bi bi-shield-fill text-white" style={{ fontSize: "0.65rem" }} />
+                      </div>
+                      Panneau Admin
+                    </button>
+                  </li>
+                  <li><hr className="dropdown-divider my-1" /></li>
+                </>
+              )}
+              <li><button className="dropdown-item" onClick={() => navigate("/profil")}><i className="bi bi-person-circle me-2 text-success" />Mon profil</button></li>
+              <li><button className="dropdown-item" onClick={() => navigate("/profil/voitures")}><i className="bi bi-car-front me-2 text-success" />Mon véhicule</button></li>
+              <li><button className="dropdown-item" onClick={() => navigate("/passager/messages")}><i className="bi bi-chat-dots me-2 text-success" />Messages</button></li>
+              <li><button className="dropdown-item" onClick={() => navigate("/profil/parametres")}><i className="bi bi-gear me-2 text-success" />Paramètres</button></li>
+              <li><hr className="dropdown-divider my-1" /></li>
+              <li><button className="dropdown-item text-danger" onClick={() => logout(navigate)}><i className="bi bi-box-arrow-right me-2" />Déconnexion</button></li>
+            </ul>
+          </div>
 
           {/* Mobile: logout button */}
           <button
