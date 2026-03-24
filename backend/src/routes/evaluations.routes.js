@@ -6,7 +6,7 @@ import { pool } from "../DB/db.js";
 const router = Router();
 
 // =====================
-// POST / — Soumettre une évaluation (passager → conducteur OU conducteur → passager)
+// POST / —-Soumettre une évaluation (passager → conducteur OU conducteur → passager)
 // =====================
 router.post("/", requireAuth, async (req, res) => {
   try {
@@ -24,7 +24,7 @@ router.post("/", requireAuth, async (req, res) => {
     let evalueId;
 
     if (passager_id) {
-      // === CAS : Conducteur évalue un passager ===
+      // === CAS : Conducteur évalue un passager ====
       const check = await pool.query(
         `SELECT r.id FROM reservations r
          JOIN trajets t ON t.id = r.trajet_id
@@ -40,7 +40,7 @@ router.post("/", requireAuth, async (req, res) => {
       }
       evalueId = passager_id;
     } else {
-      // === CAS : Passager évalue le conducteur ===
+      // === CAS : Passager évalue le conducteur ====
       const check = await pool.query(
         `SELECT r.id, t.conducteur_id
          FROM reservations r
@@ -57,7 +57,7 @@ router.post("/", requireAuth, async (req, res) => {
       evalueId = check.rows[0].conducteur_id;
     }
 
-    // Vérifier si déjà évalué
+    // Vérifier si c'est  déjà évalué
     const existing = await pool.query(
       `SELECT id FROM evaluations WHERE evaluateur_id = $1 AND evalue_id = $2 AND trajet_id = $3`,
       [evaluateurId, evalueId, trajet_id]
@@ -73,7 +73,7 @@ router.post("/", requireAuth, async (req, res) => {
       [randomUUID(), evaluateurId, evalueId, trajet_id, noteNum, commentaire || null]
     );
 
-    // Notification non-critique (ne bloque pas si le type enum est manquant)
+    // Notification non-critique (ne bloque pas si le type enum est manquant).
     try {
       await pool.query(
         `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
@@ -91,9 +91,9 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
-// =====================
+// =================================================
 // GET /conducteur/:id — Évaluations d'un conducteur
-// =====================
+// =================================================
 router.get("/conducteur/:id", async (req, res) => {
   try {
     const evalueId = req.params.id;
@@ -121,9 +121,9 @@ router.get("/conducteur/:id", async (req, res) => {
   }
 });
 
-// =====================
+// =======================================================
 // GET /passager/:id — Évaluations reçues par un passager
-// =====================
+// =======================================================
 router.get("/passager/:id", async (req, res) => {
   try {
     const evalueId = req.params.id;
@@ -151,9 +151,9 @@ router.get("/passager/:id", async (req, res) => {
   }
 });
 
-// =====================
+// ===================================================================
 // GET /trajet/:id/moi — L'utilisateur a-t-il déjà évalué ce trajet ?
-// =====================
+// ===================================================================
 router.get("/trajet/:id/moi", requireAuth, async (req, res) => {
   try {
     const { evalue_id } = req.query;

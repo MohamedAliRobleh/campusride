@@ -176,7 +176,7 @@ export default function ModalAjouterVoiture({ show, onClose, isDark, vehicule })
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         <div
-          className={`rounded-4 shadow-lg w-100 overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}
+          className={`rounded-4 shadow-lg w-100 ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}
           style={{ maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}
         >
           {/* Header */}
