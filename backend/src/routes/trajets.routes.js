@@ -185,16 +185,14 @@ router.patch("/:id/demarrer", requireAuth, async (req, res) => {
       [trajetId, trajet.lieu_depart, trajet.destination]
     );
 
-    // Push aux passagers acceptés
-    const { rows: passagersDem } = await pool.query(
-      `SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`,
-      [trajetId]
-    );
-    passagersDem.forEach(p =>
-      sendPushToUser(p.passager_id, "Trajet démarré 🚗",
-        `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} vient de démarrer !`,
-        "/passager/mes-reservations")
-    );
+    // Push aux passagers acceptés (non bloquant)
+    pool.query(`SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`, [trajetId])
+      .then(({ rows }) => rows.forEach(p =>
+        sendPushToUser(p.passager_id, "Trajet démarré 🚗",
+          `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} vient de démarrer !`,
+          "/passager/mes-reservations")
+      ))
+      .catch(() => {});
 
     return res.json({ trajet: updated[0] });
   } catch (err) {
@@ -223,16 +221,14 @@ router.patch("/:id/terminer", requireAuth, async (req, res) => {
 
     await client.query("COMMIT");
 
-    // Push aux passagers du trajet terminé
-    const { rows: passagersTerm } = await pool.query(
-      `SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`,
-      [trajetId]
-    );
-    passagersTerm.forEach(p =>
-      sendPushToUser(p.passager_id, "Trajet terminé ✅",
-        `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} est terminé.`,
-        "/passager/mes-reservations")
-    );
+    // Push aux passagers du trajet terminé (non bloquant)
+    pool.query(`SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`, [trajetId])
+      .then(({ rows }) => rows.forEach(p =>
+        sendPushToUser(p.passager_id, "Trajet terminé ✅",
+          `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} est terminé.`,
+          "/passager/mes-reservations")
+      ))
+      .catch(() => {});
 
     return res.json({ trajet });
   } catch (err) {
@@ -279,16 +275,14 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
 
     await client.query("COMMIT");
 
-    // Push aux passagers dont la réservation vient d'être annulée
-    const { rows: passagersAnn } = await pool.query(
-      `SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ANNULEE'`,
-      [trajetId]
-    );
-    passagersAnn.forEach(p =>
-      sendPushToUser(p.passager_id, "Trajet annulé ❌",
-        `Le trajet ${result.trajet.lieu_depart} → ${result.trajet.destination} a été annulé par le conducteur.`,
-        "/passager/mes-reservations")
-    );
+    // Push aux passagers dont la réservation vient d'être annulée (non bloquant)
+    pool.query(`SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ANNULEE'`, [trajetId])
+      .then(({ rows }) => rows.forEach(p =>
+        sendPushToUser(p.passager_id, "Trajet annulé ❌",
+          `Le trajet ${result.trajet.lieu_depart} → ${result.trajet.destination} a été annulé par le conducteur.`,
+          "/passager/mes-reservations")
+      ))
+      .catch(() => {});
 
     return res.json(result);
   } catch (err) {
@@ -317,7 +311,7 @@ router.get("/mes-trajets", requireAuth, async (req, res) => {
 // =====================
 // GET /Trajets populaires
 // =====================
-router.get("/populaires", async (req, res) => {
+router.get("/populaires", async (_req, res) => {
   try {
     const rows = await getTrajetsPopulaires();
     return res.json(rows);
