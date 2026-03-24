@@ -85,7 +85,6 @@ export default function Notifications() {
     } catch {}
   };
 
-  // Grouper par date
   const groupByDate = (notifs) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -113,29 +112,32 @@ export default function Notifications() {
     <div className={`d-flex flex-column min-vh-100 ${isDark ? "bg-dark text-light" : "bg-light text-dark"}`}>
       <HeaderPrivate isDark={isDark} />
 
-      <main className="flex-grow-1 py-4">
-        <div className="container" style={{ maxWidth: 680 }}>
+      <main className="flex-grow-1 py-4" style={{ paddingBottom: "80px" }}>
+        <div className="container px-3" style={{ maxWidth: 680 }}>
 
-          {/* Header */}
-          <div className="d-flex align-items-center justify-content-between mb-4">
-            <div>
-              <h4 className="fw-bold mb-1">
-                <i className="bi bi-bell-fill text-success me-2" />
-                Notifications
-              </h4>
-              <p className={`small mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
-                {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}` : "Tout est lu"}
-              </p>
+          {/* Header — responsive sur mobile */}
+          <div className="mb-4">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <h4 className="fw-bold mb-1">
+                  <i className="bi bi-bell-fill text-success me-2" />
+                  Notifications
+                </h4>
+                <p className={`small mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+                  {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}` : "Tout est lu"}
+                </p>
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  className="btn btn-outline-success btn-sm rounded-3 fw-semibold"
+                  style={{ whiteSpace: "nowrap" }}
+                  onClick={markAllRead}
+                >
+                  <i className="bi bi-check2-all me-1" />
+                  Tout lu
+                </button>
+              )}
             </div>
-            {unreadCount > 0 && (
-              <button
-                className="btn btn-outline-success btn-sm rounded-3 fw-semibold"
-                onClick={markAllRead}
-              >
-                <i className="bi bi-check2-all me-1" />
-                Tout marquer comme lu
-              </button>
-            )}
           </div>
 
           {/* Loading */}
@@ -159,7 +161,10 @@ export default function Notifications() {
           {/* Groupes */}
           {!loading && Object.entries(groups).map(([label, notifs]) => (
             <div key={label} className="mb-4">
-              <p className={`small fw-semibold mb-2 ${isDark ? "text-secondary" : "text-muted"}`} style={{ textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "0.72rem" }}>
+              <p
+                className={`small fw-semibold mb-2 ${isDark ? "text-secondary" : "text-muted"}`}
+                style={{ textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "0.72rem" }}
+              >
                 {label}
               </p>
               <div className={`rounded-4 shadow-sm overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}>
@@ -169,7 +174,7 @@ export default function Notifications() {
                   return (
                     <div key={notif.id}>
                       <button
-                        className={`w-100 border-0 bg-transparent text-start d-flex align-items-start gap-3 px-3 py-3 ${isDark ? "text-light" : "text-dark"}`}
+                        className={`w-100 border-0 bg-transparent text-start d-flex align-items-start gap-2 px-3 py-3 ${isDark ? "text-light" : "text-dark"}`}
                         style={{ cursor: NAV_DEST[notif.type] ? "pointer" : "default", transition: "background 0.15s" }}
                         onClick={() => handleClick(notif)}
                         onMouseEnter={(e) => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
@@ -178,17 +183,20 @@ export default function Notifications() {
                         {/* Icône */}
                         <div
                           className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1"
-                          style={{ width: 36, height: 36, background: cfg.bg }}
+                          style={{ width: 34, height: 34, background: cfg.bg, minWidth: 34 }}
                         >
-                          <i className={`bi ${cfg.icon}`} style={{ color: cfg.color, fontSize: "0.85rem" }} />
+                          <i className={`bi ${cfg.icon}`} style={{ color: cfg.color, fontSize: "0.8rem" }} />
                         </div>
 
                         {/* Contenu */}
-                        <div className="flex-grow-1 min-w-0">
-                          <p className={`mb-0 ${isUnread ? "fw-semibold" : ""}`} style={{ fontSize: "0.88rem", lineHeight: 1.4 }}>
+                        <div className="flex-grow-1" style={{ minWidth: 0, overflow: "hidden" }}>
+                          <p
+                            className={`mb-0 ${isUnread ? "fw-semibold" : ""}`}
+                            style={{ fontSize: "0.85rem", lineHeight: 1.4, overflowWrap: "break-word", wordBreak: "break-word" }}
+                          >
                             {notif.message}
                           </p>
-                          <p className={`mb-0 mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
+                          <p className={`mb-0 mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.73rem" }}>
                             {new Date(notif.cree_le).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}
                           </p>
                         </div>
@@ -197,7 +205,7 @@ export default function Notifications() {
                         {isUnread && (
                           <div
                             className="rounded-circle bg-success flex-shrink-0 mt-2"
-                            style={{ width: 8, height: 8 }}
+                            style={{ width: 8, height: 8, minWidth: 8 }}
                           />
                         )}
                       </button>
