@@ -191,7 +191,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
         type="button"
       >
         <Avatar size={34} />
-        <div className="text-start">
+        <div className="text-start d-none d-md-block">
           <div className={`fw-semibold lh-1 mb-1 ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.85rem" }}>
             {userName}
           </div>
@@ -206,7 +206,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
             </span>
           )}
         </div>
-        <i className={`bi bi-chevron-down small opacity-50 ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.7rem" }} />
+        <i className={`bi bi-chevron-down small opacity-50 d-none d-md-inline ${isDark ? "text-light" : "text-dark"}`} style={{ fontSize: "0.7rem" }} />
       </button>
       <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 240 }}>
         <li className="px-3 py-2">
