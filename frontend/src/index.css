@@ -4,6 +4,14 @@
    DESIGN SYSTEM — CampusRide
    ============================================================ */
 
+/* Google Places autocomplete dropdown — toujours visible sur mobile */
+.pac-container {
+  z-index: 99999 !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  margin-top: 4px;
+}
+
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
