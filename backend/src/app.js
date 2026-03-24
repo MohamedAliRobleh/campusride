@@ -14,6 +14,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import evaluationsRoutes from "./routes/evaluations.routes.js";
 import messagesRoutes from "./routes/messages.routes.js";
 import signalementsRoutes from "./routes/signalements.routes.js";
+import pushRoutes from "./routes/push.routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -58,5 +59,6 @@ app.use("/admin", adminRoutes);
 app.use("/evaluations", evaluationsRoutes);
 app.use("/messages", messagesRoutes);
 app.use("/signalements", signalementsRoutes);
+app.use("/push", pushRoutes);
 
 export default app;

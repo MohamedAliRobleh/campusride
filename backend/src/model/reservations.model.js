@@ -1,4 +1,5 @@
 import { pool } from "../DB/db.js";
+import { sendPushToUser } from "../utils/pushNotification.js";
 
 
 export async function createReservation(passagerId, trajetId) {
@@ -139,6 +140,14 @@ export async function createReservation(passagerId, trajetId) {
     // Valider la transaction
     await client.query("COMMIT");
 
+    // Push au conducteur
+    sendPushToUser(
+      trajet.conducteur_id,
+      "Nouvelle demande de réservation",
+      `${prenom} veut rejoindre votre trajet ${trajet.lieu_depart} → ${trajet.destination}`,
+      "/conducteur/reservations-recues"
+    );
+
     return { reservation: reservationRes.rows[0] };
 
   } catch (err) {
@@ -268,6 +277,14 @@ export async function acceptReservation(conducteurId, reservationId) {
     // Valider transaction
     await client.query("COMMIT");
 
+    // Push au passager
+    sendPushToUser(
+      row.passager_id,
+      "Réservation acceptée ✅",
+      `Votre demande a été acceptée pour le trajet ${row.lieu_depart} → ${row.destination}`,
+      "/passager/mes-reservations"
+    );
+
     return {
       reservation: reservationRes.rows[0],
       trajet: {
@@ -365,6 +382,14 @@ export async function refuseReservation(conducteurId, reservationId) {
     );
 
     await client.query("COMMIT");
+
+    // Push au passager (refus)
+    sendPushToUser(
+      row.passager_id,
+      "Réservation refusée ❌",
+      `Votre demande a été refusée pour le trajet ${row.lieu_depart} → ${row.destination}`,
+      "/passager/mes-reservations"
+    );
 
     return { reservation: reservationRes.rows[0] };
   } catch (err) {
@@ -524,6 +549,14 @@ export async function cancelReservation(passagerId, reservationId) {
       [row.conducteur_id, `Un passager a annulé sa réservation pour votre trajet ${row.lieu_depart} → ${row.destination}`]
     );
     await client.query("COMMIT");
+
+    // Push au conducteur (annulation par le passager)
+    sendPushToUser(
+      row.conducteur_id,
+      "Réservation annulée",
+      `Un passager a annulé sa réservation pour votre trajet ${row.lieu_depart} → ${row.destination}`,
+      "/conducteur/reservations-recues"
+    );
 
     return {
       reservation: reservationRes.rows[0]

@@ -263,3 +263,16 @@ CREATE INDEX IF NOT EXISTS idx_blocages_bloque_id ON blocages(bloque_id);
 -- ==========================================================
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS conducteur_lat DOUBLE PRECISION;
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS conducteur_lng DOUBLE PRECISION;
+
+-- ==========================================================
+-- 16) Push Subscriptions (Web Push Notifications)
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id              SERIAL PRIMARY KEY,
+  utilisateur_id  UUID NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+  endpoint        TEXT NOT NULL UNIQUE,
+  p256dh          TEXT NOT NULL,
+  auth            TEXT NOT NULL,
+  cree_le         TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(utilisateur_id);

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";
+import { sendPushToUser } from "../utils/pushNotification.js";
 import { hasVehicule } from "../model/vehicules.model.js";
 import { getUserRole } from "../model/utilisateurs.model.js";
 import {
@@ -184,6 +185,17 @@ router.patch("/:id/demarrer", requireAuth, async (req, res) => {
       [trajetId, trajet.lieu_depart, trajet.destination]
     );
 
+    // Push aux passagers acceptés
+    const { rows: passagersDem } = await pool.query(
+      `SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`,
+      [trajetId]
+    );
+    passagersDem.forEach(p =>
+      sendPushToUser(p.passager_id, "Trajet démarré 🚗",
+        `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} vient de démarrer !`,
+        "/passager/mes-reservations")
+    );
+
     return res.json({ trajet: updated[0] });
   } catch (err) {
     console.error(err);
@@ -210,6 +222,18 @@ router.patch("/:id/terminer", requireAuth, async (req, res) => {
     }
 
     await client.query("COMMIT");
+
+    // Push aux passagers du trajet terminé
+    const { rows: passagersTerm } = await pool.query(
+      `SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`,
+      [trajetId]
+    );
+    passagersTerm.forEach(p =>
+      sendPushToUser(p.passager_id, "Trajet terminé ✅",
+        `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} est terminé.`,
+        "/passager/mes-reservations")
+    );
+
     return res.json({ trajet });
   } catch (err) {
     await client.query("ROLLBACK");
@@ -254,6 +278,18 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
     }
 
     await client.query("COMMIT");
+
+    // Push aux passagers dont la réservation vient d'être annulée
+    const { rows: passagersAnn } = await pool.query(
+      `SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ANNULEE'`,
+      [trajetId]
+    );
+    passagersAnn.forEach(p =>
+      sendPushToUser(p.passager_id, "Trajet annulé ❌",
+        `Le trajet ${result.trajet.lieu_depart} → ${result.trajet.destination} a été annulé par le conducteur.`,
+        "/passager/mes-reservations")
+    );
+
     return res.json(result);
   } catch (err) {
     await client.query("ROLLBACK");

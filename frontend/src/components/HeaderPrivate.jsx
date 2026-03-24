@@ -3,6 +3,7 @@ import { logout } from "../utils/auth.js";
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import { registerPush } from "../utils/pushSubscription.js";
 
 const FILL_ICON = {
   "bi-search":    "bi-search",
@@ -29,6 +30,11 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
 
   const [notifications,  setNotifications]  = useState([]);
   const [messagesNonLus, setMessagesNonLus] = useState(0);
+
+  // Enregistrer les push notifications au démarrage
+  useEffect(() => {
+    if (token) registerPush(token);
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
