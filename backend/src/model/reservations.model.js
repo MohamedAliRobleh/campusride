@@ -78,7 +78,7 @@ export async function createReservation(passagerId, trajetId) {
       return { error: "MAX_PENDING_REACHED" };
     }
 
-    // Vérifier si une réservation existe déjà pour ce passager + trajet.
+    // Vérifier si une réservation si elle existe déjà pour ce passager + trajet.
     const existingRes = await client.query(
       `SELECT id, statut FROM reservations WHERE passager_id = $1 AND trajet_id = $2`,
       [passagerId, trajetId]
@@ -93,7 +93,7 @@ export async function createReservation(passagerId, trajetId) {
         await client.query("ROLLBACK");
         return { error: "ALREADY_RESERVED" };
       }
-      // REFUSEE ou ANNULEE → réactiver la réservation existante.
+      // REFUSÉE ou ANNULEE → réactiver la réservation existante.
       reservationRes = await client.query(
         `UPDATE reservations
          SET statut = 'EN_ATTENTE', demande_le = NOW(), reponse_le = NULL
@@ -111,7 +111,7 @@ export async function createReservation(passagerId, trajetId) {
       );
     }
 
-    // Décrémenter places_dispo dès la création/réactivation de la demande .
+    // Décrémenter places_dispo dès la création/réactivation de la demande.
     await client.query(
       `UPDATE trajets SET places_dispo = places_dispo - 1 WHERE id = $1`,
       [trajetId]
