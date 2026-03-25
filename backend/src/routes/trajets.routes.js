@@ -105,7 +105,7 @@ router.get("/recherche", requireAuth, async (req, res) => {
     const departLng   = req.query.depart_lng  ? parseFloat(req.query.depart_lng) : null;
     const destLat     = req.query.dest_lat    ? parseFloat(req.query.dest_lat)   : null;
     const destLng     = req.query.dest_lng    ? parseFloat(req.query.dest_lng)   : null;
-    const rayonKm     = req.query.rayon_km    ? parseFloat(req.query.rayon_km)   : 5;
+    const rayonKm     = req.query.rayon_km    ? parseFloat(req.query.rayon_km)   : 20;
 
     if (rayonKm < 1 || rayonKm > 50) {
       return res.status(400).json({ message: "rayon_km doit être entre 1 et 50 km." });

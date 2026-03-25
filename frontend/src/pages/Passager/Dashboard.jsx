@@ -235,7 +235,10 @@ export default function Dashboard() {
                                 <div className="mt-1">
                                   <button
                                     type="button"
-                                    onClick={() => setDepart("Collège La Cité")}
+                                    onClick={() => {
+                                      setDepart("801, promenade de l'Aviation, Ottawa, ON");
+                                      setDepartCoords({ lat: 45.4456, lng: -75.6406 });
+                                    }}
                                     className="badge border-0 rounded-pill fw-normal"
                                     style={{
                                       background: "rgba(25,135,84,0.1)",
@@ -294,7 +297,10 @@ export default function Dashboard() {
                                 <div className="mt-1">
                                   <button
                                     type="button"
-                                    onClick={() => setDestination("Collège La Cité")}
+                                    onClick={() => {
+                                      setDestination("801, promenade de l'Aviation, Ottawa, ON");
+                                      setDestCoords({ lat: 45.4456, lng: -75.6406 });
+                                    }}
                                     className="badge border-0 rounded-pill fw-normal"
                                     style={{
                                       background: "rgba(25,135,84,0.1)",
