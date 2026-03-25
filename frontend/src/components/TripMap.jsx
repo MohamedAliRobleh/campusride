@@ -12,25 +12,39 @@ function ensureLeafletCSS() {
   leafletCSSLoaded = true;
 }
 
+function fetchWithTimeout(url, ms = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 async function geocode(address) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ca`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.length) return null;
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ca`;
+    const res = await fetchWithTimeout(url);
+    const data = await res.json();
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
 }
 
 async function getRoute(from, to) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.routes?.length) return null;
-  const route = data.routes[0];
-  return {
-    coords: route.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
-    distanceKm: (route.distance / 1000).toFixed(1),
-    durationMin: Math.round(route.duration / 60),
-  };
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+    const res = await fetchWithTimeout(url);
+    const data = await res.json();
+    if (!data.routes?.length) return null;
+    const route = data.routes[0];
+    return {
+      coords: route.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+      distanceKm: (route.distance / 1000).toFixed(1),
+      durationMin: Math.round(route.duration / 60),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
