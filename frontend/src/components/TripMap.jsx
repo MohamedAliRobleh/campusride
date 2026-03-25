@@ -112,27 +112,6 @@ export default function TripMap({ depart, destination, fromCoords, toCoords, isD
           maxZoom: 18,
         }).addTo(map);
 
-        // Récupérer la route via OSRM
-        let route = null;
-        try { route = await getRoute(fromCoord, toCoord); } catch { /* fallback */ }
-        if (cancelled) return;
-
-        if (route) {
-          L.polyline(route.coords, { color: "#198754", weight: 5, opacity: 0.85 }).addTo(map);
-          setRouteInfo({ distanceKm: route.distanceKm, durationMin: route.durationMin });
-          map.fitBounds(L.latLngBounds(route.coords), { padding: [40, 40] });
-        } else {
-          // Fallback ligne droite
-          L.polyline(
-            [[fromCoord.lat, fromCoord.lon], [toCoord.lat, toCoord.lon]],
-            { color: "#198754", weight: 3, opacity: 0.6, dashArray: "6 6" }
-          ).addTo(map);
-          map.fitBounds(
-            L.latLngBounds([[fromCoord.lat, fromCoord.lon], [toCoord.lat, toCoord.lon]]),
-            { padding: [50, 50] }
-          );
-        }
-
         const greenIcon = L.divIcon({
           html: `<div style="width:14px;height:14px;background:#198754;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>`,
           iconSize: [14, 14], iconAnchor: [7, 7], className: "",
@@ -145,7 +124,28 @@ export default function TripMap({ depart, destination, fromCoords, toCoords, isD
         L.marker([fromCoord.lat, fromCoord.lon], { icon: greenIcon }).addTo(map).bindPopup(`<b>Départ</b><br>${depart}`);
         L.marker([toCoord.lat, toCoord.lon], { icon: redIcon }).addTo(map).bindPopup(`<b>Arrivée</b><br>${destination}`);
 
+        // Afficher la carte immédiatement avec ligne droite + marqueurs
+        const straight = L.polyline(
+          [[fromCoord.lat, fromCoord.lon], [toCoord.lat, toCoord.lon]],
+          { color: "#198754", weight: 3, opacity: 0.5, dashArray: "6 6" }
+        ).addTo(map);
+        map.fitBounds(
+          L.latLngBounds([[fromCoord.lat, fromCoord.lon], [toCoord.lat, toCoord.lon]]),
+          { padding: [50, 50] }
+        );
         setStatus("ready");
+
+        if (cancelled) return;
+
+        // Récupérer la route réelle en arrière-plan (remplace la ligne droite)
+        const route = await getRoute(fromCoord, toCoord);
+        if (cancelled || !mapInstanceRef.current) return;
+        if (route) {
+          map.removeLayer(straight);
+          L.polyline(route.coords, { color: "#198754", weight: 5, opacity: 0.85 }).addTo(map);
+          map.fitBounds(L.latLngBounds(route.coords), { padding: [40, 40] });
+          setRouteInfo({ distanceKm: route.distanceKm, durationMin: route.durationMin });
+        }
       } catch (e) {
         console.error("TripMap error:", e);
         if (!cancelled) setStatus("error");
