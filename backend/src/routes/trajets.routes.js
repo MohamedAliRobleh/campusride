@@ -2,6 +2,9 @@ import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";
 import { sendPushToUser } from "../utils/pushNotification.js";
+import { emailTrajetDemarre, emailTrajetTermine, emailTrajetAnnuleConducteur } from "../utils/sendEmail.js";
+
+const APP_URL = process.env.APP_URL || "https://campusride-three.vercel.app";
 import { hasVehicule } from "../model/vehicules.model.js";
 import { getUserRole } from "../model/utilisateurs.model.js";
 import {
@@ -185,14 +188,16 @@ router.patch("/:id/demarrer", requireAuth, async (req, res) => {
       [trajetId, trajet.lieu_depart, trajet.destination]
     );
 
-    // Push aux passagers acceptés (non bloquant)
-    pool.query(`SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`, [trajetId])
-      .then(({ rows }) => rows.forEach(p =>
-        sendPushToUser(p.passager_id, "Trajet démarré 🚗",
-          `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} vient de démarrer !`,
-          "/passager/mes-reservations")
-      ))
-      .catch(() => {});
+    // Push + email aux passagers acceptés (non bloquant)
+    pool.query(
+      `SELECT r.passager_id, u.email FROM reservations r JOIN utilisateurs u ON u.id = r.passager_id WHERE r.trajet_id = $1 AND r.statut = 'ACCEPTEE'`,
+      [trajetId]
+    ).then(({ rows }) => rows.forEach(p => {
+      sendPushToUser(p.passager_id, "Trajet démarré 🚗",
+        `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} vient de démarrer !`,
+        "/passager/mes-reservations");
+      if (p.email) emailTrajetDemarre({ to: p.email, depart: trajet.lieu_depart, destination: trajet.destination, appUrl: APP_URL });
+    })).catch(() => {});
 
     return res.json({ trajet: updated[0] });
   } catch (err) {
@@ -221,14 +226,16 @@ router.patch("/:id/terminer", requireAuth, async (req, res) => {
 
     await client.query("COMMIT");
 
-    // Push aux passagers du trajet terminé (non bloquant)
-    pool.query(`SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ACCEPTEE'`, [trajetId])
-      .then(({ rows }) => rows.forEach(p =>
-        sendPushToUser(p.passager_id, "Trajet terminé ✅",
-          `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} est terminé.`,
-          "/passager/mes-reservations")
-      ))
-      .catch(() => {});
+    // Push + email aux passagers du trajet terminé (non bloquant)
+    pool.query(
+      `SELECT r.passager_id, u.email FROM reservations r JOIN utilisateurs u ON u.id = r.passager_id WHERE r.trajet_id = $1 AND r.statut = 'ACCEPTEE'`,
+      [trajetId]
+    ).then(({ rows }) => rows.forEach(p => {
+      sendPushToUser(p.passager_id, "Trajet terminé ✅",
+        `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} est terminé.`,
+        "/passager/mes-reservations");
+      if (p.email) emailTrajetTermine({ to: p.email, depart: trajet.lieu_depart, destination: trajet.destination, appUrl: APP_URL });
+    })).catch(() => {});
 
     return res.json({ trajet });
   } catch (err) {
@@ -275,14 +282,16 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
 
     await client.query("COMMIT");
 
-    // Push aux passagers dont la réservation vient d'être annulée (non bloquant)
-    pool.query(`SELECT passager_id FROM reservations WHERE trajet_id = $1 AND statut = 'ANNULEE'`, [trajetId])
-      .then(({ rows }) => rows.forEach(p =>
-        sendPushToUser(p.passager_id, "Trajet annulé ❌",
-          `Le trajet ${result.trajet.lieu_depart} → ${result.trajet.destination} a été annulé par le conducteur.`,
-          "/passager/mes-reservations")
-      ))
-      .catch(() => {});
+    // Push + email aux passagers annulés (non bloquant)
+    pool.query(
+      `SELECT r.passager_id, u.email FROM reservations r JOIN utilisateurs u ON u.id = r.passager_id WHERE r.trajet_id = $1 AND r.statut = 'ANNULEE'`,
+      [trajetId]
+    ).then(({ rows }) => rows.forEach(p => {
+      sendPushToUser(p.passager_id, "Trajet annulé ❌",
+        `Le trajet ${result.trajet.lieu_depart} → ${result.trajet.destination} a été annulé par le conducteur.`,
+        "/passager/mes-reservations");
+      if (p.email) emailTrajetAnnuleConducteur({ to: p.email, depart: result.trajet.lieu_depart, destination: result.trajet.destination, appUrl: APP_URL });
+    })).catch(() => {});
 
     return res.json(result);
   } catch (err) {
