@@ -295,7 +295,7 @@ export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
     await client.query(
       `
       INSERT INTO notifications (utilisateur_id, type, message, cree_le)
-      SELECT unnest($1::text[]), 'TRAJET_ANNULE', $2, NOW()
+      SELECT unnest($1::uuid[]), 'TRAJET_ANNULE', $2, NOW()
       `,
       [passagerIds, `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} a été annulé par le conducteur.`]
     );
