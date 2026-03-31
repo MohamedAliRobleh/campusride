@@ -1,19 +1,20 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-export const transporter = nodemailer.createTransport({
-  host: "smtp.zohocloud.ca",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.ZOHO_EMAIL,
-    pass: process.env.ZOHO_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = "CampusRide <onboarding@resend.dev>";
+
+async function sendMail({ to, subject, html }) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    await resend.emails.send({ from: FROM, to, subject, html });
+  } catch (err) {
+    console.error("mailer error:", err.message);
+  }
+}
 
 export async function sendSignalementGraveEmail({ motif, cible_prenom, cible_nom, cible_email, signaleur_email, description }) {
   const adminEmail = process.env.ADMIN_EMAIL || "campusride@lacitec.on.ca";
-  return transporter.sendMail({
-    from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
+  return sendMail({
     to: adminEmail,
     subject: "🚨 CampusRide — Signalement GRAVE reçu",
     html: `
@@ -42,8 +43,7 @@ export async function sendSignalementGraveEmail({ motif, cible_prenom, cible_nom
 }
 
 export async function sendResetPasswordEmail(to, resetLink) {
-  return transporter.sendMail({
-    from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
+  return sendMail({
     to,
     subject: "🔑 Réinitialisation de votre mot de passe — CampusRide",
     html: `
@@ -71,8 +71,7 @@ export async function sendResetPasswordEmail(to, resetLink) {
 
 export async function sendWelcomeEmail(to, prenom) {
   const appUrl = process.env.APP_URL || "https://campusride-delta.vercel.app";
-  return transporter.sendMail({
-    from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
+  return sendMail({
     to,
     subject: "🎉 Bienvenue sur CampusRide !",
     html: `

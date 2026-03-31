@@ -1,30 +1,15 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.zohocloud.ca",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.ZOHO_EMAIL,
-    pass: process.env.ZOHO_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = "CampusRide <onboarding@resend.dev>";
 
 /**
- * Envoie un email HTML.
- * @param {string} to      — email destinataire
- * @param {string} subject — sujet
- * @param {string} html    — contenu HTML
+ * Envoie un email HTML via Resend.
  */
 export async function sendEmail(to, subject, html) {
-  if (!process.env.ZOHO_EMAIL || !process.env.ZOHO_PASSWORD) return;
+  if (!process.env.RESEND_API_KEY) return;
   try {
-    await transporter.sendMail({
-      from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
-      to,
-      subject,
-      html,
-    });
+    await resend.emails.send({ from: FROM, to, subject, html });
   } catch (err) {
     console.error("sendEmail error:", err.message);
   }
