@@ -16,7 +16,9 @@ export default function Register() {
 
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
-  const [email, setEmail] = useState("");
+  const [prefix, setPrefix] = useState("");
+  const [domain, setDomain] = useState("@lacite.on.ca");
+  const email = prefix.trim() + domain;
   const [motDePasse, setMotDePasse] = useState("");
   const [confirm, setConfirm] = useState("");
 
@@ -153,14 +155,37 @@ const handleSubmit = async (e) => {
 
               <div>
                 <label className="form-label fw-semibold">Courriel institutionnel</label>
-                <input
-                  className="form-control form-control"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nom@lacite.on.ca"
-                  autoComplete="email"
-                />
+                <div className="input-group">
+                  <input
+                    className="form-control"
+                    type="text"
+                    placeholder="votre.nom ou 123456"
+                    value={prefix}
+                    onChange={(e) => setPrefix(e.target.value)}
+                    autoComplete="email"
+                  />
+                  <button
+                    type="button"
+                    className={`btn btn-sm fw-semibold px-2 ${domain === "@lacite.on.ca" ? "btn-success" : "btn-outline-success"}`}
+                    onClick={() => setDomain("@lacite.on.ca")}
+                    style={{ fontSize: "0.75rem" }}
+                  >
+                    @lacite.on.ca
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm fw-semibold px-2 ${domain === "@collegelacite.ca" ? "btn-success" : "btn-outline-success"}`}
+                    onClick={() => setDomain("@collegelacite.ca")}
+                    style={{ fontSize: "0.75rem" }}
+                  >
+                    @collegelacite.ca
+                  </button>
+                </div>
+                {prefix.trim() && (
+                  <div className="mt-1 text-muted" style={{ fontSize: "0.78rem" }}>
+                    <i className="bi bi-envelope me-1" />{email}
+                  </div>
+                )}
               </div>
 
               <div>
