@@ -33,6 +33,7 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "granted"
   );
+  const [pushToast, setPushToast] = useState(null);
 
   // Enregistrer les push notifications si déjà accordé
   useEffect(() => {
@@ -40,9 +41,19 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
   }, [token]);
 
   const handleEnableNotifications = async () => {
-    const granted = await requestPushPermission(token);
-    if (granted) setNotifPermission("granted");
-    else setNotifPermission(Notification.permission);
+    try {
+      const granted = await requestPushPermission(token);
+      if (granted) {
+        setNotifPermission("granted");
+        setPushToast({ ok: true, msg: "Notifications activées ✅" });
+      } else {
+        setNotifPermission(Notification.permission);
+        setPushToast({ ok: false, msg: "Permission refusée. Activez les notifications dans les réglages du navigateur." });
+      }
+    } catch (err) {
+      setPushToast({ ok: false, msg: "Erreur : " + err.message });
+    }
+    setTimeout(() => setPushToast(null), 4000);
   };
 
   useEffect(() => {
@@ -499,6 +510,16 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
           );
         })}
       </nav>
+
+      {/* Toast retour activation notifications */}
+      {pushToast && (
+        <div
+          className="position-fixed bottom-0 start-50 translate-middle-x mb-4 px-3 py-2 rounded-3 shadow-lg text-white fw-semibold"
+          style={{ zIndex: 9999, background: pushToast.ok ? "#198754" : "#dc3545", fontSize: "0.85rem", maxWidth: "90vw", textAlign: "center" }}
+        >
+          {pushToast.msg}
+        </div>
+      )}
     </>
   );
 }

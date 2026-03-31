@@ -34,17 +34,22 @@ export async function requestPushPermission(token) {
 }
 
 async function _subscribe(reg, token) {
-  const res = await fetch("/push/vapid-public-key");
-  const { publicKey } = await res.json();
+  const vapidRes = await fetch("/push/vapid-public-key");
+  if (!vapidRes.ok) throw new Error("Impossible de récupérer la clé VAPID (statut " + vapidRes.status + ")");
+  const { publicKey } = await vapidRes.json();
+  if (!publicKey) throw new Error("Clé VAPID manquante sur le serveur");
+
   const subscription = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey),
   });
-  await fetch("/push/subscribe", {
+
+  const saveRes = await fetch("/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(subscription),
   });
+  if (!saveRes.ok) throw new Error("Impossible de sauvegarder la subscription (statut " + saveRes.status + ")");
 }
 
 function urlBase64ToUint8Array(base64String) {
