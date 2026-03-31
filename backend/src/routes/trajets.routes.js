@@ -4,7 +4,7 @@ import { pool } from "../DB/db.js";
 import { sendPushToUser } from "../utils/pushNotification.js";
 import { emailTrajetDemarre, emailTrajetTermine, emailTrajetAnnuleConducteur } from "../utils/sendEmail.js";
 
-const APP_URL = process.env.APP_URL || "https://campusride-three.vercel.app";
+const APP_URL = process.env.APP_URL || "https://campusride-delta.vercel.app";
 import { hasVehicule } from "../model/vehicules.model.js";
 import { getUserRole } from "../model/utilisateurs.model.js";
 import {

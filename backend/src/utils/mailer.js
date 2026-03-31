@@ -70,7 +70,7 @@ export async function sendResetPasswordEmail(to, resetLink) {
 }
 
 export async function sendWelcomeEmail(to, prenom) {
-  const appUrl = process.env.APP_URL || "https://campusride-three.vercel.app";
+  const appUrl = process.env.APP_URL || "https://campusride-delta.vercel.app";
   return transporter.sendMail({
     from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
     to,

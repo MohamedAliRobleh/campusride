@@ -7,7 +7,7 @@ import {
   emailReservationAnnuleeParPassager,
 } from "../utils/sendEmail.js";
 
-const APP_URL = process.env.APP_URL || "https://campusride-three.vercel.app";
+const APP_URL = process.env.APP_URL || "https://campusride-delta.vercel.app";
 
 
 export async function createReservation(passagerId, trajetId) {
@@ -45,7 +45,6 @@ export async function createReservation(passagerId, trajetId) {
     );
 
     const prenom = userRes.rows[0]?.prenom || "Un utilisateur";
-    const passagerEmail = userRes.rows[0]?.email;
 
 
     if (trajet.conducteur_id === passagerId) {
