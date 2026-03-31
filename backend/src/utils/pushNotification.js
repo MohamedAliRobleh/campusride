@@ -25,8 +25,9 @@ export async function sendPushToUser(userId, title, body, url = "/") {
       rows.map((sub) =>
         webpush
           .sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
+          .then(() => console.log(`[push] Envoyé à user ${userId}`))
           .catch(async (err) => {
-            // Supprimer la subscription expirée (410 Gone)
+            console.error(`[push] Erreur user ${userId} — status:${err.statusCode} body:${err.body} msg:${err.message}`);
             if (err.statusCode === 410 || err.statusCode === 404) {
               await pool.query("DELETE FROM push_subscriptions WHERE endpoint = $1", [sub.endpoint]);
             }
