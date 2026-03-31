@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../DB/db.js";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
-import { sendResetPasswordEmail } from "../utils/mailer.js";
+import { sendResetPasswordEmail, sendWelcomeEmail } from "../utils/mailer.js";
 import crypto from "crypto";
 
 
@@ -68,6 +68,9 @@ router.post("/register", async (req, res) => {
   `,
       [prenom, nom, email, motDePasseHash]
     );
+
+    // Email de bienvenue (non bloquant)
+    sendWelcomeEmail(email, prenom).catch(() => {});
 
     return res.status(201).json({
       message: "Inscription réussie",

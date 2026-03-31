@@ -1,18 +1,19 @@
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
-  host: process.env.MAILTRAP_HOST,
-  port: Number(process.env.MAILTRAP_PORT),
+  host: "smtp.zohocloud.ca",
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.MAILTRAP_USER,
-    pass: process.env.MAILTRAP_PASS,
+    user: process.env.ZOHO_EMAIL,
+    pass: process.env.ZOHO_PASSWORD,
   },
 });
 
 export async function sendSignalementGraveEmail({ motif, cible_prenom, cible_nom, cible_email, signaleur_email, description }) {
   const adminEmail = process.env.ADMIN_EMAIL || "campusride@lacitec.on.ca";
   return transporter.sendMail({
-    from: process.env.MAIL_FROM,
+    from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
     to: adminEmail,
     subject: "🚨 CampusRide — Signalement GRAVE reçu",
     html: `
@@ -42,19 +43,61 @@ export async function sendSignalementGraveEmail({ motif, cible_prenom, cible_nom
 
 export async function sendResetPasswordEmail(to, resetLink) {
   return transporter.sendMail({
-    from: process.env.MAIL_FROM,
+    from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
     to,
-    subject: "CampusRide - Réinitialisation du mot de passe",
+    subject: "🔑 Réinitialisation de votre mot de passe — CampusRide",
     html: `
-      <div style="font-family: Arial, sans-serif; line-height:1.5">
-        <h2>Réinitialisation du mot de passe</h2>
-        <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
-        <p>
-          <a href="${resetLink}" style="display:inline-block;padding:10px 14px;background:#198754;color:#fff;text-decoration:none;border-radius:6px">
-            Réinitialiser mon mot de passe
-          </a>
-        </p>
-        <p>Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.</p>
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
+        <div style="background:linear-gradient(90deg,#198754,#20c374);padding:20px 24px">
+          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide</span>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:16px;color:#333">Bonjour,</p>
+          <p style="color:#555">Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous :</p>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${resetLink}" style="background:linear-gradient(135deg,#198754,#20c374);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px">
+              Réinitialiser mon mot de passe
+            </a>
+          </div>
+          <p style="color:#888;font-size:13px">Ce lien expire dans <strong>1 heure</strong>. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.</p>
+        </div>
+        <div style="padding:14px 24px;background:#f0f0f0;font-size:12px;color:#888;text-align:center">
+          Collège La Cité · Covoiturage étudiant · Ne pas répondre à cet email
+        </div>
+      </div>
+    `,
+  });
+}
+
+export async function sendWelcomeEmail(to, prenom) {
+  const appUrl = process.env.APP_URL || "https://campusride-three.vercel.app";
+  return transporter.sendMail({
+    from: `"CampusRide" <${process.env.ZOHO_EMAIL}>`,
+    to,
+    subject: "🎉 Bienvenue sur CampusRide !",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
+        <div style="background:linear-gradient(90deg,#198754,#20c374);padding:20px 24px">
+          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide</span>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:16px;color:#333">Bonjour <strong>${prenom}</strong> ! 👋</p>
+          <p style="color:#555">Bienvenue sur <strong>CampusRide</strong>, le covoiturage étudiant du Collège La Cité.</p>
+          <p style="color:#555">Vous pouvez maintenant :</p>
+          <ul style="color:#555;line-height:2">
+            <li>🔍 Rechercher et réserver des trajets</li>
+            <li>🚗 Publier vos propres trajets en tant que conducteur</li>
+            <li>🔔 Recevoir des notifications en temps réel</li>
+          </ul>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${appUrl}" style="background:linear-gradient(135deg,#198754,#20c374);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px">
+              Accéder à CampusRide
+            </a>
+          </div>
+        </div>
+        <div style="padding:14px 24px;background:#f0f0f0;font-size:12px;color:#888;text-align:center">
+          Collège La Cité · Covoiturage étudiant · Ne pas répondre à cet email
+        </div>
       </div>
     `,
   });
