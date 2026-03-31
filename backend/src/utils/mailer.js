@@ -1,14 +1,34 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = "CampusRide <onboarding@resend.dev>";
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const FROM_EMAIL = process.env.BREVO_SENDER_EMAIL || "campusride@lacitec.on.ca";
+const FROM_NAME = "CampusRide";
 
 async function sendMail({ to, subject, html }) {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!BREVO_API_KEY) {
+    console.warn("[mailer] BREVO_API_KEY manquant, email non envoyé");
+    return;
+  }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html });
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: FROM_NAME, email: FROM_EMAIL },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("[mailer] Brevo erreur:", res.status, body);
+    } else {
+      console.log(`[mailer] Email envoyé à ${to} (${subject})`);
+    }
   } catch (err) {
-    console.error("mailer error:", err.message);
+    console.error("[mailer] Erreur envoi:", err.message);
   }
 }
 
@@ -59,7 +79,7 @@ export async function sendResetPasswordEmail(to, resetLink) {
               Réinitialiser mon mot de passe
             </a>
           </div>
-          <p style="color:#888;font-size:13px">Ce lien expire dans <strong>1 heure</strong>. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.</p>
+          <p style="color:#888;font-size:13px">Ce lien expire dans <strong>1 heure</strong>. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.</p>
         </div>
         <div style="padding:14px 24px;background:#f0f0f0;font-size:12px;color:#888;text-align:center">
           Collège La Cité · Covoiturage étudiant · Ne pas répondre à cet email

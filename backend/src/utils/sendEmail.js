@@ -1,17 +1,37 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = "CampusRide <onboarding@resend.dev>";
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const FROM_EMAIL = process.env.BREVO_SENDER_EMAIL || "campusride@lacitec.on.ca";
+const FROM_NAME = "CampusRide";
 
 /**
- * Envoie un email HTML via Resend.
+ * Envoie un email HTML via Brevo HTTP API.
  */
 export async function sendEmail(to, subject, html) {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!BREVO_API_KEY) {
+    console.warn("[sendEmail] BREVO_API_KEY manquant, email non envoyé");
+    return;
+  }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html });
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: FROM_NAME, email: FROM_EMAIL },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("[sendEmail] Brevo erreur:", res.status, body);
+    } else {
+      console.log(`[sendEmail] Email envoyé à ${to} (${subject})`);
+    }
   } catch (err) {
-    console.error("sendEmail error:", err.message);
+    console.error("[sendEmail] Erreur:", err.message);
   }
 }
 

@@ -70,10 +70,7 @@ router.post("/register", async (req, res) => {
     );
 
     // Email de bienvenue (non bloquant)
-    console.log(`[email] Tentative envoi bienvenue à ${email}, ZOHO_EMAIL=${process.env.ZOHO_EMAIL ? "défini" : "MANQUANT"}`);
-    sendWelcomeEmail(email, prenom)
-      .then(() => console.log(`[email] Bienvenue envoyé à ${email}`))
-      .catch((err) => console.error(`[email] Erreur bienvenue:`, err.message, err.code));
+    sendWelcomeEmail(email, prenom).catch((err) => console.error("[email] Erreur bienvenue:", err.message));
 
     return res.status(201).json({
       message: "Inscription réussie",
