@@ -75,7 +75,7 @@ export async function sendResetPasswordEmail(to, resetLink) {
           <p style="font-size:16px;color:#333">Bonjour,</p>
           <p style="color:#555">Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous :</p>
           <div style="text-align:center;margin:24px 0">
-            <a href="${resetLink}" style="background:linear-gradient(135deg,#198754,#20c374);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px">
+            <a href="${resetLink}" style="background-color:#198754;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">
               Réinitialiser mon mot de passe
             </a>
           </div>
