@@ -198,7 +198,7 @@ router.patch("/trajets/:id/annuler", requireAuth, requireAdmin, async (req, res)
       const passagerIds = [...new Set(annuleResa.rows.map(r => r.passager_id))];
       await client.query(
         `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
-         SELECT unnest($1::text[]), 'TRAJET_ANNULE', $2, NOW()`,
+         SELECT unnest($1::uuid[]), 'TRAJET_ANNULE', $2, NOW()`,
         [passagerIds, `Votre trajet ${trajet.lieu_depart} → ${trajet.destination} a été annulé par un administrateur.`]
       );
     }
