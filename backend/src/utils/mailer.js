@@ -80,8 +80,8 @@ export async function sendCompteDesactiveEmail({ to, prenom, motif, details }) {
     subject: "⚠️ Votre compte CampusRide a été désactivé",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
-        <div style="background:linear-gradient(90deg,#dc3545,#e07b39);padding:20px 24px">
-          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide — Compte désactivé</span>
+        <div style="background-color:#dc3545;padding:20px 24px">
+          <span style="color:#ffffff;font-size:18px;font-weight:bold">🚗 CampusRide — Compte désactivé</span>
         </div>
         <div style="padding:24px">
           <p style="font-size:16px;color:#333">Bonjour <strong>${prenom}</strong>,</p>
@@ -123,8 +123,8 @@ export async function sendCompteReactiveEmail({ to, prenom }) {
     subject: "✅ Votre compte CampusRide a été réactivé",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
-        <div style="background:linear-gradient(90deg,#198754,#20c374);padding:20px 24px">
-          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide — Compte réactivé</span>
+        <div style="background-color:#198754;padding:20px 24px">
+          <span style="color:#ffffff;font-size:18px;font-weight:bold">🚗 CampusRide — Compte réactivé</span>
         </div>
         <div style="padding:24px">
           <p style="font-size:16px;color:#333">Bonjour <strong>${prenom}</strong>,</p>
