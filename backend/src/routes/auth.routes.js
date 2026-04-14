@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Routes d'authentification de l'API CampusRide.
+ *
+ * Préfixe : `/auth`
+ *
+ * Endpoints publics (sans token) :
+ * - `POST /auth/register`       — Créer un compte utilisateur.
+ * - `POST /auth/login`          — Se connecter et obtenir un token JWT.
+ * - `POST /auth/forgot-password` — Demander un lien de réinitialisation.
+ * - `POST /auth/reset-password` — Réinitialiser le mot de passe via token.
+ * - `POST /auth/contact-admin`  — Contacter l'admin depuis un compte désactivé.
+ *
+ * Endpoints protégés (token JWT requis) :
+ * - `GET  /auth/me`             — Vérifier la validité du token.
+ *
+ * @module routes/auth.routes
+ */
+
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";

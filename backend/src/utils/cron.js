@@ -1,11 +1,40 @@
+/**
+ * @fileoverview Tâches planifiées (cron) pour CampusRide.
+ *
+ * Deux tâches s'exécutent toutes les heures :
+ * 1. Passage automatique des trajets PLANIFIÉ → EN_COURS quand l'heure de départ est passée.
+ * 2. Envoi de rappels 24 h avant chaque trajet aux conducteurs et passagers acceptés.
+ *
+ * Les rappels sont dédupliqués : un utilisateur ne reçoit pas deux fois le même rappel
+ * dans une fenêtre de 2 heures.
+ *
+ * @module utils/cron
+ */
+
 import { pool } from "../DB/db.js";
 
 /**
- * Cron : envoie un rappel 24h avant chaque trajet PLANIFIE
- * Tourne toutes les heures.
+ * Démarre les tâches planifiées de l'application.
+ *
+ * Exécute immédiatement les deux tâches au démarrage du serveur,
+ * puis les répète toutes les heures (3 600 000 ms).
+ *
+ * @returns {void}
+ *
+ * @example
+ * // Dans server.js
+ * import { startCronJobs } from "./src/utils/cron.js";
+ * startCronJobs();
  */
 export function startCronJobs() {
-  // Passer automatiquement les trajets PLANIFIE dont l'heure est passée à EN_COURS
+
+  /**
+   * Met à jour le statut des trajets dont l'heure de départ est passée.
+   * Passe PLANIFIE → EN_COURS automatiquement.
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
   const mettreAJourStatuts = async () => {
     try {
       await pool.query(`
@@ -19,9 +48,18 @@ export function startCronJobs() {
     }
   };
 
+  /**
+   * Envoie des rappels de trajet 24 h à l'avance.
+   *
+   * Cible les trajets PLANIFIE dont le départ est dans la fenêtre 23h–25h.
+   * Insère une notification pour le conducteur et pour chaque passager ACCEPTE,
+   * en vérifiant qu'aucun rappel identique n'a été envoyé dans les 2 dernières heures.
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
   const envoyerRappels = async () => {
     try {
-      // Trouver les trajets qui partent dans 23h–25h et n'ont pas encore eu de rappel
       const { rows: trajets } = await pool.query(`
         SELECT t.id, t.lieu_depart, t.destination, t.dateheure_depart
         FROM trajets t
@@ -33,7 +71,7 @@ export function startCronJobs() {
       for (const trajet of trajets) {
         const msg = `Rappel : votre trajet ${trajet.lieu_depart} → ${trajet.destination} est dans moins de 24h.`;
 
-        // Notifier le conducteur
+        // Notifier le conducteur (avec déduplication sur 2h)
         await pool.query(
           `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
            SELECT t.conducteur_id, 'RAPPEL_TRAJET', $1, NOW()
@@ -48,7 +86,7 @@ export function startCronJobs() {
           [msg, trajet.id]
         );
 
-        // Notifier les passagers ACCEPTES
+        // Notifier chaque passager avec une réservation ACCEPTEE (avec déduplication sur 2h)
         await pool.query(
           `INSERT INTO notifications (utilisateur_id, type, message, cree_le)
            SELECT r.passager_id, 'RAPPEL_TRAJET', $1, NOW()
@@ -74,10 +112,15 @@ export function startCronJobs() {
     }
   };
 
-  // Exécuter immédiatement au démarrage, puis toutes les heures
+  // Exécution immédiate au démarrage du serveur
   mettreAJourStatuts();
   envoyerRappels();
-  setInterval(() => { mettreAJourStatuts(); envoyerRappels(); }, 60 * 60 * 1000);
+
+  // Répétition toutes les heures
+  setInterval(() => {
+    mettreAJourStatuts();
+    envoyerRappels();
+  }, 60 * 60 * 1000);
 
   console.log("[Cron] Rappels automatiques et mise à jour statuts activés (toutes les heures).");
 }

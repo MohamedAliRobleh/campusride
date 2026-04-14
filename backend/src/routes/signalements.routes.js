@@ -1,3 +1,19 @@
+/**
+ * @fileoverview Routes de gestion des signalements d'utilisateurs et de trajets.
+ *
+ * Préfixe : `/signalements`
+ *
+ * Les signalements permettent aux utilisateurs de signaler un comportement inapproprié.
+ * Trois niveaux de gravité sont définis :
+ * - Niveau 1 (mineur)   : stocké pour examen par l'admin.
+ * - Niveau 2 (modéré)   : stocké et tous les admins sont notifiés.
+ * - Niveau 3 (grave)    : suspension immédiate du compte cible + alerte courriel admin.
+ *
+ * - `POST /signalements` — Déposer un signalement (auth).
+ *
+ * @module routes/signalements.routes
+ */
+
 import { Router } from "express";
 import { randomUUID } from "crypto";
 import { pool } from "../DB/db.js";

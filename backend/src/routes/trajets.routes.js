@@ -1,3 +1,22 @@
+/**
+ * @fileoverview Routes de gestion des trajets de covoiturage.
+ *
+ * Préfixe : `/trajets`
+ *
+ * - `POST   /trajets`                  — Publier un nouveau trajet (auth, rôle CONDUCTEUR).
+ * - `GET    /trajets/recherche`        — Rechercher des trajets par localisation et date (auth).
+ * - `GET    /trajets/mes-trajets`      — Lister les trajets publiés par le conducteur courant (auth).
+ * - `GET    /trajets/populaires`       — Trajets populaires à venir (public).
+ * - `PATCH  /trajets/:id/demarrer`     — Démarrer un trajet PLANIFIE → EN_COURS (auth).
+ * - `PATCH  /trajets/:id/terminer`     — Terminer un trajet EN_COURS → TERMINE (auth).
+ * - `PATCH  /trajets/:id/annuler`      — Annuler un trajet PLANIFIE (auth).
+ * - `PATCH  /trajets/:id/position`     — Mettre à jour la position GPS du conducteur (auth).
+ * - `GET    /trajets/:id/live`         — Obtenir la position GPS en temps réel (auth).
+ * - `PATCH  /trajets/:id`              — Modifier les détails d'un trajet PLANIFIE (auth).
+ *
+ * @module routes/trajets.routes
+ */
+
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";

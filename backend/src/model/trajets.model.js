@@ -1,5 +1,45 @@
+/**
+ * @fileoverview Couche d'accès aux données pour les trajets de covoiturage.
+ *
+ * Ce module gère toutes les opérations SQL sur la table `trajets`, incluant
+ * la création, la recherche géographique (algorithme Haversine), et la gestion
+ * du cycle de vie des trajets (démarrer, terminer, annuler, modifier).
+ *
+ * Les opérations de mutation critiques (terminer, annuler, modifier) sont réalisées
+ * dans des transactions avec verrouillage FOR UPDATE pour éviter les conditions de course.
+ *
+ * @module model/trajets.model
+ */
+
 import { pool } from "../DB/db.js";
 
+/**
+ * Insère un nouveau trajet dans la base de données.
+ *
+ * @async
+ * @param {Object}      params                  - Données du trajet.
+ * @param {string}      params.conducteurId     - UUID du conducteur.
+ * @param {string}      params.lieuDepart       - Adresse de départ (texte libre).
+ * @param {string}      params.destination      - Adresse de destination (texte libre).
+ * @param {string}      params.dateHeureDepart  - Date et heure ISO 8601 du départ.
+ * @param {number}      params.placesTotal      - Nombre total de places (1–8).
+ * @param {number|null} [params.departLat]      - Latitude du point de départ.
+ * @param {number|null} [params.departLng]      - Longitude du point de départ.
+ * @param {number|null} [params.destLat]        - Latitude de la destination.
+ * @param {number|null} [params.destLng]        - Longitude de la destination.
+ * @returns {Promise<Object>} Le trajet inséré avec tous ses champs.
+ *
+ * @example
+ * const trajet = await insertTrajet({
+ *   conducteurId: "uuid-123",
+ *   lieuDepart: "Orléans",
+ *   destination: "Collège La Cité",
+ *   dateHeureDepart: "2025-05-01T08:00:00",
+ *   placesTotal: 3,
+ *   departLat: 45.45, departLng: -75.52,
+ *   destLat: 45.42, destLng: -75.69
+ * });
+ */
 export async function insertTrajet({
   conducteurId,
   lieuDepart,
@@ -29,6 +69,30 @@ export async function insertTrajet({
 }
 
 
+/**
+ * Recherche des trajets disponibles par localisation et date (algorithme Haversine).
+ *
+ * Si des coordonnées GPS sont fournies, un score de correspondance est calculé :
+ * - 70 points pour la proximité du départ (dans le rayon défini).
+ * - 30 points pour la proximité de la destination (dans le rayon défini).
+ * Les trajets sans coordonnées GPS ont un score de 0 mais restent inclus.
+ *
+ * Retourne jusqu'à 100 trajets PLANIFIE futurs non pleins,
+ * triés par score décroissant puis par date de départ croissante.
+ *
+ * @async
+ * @param {Object}      params              - Paramètres de recherche.
+ * @param {string}      params.depart       - Texte de départ (recherche ILIKE).
+ * @param {string}      params.destination  - Texte de destination (recherche ILIKE).
+ * @param {string|null} params.date         - Date ISO (filtre optionnel sur le jour).
+ * @param {string}      params.userId       - UUID de l'utilisateur (pour exclure ses propres trajets).
+ * @param {number|null} [params.departLat]  - Latitude GPS du départ.
+ * @param {number|null} [params.departLng]  - Longitude GPS du départ.
+ * @param {number|null} [params.destLat]    - Latitude GPS de la destination.
+ * @param {number|null} [params.destLng]    - Longitude GPS de la destination.
+ * @param {number}      [params.rayonKm=20] - Rayon de tolérance en kilomètres.
+ * @returns {Promise<Object[]>} Tableau de trajets avec `match_score`, conducteur et véhicule.
+ */
 export async function searchTrajets({
   depart, destination, date, userId,
   departLat = null, departLng = null,
@@ -149,8 +213,17 @@ export async function searchTrajets({
 
 
 /**
- * Termine un trajet (seulement conducteur) + notifie les passagers acceptés.
- * Retourne le trajet terminé ou null si pas autorisé / pas trouvable.
+ * Termine un trajet et notifie tous les passagers acceptés (dans une transaction externe).
+ *
+ * Met le statut à TERMINE et insère une notification TRAJET_TERMINE
+ * pour chaque passager avec une réservation ACCEPTEE.
+ *
+ * @async
+ * @param {Object}              params              - Paramètres.
+ * @param {import("pg").PoolClient} params.client   - Client PostgreSQL en transaction.
+ * @param {string}              params.trajetId     - UUID du trajet.
+ * @param {string}              params.conducteurId - UUID du conducteur (vérification de propriété).
+ * @returns {Promise<Object|null>} Trajet terminé avec info conducteur, ou null si non autorisé.
  */
 export async function terminerTrajetEtNotifier({ client, trajetId, conducteurId }) {
   // 1) terminer + récupérer les infos utiles.
@@ -190,6 +263,13 @@ export async function terminerTrajetEtNotifier({ client, trajetId, conducteurId 
   return trajet;
 }
 
+/**
+ * Récupère les trajets d'un conducteur avec le nombre de places réservées (ACCEPTEE).
+ *
+ * @async
+ * @param {string} conducteurId - UUID du conducteur.
+ * @returns {Promise<Object[]>} Trajets du conducteur avec le champ `places_reservees`.
+ */
 export async function getMesTrajetsAvecPlacesReservees(conducteurId) {
   const { rows } = await pool.query(
     `
@@ -207,6 +287,15 @@ export async function getMesTrajetsAvecPlacesReservees(conducteurId) {
   return rows;
 }
 
+/**
+ * Récupère les 5 prochains trajets PLANIFIE (page d'accueil / trajets populaires).
+ *
+ * Inclut les informations du conducteur et de son véhicule.
+ * Triés par date de départ croissante.
+ *
+ * @async
+ * @returns {Promise<Object[]>} Tableau de 5 trajets à venir maximum.
+ */
 export async function getTrajetsPopulaires() {
   const { rows } = await pool.query(
     `
@@ -242,6 +331,17 @@ export async function getTrajetsPopulaires() {
 /**
  * Lock + lecture trajet (utile pour annulation/modif).
  */
+/**
+ * Récupère un trajet par son identifiant avec un verrou FOR UPDATE.
+ *
+ * À utiliser dans une transaction pour prévenir les modifications concurrentes.
+ *
+ * @async
+ * @param {Object}              params          - Paramètres.
+ * @param {import("pg").PoolClient} params.client  - Client PostgreSQL en transaction.
+ * @param {string}              params.trajetId - UUID du trajet.
+ * @returns {Promise<Object|null>} Le trajet verrouillé, ou null si non trouvé.
+ */
 export async function getTrajetByIdForUpdate({ client, trajetId }) {
   const res = await client.query(
     `
@@ -258,6 +358,19 @@ export async function getTrajetByIdForUpdate({ client, trajetId }) {
 /**
  * Annule un trajet par le conducteur (PLANIFIE/EN_COURS)
  * + annule réservations actives et notifie les passagers concernés (1 requête)
+ */
+/**
+ * Annule un trajet et notifie tous les passagers avec une réservation active (dans une transaction externe).
+ *
+ * Annule les réservations EN_ATTENTE et ACCEPTEE, restaure les places disponibles,
+ * insère des notifications TRAJET_ANNULE pour chaque passager.
+ *
+ * @async
+ * @param {Object}              params          - Paramètres.
+ * @param {import("pg").PoolClient} params.client  - Client PostgreSQL en transaction.
+ * @param {string}              params.trajetId - UUID du trajet à annuler.
+ * @returns {Promise<{trajet: Object, reservations_annulees: Object[]}|null>}
+ *   Trajet annulé et liste des réservations annulées, ou null si non trouvé.
  */
 export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
   const upd = await client.query(
@@ -309,6 +422,22 @@ export async function annulerTrajetConducteurEtNotifier({ client, trajetId }) {
 
 /**
  * Modifier trajet et notfier passages accepetes (seulement conducteur + statut PLANIFIE).
+ */
+/**
+ * Modifie les détails d'un trajet PLANIFIE et notifie les passagers concernés (dans une transaction externe).
+ *
+ * Seul le conducteur propriétaire peut modifier. Notifie les passagers ACCEPTEE et EN_ATTENTE
+ * avec une notification TRAJET_MODIFIE.
+ *
+ * @async
+ * @param {Object}              params              - Paramètres.
+ * @param {import("pg").PoolClient} params.client   - Client PostgreSQL en transaction.
+ * @param {string}              params.trajetId     - UUID du trajet.
+ * @param {string}              params.conducteurId - UUID du conducteur (vérification de propriété).
+ * @param {string}              params.lieuDepart   - Nouveau lieu de départ.
+ * @param {string}              params.dest         - Nouvelle destination.
+ * @param {string}              params.dateIso      - Nouvelle date/heure ISO 8601.
+ * @returns {Promise<Object|null>} Trajet modifié, ou null si non autorisé / non trouvé.
  */
 export async function modifierTrajetEtNotifier({ client, trajetId, conducteurId, lieuDepart, dest, dateIso }) {
   // ancien trajet

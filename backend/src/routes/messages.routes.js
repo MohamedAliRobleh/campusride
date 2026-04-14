@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Routes de messagerie privée entre utilisateurs.
+ *
+ * Préfixe : `/messages`
+ *
+ * Le système de messagerie est basé sur des conversations (threads) entre deux utilisateurs.
+ * Une conversation est créée automatiquement si elle n'existe pas encore.
+ * Les messages sont marqués comme lus lors de la lecture de la conversation.
+ *
+ * - `GET  /messages/conversations`                    — Lister mes conversations (auth).
+ * - `POST /messages/conversations`                    — Créer ou récupérer une conversation (auth).
+ * - `GET  /messages/conversations/:id/messages`       — Lire les messages d'une conversation (auth).
+ * - `POST /messages/conversations/:id/messages`       — Envoyer un message (auth).
+ * - `GET  /messages/non-lus`                          — Nombre de messages non lus (auth).
+ *
+ * @module routes/messages.routes
+ */
+
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";

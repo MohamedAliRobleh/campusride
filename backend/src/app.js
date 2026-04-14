@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Configuration principale de l'application Express pour CampusRide.
+ *
+ * Ce module crée et configure l'instance Express :
+ * - Compression des réponses HTTP (gzip).
+ * - En-têtes de sécurité (Helmet).
+ * - CORS avec liste blanche d'origines (localhost en dev, Vercel en prod).
+ * - Parsing JSON des corps de requêtes.
+ * - Serveur de fichiers statiques (`/public` et `/uploads`).
+ * - Montage de tous les routeurs sur leurs préfixes respectifs.
+ * - Endpoint de santé `GET /health` pour maintenir le service Render actif.
+ *
+ * @module app
+ */
+
 import express from "express";
 import compression from "compression";
 import helmet from "helmet";

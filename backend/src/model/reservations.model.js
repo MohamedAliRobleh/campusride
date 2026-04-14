@@ -1,3 +1,27 @@
+/**
+ * @fileoverview Couche d'accès aux données pour les réservations de trajets.
+ *
+ * Toutes les opérations de mutation utilisent des transactions PostgreSQL
+ * pour garantir la cohérence des données (places disponibles, statuts, notifications).
+ *
+ * Codes d'erreur retournés (champ `error`) :
+ * - `TRAJET_NOT_FOUND`        : le trajet n'existe pas.
+ * - `CANNOT_RESERVE_OWN_TRAJET` : le conducteur tente de réserver son propre trajet.
+ * - `TRAJET_NOT_PLANIFIE`     : le trajet n'est pas en statut PLANIFIE.
+ * - `TRAJET_PAST`             : la date de départ est déjà passée.
+ * - `NO_PLACES_AVAILABLE`     : plus aucune place disponible.
+ * - `MAX_PENDING_REACHED`     : le passager a déjà 5 demandes EN_ATTENTE.
+ * - `ALREADY_RESERVED`        : une réservation active existe déjà.
+ * - `RESERVATION_NOT_FOUND`   : la réservation n'existe pas.
+ * - `NOT_OWNER`               : l'utilisateur n'est pas propriétaire de la ressource.
+ * - `NOT_PENDING`             : la réservation n'est pas en statut EN_ATTENTE.
+ * - `ALREADY_CLOSED`          : la réservation est déjà terminée ou annulée.
+ * - `TRAJET_ALREADY_STARTED`  : le trajet est EN_COURS ou TERMINE.
+ * - `CANCELLATION_TOO_LATE`   : annulation à moins de 30 minutes du départ.
+ *
+ * @module model/reservations.model
+ */
+
 import { pool } from "../DB/db.js";
 import { sendPushToUser } from "../utils/pushNotification.js";
 import {
@@ -10,6 +34,24 @@ import {
 const APP_URL = process.env.APP_URL || "https://campusride-delta.vercel.app";
 
 
+/**
+ * Crée une réservation pour un passager sur un trajet (transaction).
+ *
+ * Effectue toutes les validations métier avant d'insérer :
+ * - Trajet existant, PLANIFIE, futur, avec des places disponibles.
+ * - Le passager ne réserve pas son propre trajet.
+ * - Pas plus de 5 demandes EN_ATTENTE simultanées.
+ * - Si une réservation REFUSEE ou ANNULEE existe, elle est réactivée plutôt que dupliquée.
+ * Décrémente `places_dispo` dès la création (avant acceptation).
+ * Notifie le conducteur par notification in-app, push et courriel.
+ *
+ * @async
+ * @param {string} passagerId - UUID du passager.
+ * @param {string} trajetId   - UUID du trajet.
+ * @returns {Promise<{reservation: Object}|{error: string}>}
+ *   Objet `reservation` en cas de succès, ou objet `error` avec un code d'erreur.
+ * @throws {Error} En cas d'erreur SQL inattendue.
+ */
 export async function createReservation(passagerId, trajetId) {
 
   const client = await pool.connect();
@@ -174,7 +216,16 @@ export async function createReservation(passagerId, trajetId) {
   }
 }
 
-// Récupère les réservations associées aux trajets d’un conducteur avec les infos du passager et du trajet
+/**
+ * Récupère toutes les réservations associées aux trajets d’un conducteur.
+ *
+ * Inclut les informations du passager (nom, photo) et du trajet (lieux, date, statut).
+ * Retourne jusqu’à 200 réservations triées par date de demande décroissante.
+ *
+ * @async
+ * @param {string} conducteurId - UUID du conducteur.
+ * @returns {Promise<Object[]>} Tableau de réservations enrichies.
+ */
 export async function listReservationsForConducteur(conducteurId) {
   const { rows } = await pool.query(
     `
@@ -207,7 +258,19 @@ LIMIT 200;
 
   return rows;
 }
-// Accepte une réservation si le conducteur est autorisé, met à jour le statut et notifie le passager
+/**
+ * Accepte une réservation EN_ATTENTE (transaction).
+ *
+ * Vérifie que le conducteur est bien propriétaire du trajet et que la réservation
+ * est en statut EN_ATTENTE. Met à jour le statut à ACCEPTEE et notifie le passager
+ * par notification in-app, push et courriel.
+ *
+ * @async
+ * @param {string} conducteurId   - UUID du conducteur qui accepte.
+ * @param {string} reservationId  - UUID de la réservation à accepter.
+ * @returns {Promise<{reservation: Object, trajet: Object}|{error: string}>}
+ * @throws {Error} En cas d'erreur SQL inattendue.
+ */
 export async function acceptReservation(conducteurId, reservationId) {
 
   const client = await pool.connect();
@@ -335,6 +398,17 @@ export async function acceptReservation(conducteurId, reservationId) {
 }
 
 
+/**
+ * Refuse une réservation EN_ATTENTE (transaction).
+ *
+ * Restaure `places_dispo` du trajet et notifie le passager par push et courriel.
+ *
+ * @async
+ * @param {string} conducteurId   - UUID du conducteur qui refuse.
+ * @param {string} reservationId  - UUID de la réservation à refuser.
+ * @returns {Promise<{reservation: Object}|{error: string}>}
+ * @throws {Error} En cas d'erreur SQL inattendue.
+ */
 export async function refuseReservation(conducteurId, reservationId) {
   const client = await pool.connect();
 
@@ -443,6 +517,13 @@ export async function refuseReservation(conducteurId, reservationId) {
 }
 
 
+/**
+ * Récupère toutes les réservations d'un passager avec les détails du trajet et du conducteur.
+ *
+ * @async
+ * @param {string} passagerId - UUID du passager.
+ * @returns {Promise<Object[]>} Tableau de réservations avec informations du conducteur et du véhicule.
+ */
 export async function getReservationsByPassager(passagerId) {
   const { rows } = await pool.query(
     `
@@ -490,8 +571,23 @@ ORDER BY r.demande_le DESC
 }
 
 /**
- * Annulation par le passager
- * Si la réservation est ACCEPTÉE → on remet +1 place
+ * Annule une réservation à la demande du passager (transaction).
+ *
+ * Conditions d'annulation :
+ * - La réservation doit appartenir au passager.
+ * - Statut non terminal (pas REFUSEE, ANNULEE, TERMINEE).
+ * - Le trajet ne doit pas être EN_COURS ou TERMINE.
+ * - La date de départ ne doit pas être passée.
+ * - L'annulation doit se faire au moins 30 minutes avant le départ.
+ *
+ * Restaure systématiquement `places_dispo` (qu'elle soit EN_ATTENTE ou ACCEPTEE).
+ * Notifie le conducteur par push et courriel.
+ *
+ * @async
+ * @param {string} passagerId    - UUID du passager qui annule.
+ * @param {string} reservationId - UUID de la réservation à annuler.
+ * @returns {Promise<{reservation: Object}|{error: string}>}
+ * @throws {Error} En cas d'erreur SQL inattendue.
  */
 export async function cancelReservation(passagerId, reservationId) {
   const client = await pool.connect();

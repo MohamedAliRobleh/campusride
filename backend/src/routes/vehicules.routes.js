@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Routes de gestion des véhicules des conducteurs.
+ *
+ * Préfixe : `/vehicules`
+ *
+ * Chaque conducteur ne peut enregistrer qu'un seul véhicule.
+ * L'enregistrement d'un véhicule élève automatiquement le rôle de l'utilisateur à CONDUCTEUR.
+ * La suppression annule tous les trajets PLANIFIE et rétrograde le rôle à PASSAGER.
+ *
+ * - `POST   /vehicules/me`       — Enregistrer un véhicule (auth).
+ * - `GET    /vehicules/me`       — Récupérer son véhicule (auth).
+ * - `PATCH  /vehicules/me`       — Modifier son véhicule (auth).
+ * - `DELETE /vehicules/me`       — Supprimer son véhicule (auth).
+ * - `POST   /vehicules/me/photo` — Uploader une photo du véhicule (auth).
+ *
+ * @module routes/vehicules.routes
+ */
+
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { ajouterVehiculeEtMajConducteur, getVehiculeByUserId, updateVehiculeByUserId, supprimerVehiculeEtRevertRole, updateVehiculePhoto } from "../model/vehicules.model.js";

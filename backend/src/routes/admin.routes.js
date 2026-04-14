@@ -1,3 +1,38 @@
+/**
+ * @fileoverview Routes du tableau de bord administrateur.
+ *
+ * Préfixe : `/admin`
+ * Toutes les routes nécessitent les middlewares `requireAuth` + `requireAdmin`.
+ *
+ * Statistiques :
+ * - `GET  /admin/stats`                       — Statistiques globales de la plateforme.
+ *
+ * Gestion des utilisateurs :
+ * - `GET    /admin/users`                     — Lister tous les utilisateurs.
+ * - `PATCH  /admin/users/:id/toggle-actif`    — Activer/Désactiver un compte.
+ * - `PATCH  /admin/users/:id/role`            — Changer le rôle d'un utilisateur.
+ *
+ * Gestion des trajets :
+ * - `GET    /admin/trajets`                   — Lister tous les trajets.
+ * - `PATCH  /admin/trajets/:id/annuler`       — Annuler un trajet.
+ *
+ * Gestion des réservations :
+ * - `GET    /admin/reservations`              — Lister toutes les réservations.
+ *
+ * Gestion des signalements :
+ * - `GET    /admin/signalements`              — Lister tous les signalements.
+ * - `PATCH  /admin/signalements/:id/statut`   — Changer le statut d'un signalement.
+ * - `POST   /admin/signalements/:id/avertir`  — Émettre un avertissement (auto-suspend à 3).
+ * - `PATCH  /admin/signalements/:id/note`     — Ajouter une note admin.
+ *
+ * Blocages :
+ * - `POST   /admin/blocages`                  — Bloquer un utilisateur.
+ * - `DELETE /admin/blocages/:bloque_id`       — Débloquer un utilisateur.
+ * - `GET    /admin/blocages/mes`              — Lister ses blocages.
+ *
+ * @module routes/admin.routes
+ */
+
 import express from "express";
 import { requireAuth, requireAdmin } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";

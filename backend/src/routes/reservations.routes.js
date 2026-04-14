@@ -1,4 +1,20 @@
-// src/routes/reservations.routes.js
+/**
+ * @fileoverview Routes de gestion des réservations de trajets.
+ *
+ * Préfixe : `/reservations`
+ *
+ * Cycle de vie d'une réservation : EN_ATTENTE → ACCEPTEE | REFUSEE → ANNULEE
+ *
+ * - `POST   /reservations`              — Créer une réservation (passager, auth).
+ * - `GET    /reservations`              — Mes réservations (vue passager, auth).
+ * - `GET    /reservations/recues`       — Réservations reçues sur mes trajets (vue conducteur, auth).
+ * - `PATCH  /reservations/:id/accepter` — Accepter une réservation EN_ATTENTE (conducteur, auth).
+ * - `PATCH  /reservations/:id/refuser`  — Refuser une réservation EN_ATTENTE (conducteur, auth).
+ * - `PATCH  /reservations/:id/annuler`  — Annuler sa réservation (passager, auth, délai 30 min).
+ *
+ * @module routes/reservations.routes
+ */
+
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { createReservation } from "../model/reservations.model.js";

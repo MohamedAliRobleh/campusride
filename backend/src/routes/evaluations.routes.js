@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Routes de gestion des évaluations entre utilisateurs.
+ *
+ * Préfixe : `/evaluations`
+ *
+ * Le système d'évaluation est bidirectionnel : le conducteur peut évaluer ses passagers
+ * et les passagers peuvent évaluer le conducteur après chaque trajet.
+ * Une seule évaluation est permise par paire (evaluateur, evalue, trajet).
+ *
+ * - `POST /evaluations`                    — Soumettre une évaluation 1–5 étoiles (auth).
+ * - `GET  /evaluations/conducteur/:id`     — Avis reçus par un conducteur (public).
+ * - `GET  /evaluations/passager/:id`       — Avis reçus par un passager (public).
+ * - `GET  /evaluations/trajet/:id/moi`     — Vérifier si l'utilisateur a déjà évalué pour ce trajet (auth).
+ *
+ * @module routes/evaluations.routes
+ */
+
 import { Router } from "express";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../middlewares/auth.middlewares.js";

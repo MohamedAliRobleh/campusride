@@ -1,3 +1,19 @@
+/**
+ * @fileoverview Routes de gestion des abonnements aux notifications push (Web Push API).
+ *
+ * Préfixe : `/push`
+ *
+ * Ces routes permettent aux clients (navigateurs) de s'inscrire ou se désinscrire
+ * des notifications push. La clé publique VAPID est fournie au frontend pour initier
+ * l'abonnement côté navigateur.
+ *
+ * - `GET    /push/vapid-public-key` — Retourner la clé publique VAPID (public).
+ * - `POST   /push/subscribe`        — Enregistrer un abonnement push (auth).
+ * - `DELETE /push/subscribe`        — Supprimer un abonnement push (auth).
+ *
+ * @module routes/push.routes
+ */
+
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";

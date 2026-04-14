@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Routes de gestion des utilisateurs et de leurs profils.
+ *
+ * Préfixe : `/utilisateurs`
+ *
+ * - `GET    /utilisateurs/me`                 — Profil courant (auth).
+ * - `PATCH  /utilisateurs/me`                 — Modifier téléphone, zones, bio (auth).
+ * - `PATCH  /utilisateurs/me/password`        — Changer le mot de passe (auth).
+ * - `DELETE /utilisateurs/me`                 — Désactiver le compte (soft delete) (auth).
+ * - `GET    /utilisateurs/me/stats`           — Statistiques personnelles (auth).
+ * - `POST   /utilisateurs/me/photo`           — Uploader une photo de profil (auth).
+ * - `GET    /utilisateurs/:id/public`         — Profil public d'un utilisateur (public).
+ * - `PATCH  /utilisateurs/me/mode-conducteur` — Basculer le rôle conducteur/passager (auth).
+ *
+ * @module routes/utilisateurs.routes
+ */
+
 import { Router } from "express";
 import { pool } from "../DB/db.js";
 import bcrypt from "bcryptjs";

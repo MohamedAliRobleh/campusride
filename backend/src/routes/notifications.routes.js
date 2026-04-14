@@ -1,3 +1,19 @@
+/**
+ * @fileoverview Routes de gestion des notifications in-app.
+ *
+ * Préfixe : `/notifications`
+ *
+ * Les notifications sont créées automatiquement par les autres routes lors d'événements
+ * (nouvelle réservation, trajet démarré, message reçu, etc.).
+ * Ce module expose uniquement la lecture et le marquage comme lu.
+ *
+ * - `GET   /notifications`          — Lister les 50 dernières notifications (auth).
+ * - `PATCH /notifications/read-all` — Marquer toutes les notifications comme lues (auth).
+ * - `PATCH /notifications/:id/read` — Marquer une notification spécifique comme lue (auth).
+ *
+ * @module routes/notifications.routes
+ */
+
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";
