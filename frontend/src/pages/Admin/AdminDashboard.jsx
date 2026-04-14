@@ -229,7 +229,9 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("TOUS");
-  const [confirmDeact, setConfirmDeact] = useState(null);
+  const [confirmDeact, setConfirmDeact] = useState(null); // user à désactiver
+  const [motifDeact, setMotifDeact] = useState("");
+  const [detailsDeact, setDetailsDeact] = useState("");
   const [pendingRoles, setPendingRoles] = useState({}); // { [userId]: newRole }
   const [savingRole, setSavingRole] = useState(null);
 
@@ -246,16 +248,33 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+  const MOTIFS_DESACTIVATION = [
+    "Comportement inapproprié envers d'autres utilisateurs",
+    "Non-respect répété des règles de la communauté",
+    "Informations de profil fausses ou trompeuses",
+    "Signalements multiples validés",
+    "Utilisation abusive de la plateforme",
+    "Compte inactif depuis plus de 6 mois",
+    "Demande de l'utilisateur",
+    "Autre (voir précisions)",
+  ];
+
   const handleToggleActif = async (userId, actif) => {
     try {
+      const body = actif
+        ? { motif: motifDeact.trim(), details: detailsDeact.trim() || undefined }
+        : {};
       const res = await fetch(`/admin/users/${userId}/toggle-actif`, {
-        method: "PATCH", headers: { Authorization: `Bearer ${token}` },
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, actif: !actif } : u));
-      showToast(actif ? "Compte désactivé." : "Compte réactivé.");
-    } catch { showToast("Erreur.", "danger"); }
-    finally { setConfirmDeact(null); }
+      showToast(actif ? "Compte désactivé — notification envoyée par courriel." : "Compte réactivé — notification envoyée par courriel.", "success");
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setConfirmDeact(null); setMotifDeact(""); setDetailsDeact(""); }
   };
 
   const handleSaveRole = async (userId) => {
@@ -414,26 +433,71 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
         )}
       </div>
 
-      {/* Modal confirmation désactivation */}
+      {/* Modal désactivation avec motif */}
       {confirmDeact && (
-        <div className="modal d-block" style={{ background: "rgba(0,0,0,.45)", position: "fixed", inset: 0, zIndex: 9999 }}>
-          <div className="modal-dialog modal-dialog-centered modal-sm">
-            <div className="modal-content rounded-4 border-0">
-              <div className="modal-body text-center p-4">
-                <div className="mb-3">
-                  <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                    style={{ width: 56, height: 56, background: "#fff3cd" }}>
-                    <i className="bi bi-exclamation-triangle-fill text-warning" style={{ fontSize: "1.5rem" }} />
+        <div className="modal d-block" style={{ background: "rgba(0,0,0,.5)", position: "fixed", inset: 0, zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 480 }}>
+            <div className="modal-content rounded-4 border-0 shadow-lg">
+              <div style={{ height: 4, background: "linear-gradient(90deg,#dc3545,#e07b39)", borderRadius: "12px 12px 0 0" }} />
+              <div className="modal-body p-4">
+                <div className="d-flex align-items-center gap-3 mb-3">
+                  <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style={{ width: 48, height: 48, background: "rgba(220,53,69,0.1)" }}>
+                    <i className="bi bi-slash-circle-fill text-danger" style={{ fontSize: "1.3rem" }} />
                   </div>
-                  <h6 className="fw-bold mb-1">Désactiver ce compte ?</h6>
-                  <p className="text-muted small mb-0">
-                    <strong>{confirmDeact.prenom} {confirmDeact.nom}</strong> ne pourra plus se connecter.
-                  </p>
+                  <div>
+                    <h6 className="fw-bold mb-0">Désactiver ce compte</h6>
+                    <p className="text-muted small mb-0">
+                      <strong>{confirmDeact.prenom} {confirmDeact.nom}</strong> — {confirmDeact.email}
+                    </p>
+                  </div>
                 </div>
+
+                <div className="alert alert-warning py-2 small mb-3">
+                  <i className="bi bi-envelope me-1" />
+                  L'utilisateur recevra un courriel avec le motif de désactivation.
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label fw-semibold small">Motif de désactivation <span className="text-danger">*</span></label>
+                  <select
+                    className="form-select form-select-sm rounded-3"
+                    value={motifDeact}
+                    onChange={(e) => setMotifDeact(e.target.value)}
+                  >
+                    <option value="">— Choisir un motif —</option>
+                    {MOTIFS_DESACTIVATION.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label className="form-label fw-semibold small">Précisions supplémentaires <span className="text-muted">(optionnel)</span></label>
+                  <textarea
+                    className="form-control form-control-sm rounded-3"
+                    rows={3}
+                    placeholder="Décrivez le contexte ou les incidents spécifiques..."
+                    value={detailsDeact}
+                    onChange={(e) => setDetailsDeact(e.target.value)}
+                    maxLength={500}
+                  />
+                  <div className="text-end text-muted" style={{ fontSize: "0.72rem" }}>{detailsDeact.length}/500</div>
+                </div>
+
                 <div className="d-flex gap-2">
-                  <button className="btn btn-outline-secondary rounded-3 flex-grow-1" onClick={() => setConfirmDeact(null)}>Annuler</button>
-                  <button className="btn btn-danger rounded-3 flex-grow-1 fw-semibold" onClick={() => handleToggleActif(confirmDeact.id, confirmDeact.actif)}>
-                    Désactiver
+                  <button
+                    className="btn btn-outline-secondary rounded-3 flex-grow-1"
+                    onClick={() => { setConfirmDeact(null); setMotifDeact(""); setDetailsDeact(""); }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    className="btn btn-danger rounded-3 flex-grow-1 fw-semibold"
+                    disabled={!motifDeact}
+                    onClick={() => handleToggleActif(confirmDeact.id, confirmDeact.actif)}
+                  >
+                    <i className="bi bi-slash-circle me-2" />Désactiver et notifier
                   </button>
                 </div>
               </div>

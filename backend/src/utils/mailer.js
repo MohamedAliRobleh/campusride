@@ -62,6 +62,91 @@ export async function sendSignalementGraveEmail({ motif, cible_prenom, cible_nom
   });
 }
 
+/**
+ * Notifie un utilisateur que son compte a été désactivé par l'administrateur.
+ *
+ * @async
+ * @param {Object} params           - Paramètres.
+ * @param {string} params.to        - Adresse courriel de l'utilisateur.
+ * @param {string} params.prenom    - Prénom de l'utilisateur.
+ * @param {string} params.motif     - Motif de désactivation choisi par l'admin.
+ * @param {string} [params.details] - Précisions supplémentaires (optionnel).
+ * @returns {Promise<void>}
+ */
+export async function sendCompteDesactiveEmail({ to, prenom, motif, details }) {
+  const appUrl = process.env.APP_URL || "https://campusride-delta.vercel.app";
+  return sendMail({
+    to,
+    subject: "⚠️ Votre compte CampusRide a été désactivé",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
+        <div style="background:linear-gradient(90deg,#dc3545,#e07b39);padding:20px 24px">
+          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide — Compte désactivé</span>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:16px;color:#333">Bonjour <strong>${prenom}</strong>,</p>
+          <p style="color:#555">Nous vous informons que votre compte CampusRide a été <strong>temporairement désactivé</strong> par l'équipe d'administration.</p>
+          <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:4px;padding:16px;margin:20px 0">
+            <p style="margin:0 0 6px 0;font-weight:bold;color:#856404">Motif de désactivation :</p>
+            <p style="margin:0;color:#333">${motif}</p>
+            ${details ? `<p style="margin:8px 0 0 0;color:#555;font-size:0.9rem"><em>${details}</em></p>` : ""}
+          </div>
+          <p style="color:#555">Si vous pensez qu'il s'agit d'une erreur ou si vous souhaitez contester cette décision, vous pouvez contacter l'administrateur directement depuis la page de connexion.</p>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${appUrl}/login" style="background:#198754;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">
+              Contacter l'administrateur
+            </a>
+          </div>
+          <p style="color:#888;font-size:13px">L'équipe CampusRide reste disponible pour toute question.</p>
+        </div>
+        <div style="padding:14px 24px;background:#f0f0f0;font-size:12px;color:#888;text-align:center">
+          Collège La Cité · CampusRide · Ne pas répondre à cet email
+        </div>
+      </div>
+    `,
+  });
+}
+
+/**
+ * Notifie un utilisateur que son compte a été réactivé par l'administrateur.
+ *
+ * @async
+ * @param {Object} params        - Paramètres.
+ * @param {string} params.to     - Adresse courriel de l'utilisateur.
+ * @param {string} params.prenom - Prénom de l'utilisateur.
+ * @returns {Promise<void>}
+ */
+export async function sendCompteReactiveEmail({ to, prenom }) {
+  const appUrl = process.env.APP_URL || "https://campusride-delta.vercel.app";
+  return sendMail({
+    to,
+    subject: "✅ Votre compte CampusRide a été réactivé",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
+        <div style="background:linear-gradient(90deg,#198754,#20c374);padding:20px 24px">
+          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide — Compte réactivé</span>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:16px;color:#333">Bonjour <strong>${prenom}</strong>,</p>
+          <p style="color:#555">Bonne nouvelle ! Votre compte CampusRide a été <strong>réactivé</strong> par l'équipe d'administration.</p>
+          <div style="background:#d1e7dd;border-left:4px solid #198754;border-radius:4px;padding:16px;margin:20px 0">
+            <p style="margin:0;color:#0f5132;font-weight:bold">Vous pouvez maintenant vous reconnecter et utiliser l'application normalement.</p>
+          </div>
+          <p style="color:#555">Nous vous rappelons de respecter les règles de la communauté CampusRide afin de garantir une expérience agréable pour tous.</p>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${appUrl}/login" style="background:linear-gradient(135deg,#198754,#20c374);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">
+              Se connecter
+            </a>
+          </div>
+        </div>
+        <div style="padding:14px 24px;background:#f0f0f0;font-size:12px;color:#888;text-align:center">
+          Collège La Cité · CampusRide · Ne pas répondre à cet email
+        </div>
+      </div>
+    `,
+  });
+}
+
 export async function sendResetPasswordEmail(to, resetLink) {
   return sendMail({
     to,

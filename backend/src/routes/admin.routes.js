@@ -36,6 +36,7 @@
 import express from "express";
 import { requireAuth, requireAdmin } from "../middlewares/auth.middlewares.js";
 import { pool } from "../DB/db.js";
+import { sendCompteDesactiveEmail, sendCompteReactiveEmail } from "../utils/mailer.js";
 
 const router = express.Router();
 
@@ -118,24 +119,55 @@ router.get("/users", requireAuth, requireAdmin, async (req, res) => {
 
 // =====================
 // PATCH /admin/users/:id/toggle-actif — Activer/Désactiver un compte
+// Body (désactivation uniquement) : { motif: string, details?: string }
 // =====================
 router.patch("/users/:id/toggle-actif", requireAuth, requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
+    const { motif, details } = req.body;
 
-    // Interdire de désactiver son propre compte ou un autre admin
+    // Récupérer l'utilisateur cible
     const { rows: target } = await pool.query(
-      `SELECT role FROM utilisateurs WHERE id = $1`, [userId]
+      `SELECT id, prenom, nom, email, role, actif FROM utilisateurs WHERE id = $1`,
+      [userId]
     );
     if (target.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
-    if (target[0].role === "ADMIN") return res.status(403).json({ message: "Impossible de désactiver un compte administrateur." });
-    if (String(userId) === String(req.user.id)) return res.status(403).json({ message: "Vous ne pouvez pas désactiver votre propre compte." });
+    if (target[0].role === "ADMIN") return res.status(403).json({ message: "Impossible de modifier un compte administrateur." });
+    if (String(userId) === String(req.user.id)) return res.status(403).json({ message: "Vous ne pouvez pas modifier votre propre compte." });
+
+    const user = target[0];
+    const estActif = user.actif;
+
+    // Motif obligatoire pour une désactivation
+    if (estActif && !motif?.trim()) {
+      return res.status(400).json({ message: "Un motif est obligatoire pour désactiver un compte." });
+    }
 
     const { rows } = await pool.query(
       `UPDATE utilisateurs SET actif = NOT actif WHERE id = $1 RETURNING id, actif, role`,
       [userId]
     );
-    return res.json(rows[0]);
+
+    const nouvelEtat = rows[0];
+
+    // Envoyer l'email de notification (non bloquant)
+    if (!nouvelEtat.actif) {
+      // Compte vient d'être désactivé
+      sendCompteDesactiveEmail({
+        to: user.email,
+        prenom: user.prenom,
+        motif: motif.trim(),
+        details: details?.trim() || null,
+      }).catch((err) => console.error("[email] Erreur désactivation:", err.message));
+    } else {
+      // Compte vient d'être réactivé
+      sendCompteReactiveEmail({
+        to: user.email,
+        prenom: user.prenom,
+      }).catch((err) => console.error("[email] Erreur réactivation:", err.message));
+    }
+
+    return res.json(nouvelEtat);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });
