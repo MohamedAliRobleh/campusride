@@ -89,6 +89,38 @@ export async function sendResetPasswordEmail(to, resetLink) {
   });
 }
 
+export async function sendContactAdminEmail({ userEmail, prenom, nom, message }) {
+  const adminEmail = process.env.ADMIN_EMAIL || "campusride@lacitec.on.ca";
+  return sendMail({
+    to: adminEmail,
+    subject: "📩 CampusRide — Demande de réactivation de compte",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0">
+        <div style="background:linear-gradient(90deg,#198754,#20c374);padding:20px 24px">
+          <span style="color:#fff;font-size:18px;font-weight:bold">🚗 CampusRide — Demande de réactivation</span>
+        </div>
+        <div style="padding:24px">
+          <p style="color:#333">Un utilisateur dont le compte est désactivé vous contacte :</p>
+          <table style="width:100%;border-collapse:collapse;margin:12px 0">
+            <tr><td style="padding:6px 0;color:#555;font-weight:bold;width:120px">Nom :</td><td style="color:#333">${prenom} ${nom}</td></tr>
+            <tr><td style="padding:6px 0;color:#555;font-weight:bold">Courriel :</td><td style="color:#333">${userEmail}</td></tr>
+          </table>
+          <div style="background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:16px;margin:16px 0">
+            <p style="margin:0;color:#333;font-style:italic">"${message}"</p>
+          </div>
+          <p style="color:#555;font-size:0.9rem">Pour réactiver ce compte, accédez au tableau de bord administrateur :</p>
+          <a href="${process.env.APP_URL || "https://campusride-delta.vercel.app"}/admin" style="display:inline-block;padding:10px 20px;background:linear-gradient(90deg,#198754,#20c374);color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">
+            Tableau de bord Admin
+          </a>
+        </div>
+        <div style="padding:14px 24px;background:#f0f0f0;font-size:12px;color:#888;text-align:center">
+          Collège La Cité · CampusRide · Ne pas répondre à cet email
+        </div>
+      </div>
+    `,
+  });
+}
+
 export async function sendWelcomeEmail(to, prenom) {
   const appUrl = process.env.APP_URL || "https://campusride-delta.vercel.app";
   return sendMail({

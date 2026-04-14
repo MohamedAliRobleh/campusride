@@ -21,6 +21,10 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [accountDisabled, setAccountDisabled] = useState(false);
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,6 +46,11 @@ export default function Login() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
+        if (res.status === 403 && data?.error === "Compte désactivé") {
+          setAccountDisabled(true);
+          setLoading(false);
+          return;
+        }
         setError(data?.error || "Connexion impossible. Vérifiez vos informations.");
         setLoading(false);
         return;
@@ -61,6 +70,26 @@ if (data?.user?.role === "ADMIN") {
       console.error("LOGIN FETCH ERROR:", err);
       setLoading(false);
       setError("Erreur réseau/serveur. Vérifiez que le backend est lancé.");
+    }
+  };
+
+  const handleContactAdmin = async (e) => {
+    e.preventDefault();
+    if (!contactMessage.trim()) return;
+    setContactLoading(true);
+    try {
+      const res = await fetch("/auth/contact-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, message: contactMessage }),
+      });
+      if (res.ok) {
+        setContactSent(true);
+      }
+    } catch {
+      // silencieux
+    } finally {
+      setContactLoading(false);
     }
   };
 
@@ -110,6 +139,51 @@ if (data?.user?.role === "ADMIN") {
                 Le covoiturage pour La Cité
               </p>
             </div>
+            {accountDisabled ? (
+              <div className={`rounded-4 shadow-sm border p-4 ${isDark ? "bg-dark border-secondary" : "bg-white border-warning"}`}>
+                <div style={{ height: 3, background: "linear-gradient(90deg, #dc3545, #fd7e14)", borderRadius: "4px 4px 0 0", margin: "-16px -16px 16px -16px" }} />
+                <div className="text-center mb-3">
+                  <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style={{ width: 56, height: 56, background: "rgba(220,53,69,0.12)" }}>
+                    <i className="bi bi-slash-circle" style={{ color: "#dc3545", fontSize: 24 }} />
+                  </div>
+                  <h5 className="fw-bold mb-1">Compte désactivé</h5>
+                  <p className={`small mb-0 ${isDark ? "text-secondary" : "text-muted"}`}>
+                    Votre compte a été désactivé par l'administrateur. Envoyez un message pour demander la réactivation.
+                  </p>
+                </div>
+
+                {contactSent ? (
+                  <div className="alert alert-success d-flex align-items-center gap-2 py-2 mb-3">
+                    <i className="bi bi-check-circle-fill" />
+                    <span>Message envoyé ! L'administrateur vous contactera par courriel.</span>
+                  </div>
+                ) : (
+                  <form onSubmit={handleContactAdmin} className="d-grid gap-2">
+                    <textarea
+                      className="form-control"
+                      rows={3}
+                      placeholder="Expliquez pourquoi vous souhaitez réactiver votre compte..."
+                      value={contactMessage}
+                      onChange={(e) => setContactMessage(e.target.value)}
+                      required
+                    />
+                    <button type="submit" className="btn btn-danger w-100" disabled={contactLoading || !contactMessage.trim()}>
+                      {contactLoading
+                        ? <><span className="spinner-border spinner-border-sm me-2" />Envoi...</>
+                        : <><i className="bi bi-envelope me-2" />Contacter l'administrateur</>}
+                    </button>
+                  </form>
+                )}
+
+                <button
+                  type="button"
+                  className={`btn btn-link btn-sm p-0 mt-3 w-100 text-center ${isDark ? "text-secondary" : "text-muted"}`}
+                  onClick={() => { setAccountDisabled(false); setContactSent(false); setContactMessage(""); }}
+                >
+                  Retour à la connexion
+                </button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="d-grid gap-3 p-4 rounded-4 shadow-sm border bg-dark bg-opacity-10 border-secondary">
               {error && (
                 <div className="alert alert-danger py-2 mb-0" role="alert">
@@ -190,6 +264,7 @@ if (data?.user?.role === "ADMIN") {
                 {loading ? "Connexion..." : "Se connecter"}
               </button>
             </form>
+            )}
 
             <div className="text-center mt-4">
               <span className={isDark ? "text-secondary" : "text-muted"}>Pas encore de compte ?</span>

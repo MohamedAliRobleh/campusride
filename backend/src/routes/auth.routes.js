@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../DB/db.js";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
-import { sendResetPasswordEmail, sendWelcomeEmail } from "../utils/mailer.js";
+import { sendResetPasswordEmail, sendWelcomeEmail, sendContactAdminEmail } from "../utils/mailer.js";
 import crypto from "crypto";
 
 
@@ -264,5 +264,41 @@ router.post("/reset-password", async (req, res) => {
 
 
 
+
+// POST /auth/contact-admin — Permet à un utilisateur désactivé de contacter l'admin
+router.post("/contact-admin", async (req, res) => {
+  try {
+    const { email, message } = req.body;
+    if (!email || !message?.trim()) {
+      return res.status(400).json({ error: "Email et message obligatoires." });
+    }
+
+    const result = await pool.query(
+      "SELECT prenom, nom, actif FROM utilisateurs WHERE LOWER(email) = $1",
+      [email.toLowerCase().trim()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Compte introuvable." });
+    }
+
+    const user = result.rows[0];
+    if (user.actif) {
+      return res.status(400).json({ error: "Ce compte n'est pas désactivé." });
+    }
+
+    await sendContactAdminEmail({
+      userEmail: email,
+      prenom: user.prenom,
+      nom: user.nom,
+      message: message.trim(),
+    });
+
+    return res.json({ message: "Votre message a été envoyé à l'administrateur." });
+  } catch (err) {
+    console.error("Erreur contact-admin:", err);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+});
 
 export default router;
