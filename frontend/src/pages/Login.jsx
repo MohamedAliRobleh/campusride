@@ -25,6 +25,7 @@ export default function Login() {
   const [contactMessage, setContactMessage] = useState("");
   const [contactLoading, setContactLoading] = useState(false);
   const [contactSent, setContactSent] = useState(false);
+  const [contactError, setContactError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,17 +78,21 @@ if (data?.user?.role === "ADMIN") {
     e.preventDefault();
     if (!contactMessage.trim()) return;
     setContactLoading(true);
+    setContactError("");
     try {
       const res = await fetch("/auth/contact-admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, message: contactMessage }),
       });
+      const data = await res.json().catch(() => null);
       if (res.ok) {
         setContactSent(true);
+      } else {
+        setContactError(data?.error || "Erreur lors de l'envoi. Réessayez.");
       }
     } catch {
-      // silencieux
+      setContactError("Erreur réseau. Vérifiez votre connexion.");
     } finally {
       setContactLoading(false);
     }
@@ -159,6 +164,11 @@ if (data?.user?.role === "ADMIN") {
                   </div>
                 ) : (
                   <form onSubmit={handleContactAdmin} className="d-grid gap-2">
+                    {contactError && (
+                      <div className="alert alert-danger py-2 mb-0 small" role="alert">
+                        <i className="bi bi-exclamation-triangle me-1" />{contactError}
+                      </div>
+                    )}
                     <textarea
                       className="form-control"
                       rows={3}
@@ -178,7 +188,7 @@ if (data?.user?.role === "ADMIN") {
                 <button
                   type="button"
                   className={`btn btn-link btn-sm p-0 mt-3 w-100 text-center ${isDark ? "text-secondary" : "text-muted"}`}
-                  onClick={() => { setAccountDisabled(false); setContactSent(false); setContactMessage(""); }}
+                  onClick={() => { setAccountDisabled(false); setContactSent(false); setContactMessage(""); setContactError(""); }}
                 >
                   Retour à la connexion
                 </button>
