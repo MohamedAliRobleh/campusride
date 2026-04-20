@@ -65,14 +65,9 @@ export default defineConfig({
             },
           },
           {
-            // Cache les appels API GET (trajets, profil, etc.)
-            urlPattern: /^\/.*(trajets|utilisateurs|notifications|evaluations).*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
+            // Routes API avec Authorization — jamais mises en cache
+            urlPattern: /^\/(auth|utilisateurs|trajets|reservations|notifications|vehicules|messages|signalements|evaluations|admin|push|uploads|health)(\/.*)?$/i,
+            handler: 'NetworkOnly',
           },
         ],
       },
