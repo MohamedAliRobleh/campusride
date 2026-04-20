@@ -280,7 +280,7 @@ export default function Post() {
 )}
 
 
-      <Footer />
+      <Footer isDark={isDark} />
     </div>
   );
 }

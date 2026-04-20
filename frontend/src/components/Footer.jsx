@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 
 export default function Footer({ isDark }) {
+  const isLoggedIn = !!localStorage.getItem("token");
   const year = new Date().getFullYear();
 
   const bg = isDark
@@ -48,33 +49,35 @@ export default function Footer({ isDark }) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="col-6 col-md-4">
-            <h6 className="text-white fw-bold mb-3" style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.6 }}>
-              Navigation
-            </h6>
-            <ul className="list-unstyled mb-0">
-              {[
-                { to: "/passager", icon: "bi-house", label: "Tableau de bord" },
-                { to: "/passager/search", icon: "bi-search", label: "Trouver un trajet" },
-                { to: "/passager/mes-reservations", icon: "bi-bookmark", label: "Mes réservations" },
-                { to: "/passager/trajets", icon: "bi-list-ul", label: "Tous les trajets" },
-              ].map(({ to, icon, label }) => (
-                <li key={to} className="mb-2">
-                  <Link
-                    to={to}
-                    className="text-decoration-none d-flex align-items-center gap-2"
-                    style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.85rem", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-                  >
-                    <i className={`bi ${icon}`} style={{ fontSize: "0.75rem", opacity: 0.7 }} />
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Navigation — visible seulement si connecté */}
+          {isLoggedIn && (
+            <div className="col-6 col-md-4">
+              <h6 className="text-white fw-bold mb-3" style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.6 }}>
+                Navigation
+              </h6>
+              <ul className="list-unstyled mb-0">
+                {[
+                  { to: "/passager", icon: "bi-house", label: "Tableau de bord" },
+                  { to: "/passager/search", icon: "bi-search", label: "Trouver un trajet" },
+                  { to: "/passager/mes-reservations", icon: "bi-bookmark", label: "Mes réservations" },
+                  { to: "/passager/trajets", icon: "bi-list-ul", label: "Tous les trajets" },
+                ].map(({ to, icon, label }) => (
+                  <li key={to} className="mb-2">
+                    <Link
+                      to={to}
+                      className="text-decoration-none d-flex align-items-center gap-2"
+                      style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.85rem", transition: "opacity 0.2s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+                    >
+                      <i className={`bi ${icon}`} style={{ fontSize: "0.75rem", opacity: 0.7 }} />
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Info */}
           <div className="col-6 col-md-4">

@@ -30,6 +30,7 @@ import ProfilParametres from "./pages/Profil/ProfilParametres.jsx";
 
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
+import PrivateRoute from "./components/PrivateRoute.jsx";
 import InstallBanner from "./components/InstallBanner.jsx";
 import Disclaimer from "./pages/Disclaimer.jsx";
 
@@ -56,20 +57,17 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/passager" element={<Dashboard />} />
-      <Route path="/passager/search" element={<Search />} />
-      <Route path="/passager/post" element={<Post />} />
-      <Route path="/passager/trajets" element={<Trajets />} />
-      <Route path="/passager/aide" element={<Aide />} />
-      <Route path="/passager/mes-reservations" element={<MesReservations />} />
-      <Route path="/passager/messages" element={<Messages />} />
-      <Route path="/passager/notifications" element={<Notifications />} />
+      <Route path="/passager" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/passager/search" element={<PrivateRoute><Search /></PrivateRoute>} />
+      <Route path="/passager/post" element={<PrivateRoute><Post /></PrivateRoute>} />
+      <Route path="/passager/trajets" element={<PrivateRoute><Trajets /></PrivateRoute>} />
+      <Route path="/passager/aide" element={<PrivateRoute><Aide /></PrivateRoute>} />
+      <Route path="/passager/mes-reservations" element={<PrivateRoute><MesReservations /></PrivateRoute>} />
+      <Route path="/passager/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+      <Route path="/passager/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
 
-    
-      <Route path="/conducteur/mes-trajets" element={<MesTrajets />} />
-      <Route path="/conducteur/reservations-recues" element={<ReservationsRecues />}
-/>
-
+      <Route path="/conducteur/mes-trajets" element={<PrivateRoute><MesTrajets /></PrivateRoute>} />
+      <Route path="/conducteur/reservations-recues" element={<PrivateRoute><ReservationsRecues /></PrivateRoute>} />
 
       <Route path="/disclaimer" element={<Disclaimer />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -83,7 +81,7 @@ export default function App() {
         }
       />
 
-      <Route path="/profil" element={<ProfilLayout />}>
+      <Route path="/profil" element={<PrivateRoute><ProfilLayout /></PrivateRoute>}>
         <Route index element={<ProfilInfos />} />
         <Route path="infos" element={<ProfilInfos />} />
         <Route path="voitures" element={<ProfilVoitures />} />

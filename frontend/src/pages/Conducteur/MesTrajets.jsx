@@ -608,7 +608,7 @@ export default function MesTrajets() {
                 </>
             )}
 
-            <Footer />
+            <Footer isDark={isDark} />
             <EmergencyButton />
         </div>
     );

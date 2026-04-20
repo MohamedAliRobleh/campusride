@@ -168,7 +168,7 @@ export default function Aide() {
             </main>
 
             {/* ================= FOOTER ================= */}
-            <Footer />
+            <Footer isDark={isDark} />
         </div>
     );
 }

@@ -22,8 +22,8 @@ export default function HeaderPrivate({ isDark, onToggleTheme }) {
   try { user = JSON.parse(localStorage.getItem("user") || "null"); } catch { user = null; }
 
   const token    = localStorage.getItem("token");
-  const userName = [user?.prenom, user?.nom].filter(Boolean).join(" ") || "Utilisateur";
-  const initials = ((user?.prenom?.[0] ?? "") + (user?.nom?.[0] ?? "")).toUpperCase() || "U";
+  const userName = [user?.prenom, user?.nom].filter(Boolean).join(" ") || user?.email?.split("@")[0] || "Mon compte";
+  const initials = ((user?.prenom?.[0] ?? "") + (user?.nom?.[0] ?? "")).toUpperCase() || userName[0]?.toUpperCase() || "?";
   const isDriver = user?.role === "CONDUCTEUR";
   const isAdmin  = user?.role === "ADMIN";
   const photoUrl = user?.photo_url || null;
