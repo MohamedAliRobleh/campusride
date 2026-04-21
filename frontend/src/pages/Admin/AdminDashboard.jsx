@@ -230,6 +230,7 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("TOUS");
   const [confirmDeact, setConfirmDeact] = useState(null); // user à désactiver
+  const [confirmDelete, setConfirmDelete] = useState(null); // user à supprimer définitivement
   const [motifDeact, setMotifDeact] = useState("");
   const [detailsDeact, setDetailsDeact] = useState("");
   const [pendingRoles, setPendingRoles] = useState({}); // { [userId]: newRole }
@@ -258,6 +259,20 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
     "Demande de l'utilisateur",
     "Autre (voir précisions)",
   ];
+
+  const handleDeleteUser = async (userId) => {
+    try {
+      const res = await fetch(`/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setConfirmDelete(null);
+      showToast("Compte supprimé définitivement.", "success");
+    } catch { showToast("Erreur réseau.", "danger"); }
+  };
 
   const handleToggleActif = async (userId, actif) => {
     try {
@@ -416,13 +431,23 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
                           <i className="bi bi-shield-lock-fill me-1" />Protégé
                         </span>
                       ) : (
-                        <button
-                          className={`btn btn-sm rounded-3 fw-semibold ${u.actif ? "btn-outline-danger" : "btn-outline-success"}`}
-                          style={{ fontSize: "0.72rem", padding: "3px 10px" }}
-                          onClick={() => u.actif ? setConfirmDeact(u) : handleToggleActif(u.id, u.actif)}
-                        >
-                          {u.actif ? <><i className="bi bi-slash-circle me-1" />Désactiver</> : <><i className="bi bi-check-circle me-1" />Activer</>}
-                        </button>
+                        <div className="d-flex gap-1 flex-wrap">
+                          <button
+                            className={`btn btn-sm rounded-3 fw-semibold ${u.actif ? "btn-outline-danger" : "btn-outline-success"}`}
+                            style={{ fontSize: "0.72rem", padding: "3px 10px" }}
+                            onClick={() => u.actif ? setConfirmDeact(u) : handleToggleActif(u.id, u.actif)}
+                          >
+                            {u.actif ? <><i className="bi bi-slash-circle me-1" />Désactiver</> : <><i className="bi bi-check-circle me-1" />Activer</>}
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-dark rounded-3 fw-semibold"
+                            style={{ fontSize: "0.72rem", padding: "3px 10px" }}
+                            onClick={() => setConfirmDelete(u)}
+                            title="Supprimer définitivement"
+                          >
+                            <i className="bi bi-trash3" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -500,6 +525,42 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
                     <i className="bi bi-slash-circle me-2" />Désactiver et notifier
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal suppression définitive */}
+      {confirmDelete && (
+        <div className="modal d-block" style={{ background: "rgba(0,0,0,.5)", position: "fixed", inset: 0, zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420 }}>
+            <div className="modal-content rounded-4 border-0 shadow-lg p-4">
+              <div className="text-center mb-3">
+                <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                  style={{ width: 56, height: 56, background: "#f8d7da" }}>
+                  <i className="bi bi-trash3-fill text-danger" style={{ fontSize: "1.5rem" }} />
+                </div>
+                <h5 className="fw-bold mb-1">Supprimer définitivement ?</h5>
+                <p className="text-muted small mb-0">
+                  Le compte de <strong>{confirmDelete.prenom} {confirmDelete.nom}</strong> sera
+                  supprimé de façon permanente, ainsi que tous ses trajets, réservations et données associées.
+                  <br /><strong className="text-danger">Cette action est irréversible.</strong>
+                </p>
+              </div>
+              <div className="d-flex gap-2 mt-3">
+                <button
+                  className="btn btn-outline-secondary rounded-3 flex-grow-1"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Annuler
+                </button>
+                <button
+                  className="btn btn-danger rounded-3 flex-grow-1 fw-semibold"
+                  onClick={() => handleDeleteUser(confirmDelete.id)}
+                >
+                  <i className="bi bi-trash3 me-2" />Supprimer définitivement
+                </button>
               </div>
             </div>
           </div>

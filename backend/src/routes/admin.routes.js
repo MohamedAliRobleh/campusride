@@ -11,6 +11,7 @@
  * - `GET    /admin/users`                     — Lister tous les utilisateurs.
  * - `PATCH  /admin/users/:id/toggle-actif`    — Activer/Désactiver un compte.
  * - `PATCH  /admin/users/:id/role`            — Changer le rôle d'un utilisateur.
+ * - `DELETE /admin/users/:id`                 — Supprimer définitivement un compte.
  *
  * Gestion des trajets :
  * - `GET    /admin/trajets`                   — Lister tous les trajets.
@@ -190,6 +191,35 @@ router.patch("/users/:id/role", requireAuth, requireAdmin, async (req, res) => {
     );
     if (rows.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
     return res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
+// DELETE /admin/users/:id — Supprimer définitivement un compte
+// =====================
+router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const adminId = req.user.id;
+
+    if (String(targetId) === String(adminId)) {
+      return res.status(400).json({ message: "Vous ne pouvez pas supprimer votre propre compte." });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT role FROM utilisateurs WHERE id = $1`,
+      [targetId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
+    if (rows[0].role === "ADMIN") {
+      return res.status(403).json({ message: "Impossible de supprimer un compte administrateur." });
+    }
+
+    await pool.query(`DELETE FROM utilisateurs WHERE id = $1`, [targetId]);
+    return res.json({ message: "Compte supprimé définitivement." });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Erreur serveur." });
