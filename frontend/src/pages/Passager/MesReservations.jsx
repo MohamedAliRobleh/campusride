@@ -263,7 +263,8 @@ export default function MesReservations() {
             const dateObj = new Date(r.dateheure_depart);
             const initiales = getInitiales(r.conducteur_prenom, r.conducteur_nom);
             const statutCfg = STATUT_CONFIG[r.statut] ?? { label: r.statut, cls: "bg-secondary-subtle text-secondary", icon: "bi-circle" };
-            const canCancel = r.statut === "EN_ATTENTE" || r.statut === "ACCEPTEE";
+            const canCancel = (r.statut === "EN_ATTENTE" || r.statut === "ACCEPTEE")
+              && r.trajet_statut !== "EN_COURS" && r.trajet_statut !== "TERMINE" && r.trajet_statut !== "ANNULE";
             const voitureLabel = r.marque
               ? `${r.marque} ${r.modele ?? ""}${r.couleur ? ` · ${r.couleur}` : ""}`
               : null;
