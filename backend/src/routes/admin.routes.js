@@ -13,6 +13,10 @@
  * - `PATCH  /admin/users/:id/role`            — Changer le rôle d'un utilisateur.
  * - `DELETE /admin/users/:id`                 — Supprimer définitivement un compte.
  *
+ * Journal d'activités :
+ * - `GET  /admin/activites`                    — Lister toutes les actions admin.
+ * - `POST /admin/activites/:id/restaurer`      — Restaurer une action réversible.
+ *
  * Gestion des trajets :
  * - `GET    /admin/trajets`                   — Lister tous les trajets.
  * - `PATCH  /admin/trajets/:id/annuler`       — Annuler un trajet.
@@ -40,6 +44,21 @@ import { pool } from "../DB/db.js";
 import { sendCompteDesactiveEmail, sendCompteReactiveEmail } from "../utils/mailer.js";
 
 const router = express.Router();
+
+// Helper — enregistrer une action dans le journal
+async function logActivite({ adminId, action, cibleId, cibleNom, details = {}, restaurable = false }) {
+  try {
+    const { rows } = await pool.query(`SELECT prenom, nom FROM utilisateurs WHERE id = $1`, [adminId]);
+    const adminNom = rows.length > 0 ? `${rows[0].prenom} ${rows[0].nom}` : "Admin";
+    await pool.query(
+      `INSERT INTO journal_activites (admin_id, admin_nom, action, cible_id, cible_nom, details, restaurable)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [adminId, adminNom, action, cibleId || null, cibleNom, JSON.stringify(details), restaurable]
+    );
+  } catch (err) {
+    console.error("[journal] Erreur:", err.message);
+  }
+}
 
 // =====================
 // GET /admin/stats — Statistiques globales
@@ -168,6 +187,15 @@ router.patch("/users/:id/toggle-actif", requireAuth, requireAdmin, async (req, r
       }).catch((err) => console.error("[email] Erreur réactivation:", err.message));
     }
 
+    await logActivite({
+      adminId: req.user.id,
+      action: nouvelEtat.actif ? "REACTIVATION" : "DESACTIVATION",
+      cibleId: userId,
+      cibleNom: `${user.prenom} ${user.nom}`,
+      details: { motif: motif?.trim() || null },
+      restaurable: true,
+    });
+
     return res.json(nouvelEtat);
   } catch (err) {
     console.error(err);
@@ -185,11 +213,27 @@ router.patch("/users/:id/role", requireAuth, requireAdmin, async (req, res) => {
     if (!["PASSAGER", "CONDUCTEUR", "ADMIN"].includes(role)) {
       return res.status(400).json({ message: "Rôle invalide." });
     }
+    const { rows: before } = await pool.query(
+      `SELECT prenom, nom, role FROM utilisateurs WHERE id = $1`,
+      [userId]
+    );
+    if (before.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
+    const ancienRole = before[0].role;
+
     const { rows } = await pool.query(
       `UPDATE utilisateurs SET role = $1 WHERE id = $2 RETURNING id, role`,
       [role, userId]
     );
-    if (rows.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
+
+    await logActivite({
+      adminId: req.user.id,
+      action: "CHANGEMENT_ROLE",
+      cibleId: userId,
+      cibleNom: `${before[0].prenom} ${before[0].nom}`,
+      details: { ancien_role: ancienRole, nouveau_role: role },
+      restaurable: true,
+    });
+
     return res.json(rows[0]);
   } catch (err) {
     console.error(err);
@@ -210,7 +254,7 @@ router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `SELECT role FROM utilisateurs WHERE id = $1`,
+      `SELECT role, prenom, nom FROM utilisateurs WHERE id = $1`,
       [targetId]
     );
     if (rows.length === 0) return res.status(404).json({ message: "Utilisateur introuvable." });
@@ -219,6 +263,16 @@ router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     }
 
     await pool.query(`DELETE FROM utilisateurs WHERE id = $1`, [targetId]);
+
+    await logActivite({
+      adminId,
+      action: "SUPPRESSION_COMPTE",
+      cibleId: null,
+      cibleNom: `${rows[0].prenom ?? ""} ${rows[0].nom ?? ""}`.trim() || targetId,
+      details: { ancien_id: targetId, role: rows[0].role },
+      restaurable: false,
+    });
+
     return res.json({ message: "Compte supprimé définitivement." });
   } catch (err) {
     console.error(err);
@@ -301,6 +355,16 @@ router.patch("/trajets/:id/annuler", requireAuth, requireAdmin, async (req, res)
     }
 
     await client.query("COMMIT");
+
+    await logActivite({
+      adminId: req.user.id,
+      action: "ANNULATION_TRAJET",
+      cibleId: trajet.id,
+      cibleNom: `${trajet.lieu_depart} → ${trajet.destination}`,
+      details: { ancien_statut: "PLANIFIE" },
+      restaurable: true,
+    });
+
     return res.json({ id: trajet.id, statut: "ANNULE", reservations_annulees: annuleResa.rowCount });
   } catch (err) {
     await client.query("ROLLBACK");
@@ -535,6 +599,74 @@ router.delete("/blocages/:bloque_id", requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
+// =====================
+// GET /admin/activites — Journal de toutes les actions admin
+// =====================
+router.get("/activites", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM journal_activites ORDER BY cree_le DESC`
+    );
+    return res.json({ activites: rows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+// =====================
+// POST /admin/activites/:id/restaurer — Restaurer une action réversible
+// =====================
+router.post("/activites/:id/restaurer", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM journal_activites WHERE id = $1`,
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: "Activité introuvable." });
+    const act = rows[0];
+    if (!act.restaurable) return res.status(400).json({ message: "Cette action n'est pas restaurable." });
+    if (act.restaure_le) return res.status(400).json({ message: "Action déjà restaurée." });
+
+    const { action, cible_id, details } = act;
+
+    switch (action) {
+      case "DESACTIVATION":
+        await pool.query(`UPDATE utilisateurs SET actif = TRUE WHERE id = $1`, [cible_id]);
+        break;
+      case "REACTIVATION":
+        await pool.query(`UPDATE utilisateurs SET actif = FALSE WHERE id = $1`, [cible_id]);
+        break;
+      case "CHANGEMENT_ROLE":
+        await pool.query(`UPDATE utilisateurs SET role = $1 WHERE id = $2`, [details.ancien_role, cible_id]);
+        break;
+      case "ANNULATION_TRAJET":
+        await pool.query(
+          `UPDATE trajets SET statut = $1, maj_le = NOW() WHERE id = $2`,
+          [details.ancien_statut || "PLANIFIE", cible_id]
+        );
+        break;
+      default:
+        return res.status(400).json({ message: "Action non restaurable." });
+    }
+
+    const { rows: adminRows } = await pool.query(
+      `SELECT prenom, nom FROM utilisateurs WHERE id = $1`, [req.user.id]
+    );
+    const adminNom = adminRows.length > 0 ? `${adminRows[0].prenom} ${adminRows[0].nom}` : "Admin";
+
+    await pool.query(
+      `UPDATE journal_activites SET restaure_le = NOW(), restaure_par = $1 WHERE id = $2`,
+      [adminNom, req.params.id]
+    );
+
+    return res.json({ message: "Action restaurée avec succès." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
   }
 });
 
