@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { id: "trajets",       icon: "bi-map-fill",       label: "Trajets" },
   { id: "reservations",  icon: "bi-bookmark-fill",  label: "Réservations" },
   { id: "signalements",  icon: "bi-flag-fill",      label: "Signalements" },
+  { id: "activites",     icon: "bi-clock-history",  label: "Activités" },
 ];
 
 const SIGNAL_STATUT_CFG = {
@@ -266,12 +267,13 @@ function SectionUtilisateurs({ token, showToast, currentUser }) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+      let data = {};
+      try { data = await res.json(); } catch { /* réponse non-JSON */ }
+      if (!res.ok) { showToast(data.message || `Erreur ${res.status}`, "danger"); return; }
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       setConfirmDelete(null);
       showToast("Compte supprimé définitivement.", "success");
-    } catch { showToast("Erreur réseau.", "danger"); }
+    } catch (err) { showToast("Erreur réseau : " + err.message, "danger"); }
   };
 
   const handleToggleActif = async (userId, actif) => {
@@ -1620,6 +1622,163 @@ function SectionSignalements({ token, showToast }) {
   );
 }
 
+// ─── Section Activités ─────────────────────────────────────────────────────────
+const ACTION_CFG = {
+  DESACTIVATION:   { label: "Désactivation",   icon: "bi-person-slash",      color: "#dc3545", bg: "#f8d7da" },
+  REACTIVATION:    { label: "Réactivation",     icon: "bi-person-check",      color: "#198754", bg: "#d1e7dd" },
+  CHANGEMENT_ROLE: { label: "Changement rôle",  icon: "bi-arrow-left-right",  color: "#0d6efd", bg: "#cfe2ff" },
+  SUPPRESSION_COMPTE: { label: "Suppression",   icon: "bi-trash3",            color: "#6c757d", bg: "#e2e3e5" },
+  ANNULATION_TRAJET:  { label: "Annulation trajet", icon: "bi-x-circle",      color: "#fd7e14", bg: "#fff3cd" },
+};
+
+function SectionActivites({ token, showToast }) {
+  const [activites, setActivites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/admin/activites", { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (res.ok) setActivites(data.activites || []);
+        else showToast(data.message || "Erreur chargement activités.", "danger");
+      } catch { showToast("Erreur réseau.", "danger"); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [token, showToast]);
+
+  const restaurer = async (id) => {
+    setRestoring(id);
+    try {
+      const res = await fetch(`/admin/activites/${id}/restaurer`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActivites((prev) => prev.map((a) => a.id === id ? { ...a, restaure_le: new Date().toISOString(), restaure_par: data.restaure_par || "" } : a));
+        showToast("Action restaurée avec succès.", "success");
+      } else showToast(data.message || "Erreur restauration.", "danger");
+    } catch { showToast("Erreur réseau.", "danger"); }
+    finally { setRestoring(null); }
+  };
+
+  const fmtDate = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+      + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const fmtDetails = (action, details) => {
+    if (!details) return null;
+    if (action === "CHANGEMENT_ROLE") return `${details.ancien_role} → ${details.nouveau_role}`;
+    if (action === "ANNULATION_TRAJET") return `Statut : ${details.ancien_statut || "PLANIFIE"}`;
+    if (action === "SUPPRESSION_COMPTE") return `Rôle : ${details.role || "—"}`;
+    return null;
+  };
+
+  if (loading) return (
+    <div className="d-flex justify-content-center align-items-center" style={{ height: 200 }}>
+      <div className="spinner-border text-success" />
+    </div>
+  );
+
+  return (
+    <>
+      <div className="rounded-4 shadow-sm overflow-hidden bg-white mb-3">
+        <div style={{ height: 3, background: "linear-gradient(90deg,#198754,#20c374)" }} />
+        <div className="px-4 py-3 d-flex align-items-center justify-content-between border-bottom">
+          <div>
+            <div className="fw-bold" style={{ fontSize: "0.9rem" }}>
+              <i className="bi bi-clock-history text-success me-2" />Journal d'activités
+            </div>
+            <div className="text-muted" style={{ fontSize: "0.72rem" }}>{activites.length} action(s) enregistrée(s)</div>
+          </div>
+        </div>
+
+        {activites.length === 0 ? (
+          <div className="text-center py-5 text-muted">
+            <i className="bi bi-clock-history" style={{ fontSize: "2.5rem", opacity: .35 }} />
+            <div className="mt-2" style={{ fontSize: "0.85rem" }}>Aucune activité enregistrée.</div>
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="table table-hover mb-0" style={{ fontSize: "0.82rem", minWidth: 700 }}>
+              <thead style={{ background: "#f8f9fa" }}>
+                <tr>
+                  <th className="px-4 py-2 fw-semibold text-muted border-0" style={{ fontSize: "0.72rem" }}>DATE</th>
+                  <th className="px-3 py-2 fw-semibold text-muted border-0" style={{ fontSize: "0.72rem" }}>ADMIN</th>
+                  <th className="px-3 py-2 fw-semibold text-muted border-0" style={{ fontSize: "0.72rem" }}>ACTION</th>
+                  <th className="px-3 py-2 fw-semibold text-muted border-0" style={{ fontSize: "0.72rem" }}>CIBLE</th>
+                  <th className="px-3 py-2 fw-semibold text-muted border-0" style={{ fontSize: "0.72rem" }}>DÉTAILS</th>
+                  <th className="px-3 py-2 fw-semibold text-muted border-0" style={{ fontSize: "0.72rem" }}>STATUT</th>
+                  <th className="px-3 py-2 border-0" />
+                </tr>
+              </thead>
+              <tbody>
+                {activites.map((a) => {
+                  const cfg = ACTION_CFG[a.action] || { label: a.action, icon: "bi-lightning", color: "#6c757d", bg: "#e2e3e5" };
+                  const isRestored = !!a.restaure_le;
+                  const details = typeof a.details === "string" ? (() => { try { return JSON.parse(a.details); } catch { return {}; } })() : (a.details || {});
+                  const detailStr = fmtDetails(a.action, details);
+                  return (
+                    <tr key={a.id}>
+                      <td className="px-4 py-3 text-muted" style={{ whiteSpace: "nowrap" }}>{fmtDate(a.cree_le)}</td>
+                      <td className="px-3 py-3 fw-semibold">{a.admin_nom}</td>
+                      <td className="px-3 py-3">
+                        <span className="d-inline-flex align-items-center gap-1 rounded-pill px-2 py-1 fw-semibold"
+                          style={{ background: cfg.bg, color: cfg.color, fontSize: "0.72rem" }}>
+                          <i className={`bi ${cfg.icon}`} />
+                          {cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">{a.cible_nom || <span className="text-muted fst-italic">—</span>}</td>
+                      <td className="px-3 py-3 text-muted">{detailStr || "—"}</td>
+                      <td className="px-3 py-3">
+                        {isRestored ? (
+                          <span className="d-inline-flex align-items-center gap-1 rounded-pill px-2 py-1"
+                            style={{ background: "#d1e7dd", color: "#0f5132", fontSize: "0.7rem", fontWeight: 600 }}>
+                            <i className="bi bi-check2-circle" />Restaurée
+                          </span>
+                        ) : a.restaurable ? (
+                          <span className="text-muted" style={{ fontSize: "0.72rem" }}>Restaurable</span>
+                        ) : (
+                          <span className="text-muted fst-italic" style={{ fontSize: "0.72rem" }}>Définitif</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        {a.restaurable && !isRestored && (
+                          <button
+                            className="btn btn-sm rounded-3"
+                            style={{ background: "#d1e7dd", color: "#0f5132", fontSize: "0.72rem", padding: "3px 10px", border: "none" }}
+                            disabled={restoring === a.id}
+                            onClick={() => restaurer(a.id)}
+                          >
+                            {restoring === a.id
+                              ? <span className="spinner-border spinner-border-sm" />
+                              : <><i className="bi bi-arrow-counterclockwise me-1" />Restaurer</>
+                            }
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="px-4 py-2 text-muted text-end" style={{ fontSize: "0.75rem", borderTop: "1px solid #f0f0f0" }}>
+          {activites.length} activité(s)
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Composant principal ────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -1659,6 +1818,7 @@ export default function AdminDashboard() {
     trajets:      { icon: "bi-map-fill",       title: "Trajets",          sub: "Consulter et modérer les trajets" },
     reservations: { icon: "bi-bookmark-fill", title: "Réservations",     sub: "Consulter toutes les réservations" },
     signalements: { icon: "bi-flag-fill",     title: "Signalements",     sub: "Gérer les signalements utilisateurs" },
+    activites:    { icon: "bi-clock-history", title: "Activités",        sub: "Journal de toutes les actions administratives" },
   };
   const current = sectionTitles[activeSection];
 
@@ -1868,6 +2028,9 @@ export default function AdminDashboard() {
           )}
           {activeSection === "signalements" && (
             <SectionSignalements token={token} showToast={showToast} />
+          )}
+          {activeSection === "activites" && (
+            <SectionActivites token={token} showToast={showToast} />
           )}
         </main>
       </div>
