@@ -134,7 +134,7 @@ export default function Post() {
                 <div className="fw-semibold">Aucun véhicule enregistré</div>
                 <div className="small">Vous devez ajouter un véhicule avant de pouvoir publier un trajet.</div>
                 <button className="btn btn-sm btn-warning mt-2 rounded-3 fw-semibold"
-                  onClick={() => navigate("/profil/vehicule")}>
+                  onClick={() => navigate("/profil/voitures")}>
                   <i className="bi bi-plus-circle me-1" />Ajouter un véhicule
                 </button>
               </div>
