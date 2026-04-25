@@ -114,6 +114,8 @@ export default function ProfilLayout() {
                   <Outlet
                     context={{
                       isDark,
+                      theme,
+                      setTheme,
                       user,
                       loadingUser,
                       reloadUser: loadUser

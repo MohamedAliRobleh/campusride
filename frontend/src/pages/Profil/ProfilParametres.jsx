@@ -54,18 +54,12 @@ function ToggleRow({ label, description, checked, onChange, isDark }) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export default function ProfilParametres() {
-  const { isDark, user } = useOutletContext();
+  const { isDark, theme, setTheme, user } = useOutletContext();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   // === Apparence ===
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
-
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.body.dataset.bsTheme = newTheme;
-  };
+  const handleThemeChange = (newTheme) => setTheme(newTheme);
 
   // === Notifications ===
   const [notifReservation, setNotifReservation] = useState(
