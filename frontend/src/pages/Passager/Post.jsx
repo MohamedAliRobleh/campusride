@@ -14,6 +14,14 @@ export default function Post() {
   const isDark = theme === "dark";
 
   const [toastMessage, setToastMessage] = useState(null);
+  const [hasVehicule, setHasVehicule] = useState(null); // null = chargement
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch("/vehicules/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setHasVehicule(r.ok))
+      .catch(() => setHasVehicule(false));
+  }, []);
 
   const [formData, setFormData] = useState({
     depart: "",
@@ -118,6 +126,20 @@ export default function Post() {
               Partagez votre route avec d'autres étudiants du Collège La Cité.
             </p>
           </div>
+
+          {hasVehicule === false && (
+            <div className="alert alert-warning rounded-4 d-flex align-items-center gap-3 mb-4" role="alert">
+              <i className="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0" />
+              <div>
+                <div className="fw-semibold">Aucun véhicule enregistré</div>
+                <div className="small">Vous devez ajouter un véhicule avant de pouvoir publier un trajet.</div>
+                <button className="btn btn-sm btn-warning mt-2 rounded-3 fw-semibold"
+                  onClick={() => navigate("/profil/vehicule")}>
+                  <i className="bi bi-plus-circle me-1" />Ajouter un véhicule
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className={`rounded-4 shadow-sm overflow-hidden ${isDark ? "bg-dark border border-secondary" : "bg-white"}`}>
             <div style={{ height: 3, background: "linear-gradient(90deg, #198754, #20c374)" }} />
