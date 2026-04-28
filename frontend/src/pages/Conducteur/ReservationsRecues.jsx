@@ -111,7 +111,10 @@ export default function ReservationsRecues() {
         const res = await fetch("/reservations/recues", { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         if (!res.ok) { showToast(data.message || "Erreur chargement.", "danger"); return; }
-        setReservations(data.reservations || []);
+        const list = data.reservations || [];
+        setReservations(list);
+        const hasEnCours = list.some((r) => r.statut === "ACCEPTEE" && r.trajet_statut === "EN_COURS");
+        if (hasEnCours) setFilter("TRAITEES");
       } catch { showToast("Erreur serveur.", "danger"); }
       finally { setLoading(false); }
     };
