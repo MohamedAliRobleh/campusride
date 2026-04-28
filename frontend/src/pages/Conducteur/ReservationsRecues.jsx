@@ -94,6 +94,8 @@ export default function ReservationsRecues() {
   const [evalModal, setEvalModal] = useState(null); // { trajetId, passagerId, passagerPrenom }
   const [dejasEvalues, setDejaEvalues] = useState(new Set());
   const [reportPassager, setReportPassager] = useState(null);
+  const [codeInputs, setCodeInputs] = useState({});
+  const [confirmLoading, setConfirmLoading] = useState(null);
 
   const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const isDark = theme === "dark";
@@ -138,6 +140,26 @@ export default function ReservationsRecues() {
       );
       showToast(action === "accepter" ? "Réservation acceptée !" : "Réservation refusée.");
     } catch { showToast("Erreur serveur.", "danger"); }
+  };
+
+  const handleConfirmerEmbarquement = async (reservationId) => {
+    const code = (codeInputs[reservationId] || "").trim();
+    if (code.length !== 4) { showToast("Entrez un code à 4 chiffres.", "danger"); return; }
+    try {
+      setConfirmLoading(reservationId);
+      const res = await fetch(`/reservations/${reservationId}/confirmer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur.", "danger"); return; }
+      setReservations((prev) =>
+        prev.map((r) => r.reservation_id === reservationId ? { ...r, embarquement_confirme: true } : r)
+      );
+      showToast("Embarquement confirmé !");
+    } catch { showToast("Erreur serveur.", "danger"); }
+    finally { setConfirmLoading(null); }
   };
 
   const handleMessage = (passagerId) => {
@@ -293,6 +315,44 @@ export default function ReservationsRecues() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Confirmation embarquement conducteur */}
+                  {r.statut === "ACCEPTEE" && r.trajet_statut === "EN_COURS" && !r.embarquement_confirme && (
+                    <div className={`rounded-3 p-3 mb-3 ${isDark ? "border border-success bg-black bg-opacity-25" : "border border-success bg-success-subtle"}`}>
+                      <div className="fw-semibold mb-2" style={{ fontSize: "0.83rem", color: "#198754" }}>
+                        <i className="bi bi-qr-code-scan me-1" />
+                        Vérifier l'embarquement de {r.prenom}
+                      </div>
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="Code 4 chiffres"
+                          className={`form-control form-control-sm rounded-3 text-center fw-bold ${isDark ? "bg-dark text-light border-secondary" : ""}`}
+                          style={{ maxWidth: 130, letterSpacing: "0.3em", fontSize: "1.1rem" }}
+                          value={codeInputs[r.reservation_id] || ""}
+                          onChange={(e) => setCodeInputs((prev) => ({ ...prev, [r.reservation_id]: e.target.value.replace(/\D/g, "") }))}
+                        />
+                        <button
+                          className="btn btn-success btn-sm rounded-3 fw-semibold"
+                          onClick={() => handleConfirmerEmbarquement(r.reservation_id)}
+                          disabled={confirmLoading === r.reservation_id}
+                        >
+                          {confirmLoading === r.reservation_id
+                            ? <span className="spinner-border spinner-border-sm" />
+                            : <><i className="bi bi-check-circle-fill me-1" />Confirmer</>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {r.statut === "ACCEPTEE" && r.embarquement_confirme && (
+                    <div className="rounded-3 p-2 mb-3 d-flex align-items-center gap-2" style={{ background: "linear-gradient(135deg,#0f4c2a,#198754)" }}>
+                      <i className="bi bi-person-check-fill text-white" style={{ fontSize: "1.1rem" }} />
+                      <span className="text-white fw-semibold" style={{ fontSize: "0.83rem" }}>Embarquement confirmé</span>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap">

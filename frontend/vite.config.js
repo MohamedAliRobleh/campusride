@@ -145,6 +145,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/admin/activites": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
       "/evaluations": {
         target: "http://localhost:5000",
         changeOrigin: true,

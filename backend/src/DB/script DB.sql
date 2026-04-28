@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS trajets (
   maj_le             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_trajets_conducteur
     FOREIGN KEY (conducteur_id) REFERENCES utilisateurs(id)
+    ON DELETE CASCADE
 );
 
 -- ==========================================================
@@ -134,14 +135,17 @@ CREATE TABLE IF NOT EXISTS reservations (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trajet_id    UUID NOT NULL,
   passager_id  UUID NOT NULL,
-  statut       statut_reservation NOT NULL DEFAULT 'EN_ATTENTE',
-  demande_le   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  reponse_le   TIMESTAMPTZ,
+  statut                statut_reservation NOT NULL DEFAULT 'EN_ATTENTE',
+  demande_le            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reponse_le            TIMESTAMPTZ,
+  code_confirmation     VARCHAR(4),
+  embarquement_confirme BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT fk_reservations_trajet
     FOREIGN KEY (trajet_id) REFERENCES trajets(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_reservations_passager
     FOREIGN KEY (passager_id) REFERENCES utilisateurs(id)
+    ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_trajet_passager

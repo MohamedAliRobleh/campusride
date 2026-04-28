@@ -395,6 +395,27 @@ export default function MesReservations() {
                     </span>
                   </div>
 
+                  {/* Code de confirmation embarquement */}
+                  {r.statut === "ACCEPTEE" && r.trajet_statut === "EN_COURS" && r.code_confirmation && !r.embarquement_confirme && (
+                    <div className="rounded-3 p-3 mb-3 text-center" style={{ background: "linear-gradient(135deg,#0f4c2a,#198754)" }}>
+                      <div className="text-white fw-semibold mb-1" style={{ fontSize: "0.78rem", letterSpacing: "0.05em" }}>
+                        <i className="bi bi-qr-code me-1" />VOTRE CODE D'EMBARQUEMENT
+                      </div>
+                      <div className="fw-bold text-white" style={{ fontSize: "2.8rem", letterSpacing: "0.3em", fontFamily: "monospace" }}>
+                        {r.code_confirmation}
+                      </div>
+                      <div className="text-white opacity-75" style={{ fontSize: "0.72rem" }}>
+                        Montrez ce code à votre conducteur
+                      </div>
+                    </div>
+                  )}
+                  {r.statut === "ACCEPTEE" && r.embarquement_confirme && (
+                    <div className="rounded-3 p-2 mb-3 d-flex align-items-center gap-2" style={{ background: "#d1e7dd" }}>
+                      <i className="bi bi-check-circle-fill text-success fs-5" />
+                      <span className="fw-semibold text-success" style={{ fontSize: "0.82rem" }}>Embarquement confirmé par le conducteur</span>
+                    </div>
+                  )}
+
                   {/* Panel suivi en direct passager */}
                   {r.statut === "ACCEPTEE" && r.trajet_statut === "EN_COURS" && (
                     <div className={`rounded-3 p-3 mb-3 ${isDark ? "bg-dark border border-primary border-opacity-25" : "bg-light border border-primary border-opacity-25"}`}>

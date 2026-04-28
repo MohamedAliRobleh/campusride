@@ -235,6 +235,7 @@ export async function listReservationsForConducteur(conducteurId) {
   r.demande_le,
   r.reponse_le,
   r.passager_id,
+  r.embarquement_confirme,
   u.prenom,
   u.nom,
   u.email,
@@ -323,15 +324,16 @@ export async function acceptReservation(conducteurId, reservationId) {
       return { error: "NOT_PENDING" };
     }
 
-    // Mettre réservation ACCEPTÉE
+    // Générer code confirmation 4 chiffres
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+
+    // Mettre réservation ACCEPTÉE + stocker le code
     const reservationRes = await client.query(
-      `
-      UPDATE reservations
-      SET statut = 'ACCEPTEE', reponse_le = NOW()
-      WHERE id = $1
-      RETURNING *;
-      `,
-      [reservationId]
+      `UPDATE reservations
+       SET statut = 'ACCEPTEE', reponse_le = NOW(), code_confirmation = $2
+       WHERE id = $1
+       RETURNING *;`,
+      [reservationId, code]
     );
 
 
@@ -533,6 +535,8 @@ export async function getReservationsByPassager(passagerId) {
   r.statut,
   r.demande_le,
   r.reponse_le,
+  r.code_confirmation,
+  r.embarquement_confirme,
 
   t.lieu_depart,
   t.destination,

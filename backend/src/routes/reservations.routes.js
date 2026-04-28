@@ -17,6 +17,7 @@
 
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middlewares.js";
+import { pool } from "../DB/db.js";
 import { createReservation } from "../model/reservations.model.js";
 import { listReservationsForConducteur } from "../model/reservations.model.js";
 import { acceptReservation } from "../model/reservations.model.js";
@@ -185,5 +186,43 @@ router.patch("/:id/annuler", requireAuth, async (req, res) => {
 });
 
 
+
+// POST /reservations/:id/confirmer — Conducteur vérifie le code passager
+router.post("/:id/confirmer", requireAuth, async (req, res) => {
+  try {
+    const conducteurId = req.user.id;
+    const reservationId = String(req.params.id);
+    const { code } = req.body;
+
+    if (!code) return res.status(400).json({ message: "Code requis." });
+
+    const { rows } = await pool.query(
+      `SELECT r.*, t.conducteur_id, t.statut AS trajet_statut
+       FROM reservations r
+       JOIN trajets t ON t.id = r.trajet_id
+       WHERE r.id = $1`,
+      [reservationId]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ message: "Réservation introuvable." });
+    const r = rows[0];
+
+    if (r.conducteur_id !== conducteurId) return res.status(403).json({ message: "Accès refusé." });
+    if (r.trajet_statut !== "EN_COURS") return res.status(400).json({ message: "Le trajet n'est pas en cours." });
+    if (r.statut !== "ACCEPTEE") return res.status(400).json({ message: "Réservation non acceptée." });
+    if (r.embarquement_confirme) return res.status(409).json({ message: "Embarquement déjà confirmé." });
+    if (r.code_confirmation !== String(code).trim()) return res.status(400).json({ message: "Code incorrect." });
+
+    await pool.query(
+      `UPDATE reservations SET embarquement_confirme = TRUE WHERE id = $1`,
+      [reservationId]
+    );
+
+    return res.json({ message: "Embarquement confirmé ✅" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
 
 export default router;
