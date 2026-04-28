@@ -1,5 +1,5 @@
 // src/pages/Profil/ProfilParametres.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { logout } from "../../utils/auth.js";
 import { usePWAInstall } from "../../hooks/usePWAInstall.js";
