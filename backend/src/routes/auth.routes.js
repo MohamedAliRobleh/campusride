@@ -56,10 +56,10 @@ router.post("/register", async (req, res) => {
     }
 
     // Validation email institutionnel La Cité
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@(lacite\.on\.ca|collegelacite\.ca)$/i;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@(lacitec\.on\.ca|collegelacite\.ca)$/i;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
-        error: "Seuls les courriels @lacite.on.ca ou @collegelacite.ca sont acceptés.",
+        error: "Seuls les courriels @lacitec.on.ca ou @collegelacite.ca sont acceptés.",
       });
     }
 

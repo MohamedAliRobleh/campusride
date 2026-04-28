@@ -17,7 +17,7 @@ export default function Register() {
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [prefix, setPrefix] = useState("");
-  const [domain, setDomain] = useState("@lacite.on.ca");
+  const [domain, setDomain] = useState("@lacitec.on.ca");
   const email = prefix.trim() + domain;
   const [motDePasse, setMotDePasse] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -34,9 +34,9 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
 
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@(lacite\.on\.ca|collegelacite\.ca)$/i;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@(lacitec\.on\.ca|collegelacite\.ca)$/i;
   if (!emailRegex.test(email)) {
-    setError("Seuls les courriels @lacite.on.ca ou @collegelacite.ca sont acceptés.");
+    setError("Seuls les courriels @lacitec.on.ca ou @collegelacite.ca sont acceptés.");
     return;
   }
   if (motDePasse.length < 8) {
@@ -118,7 +118,7 @@ const handleSubmit = async (e) => {
 
               <h1 className="mt-2 mb-1 fw-bold fs-3">Créer un compte</h1>
               <p className={isDark ? "text-secondary mb-0" : "text-muted mb-0"}>
-                @lacite.on.ca ou @collegelacite.ca
+                @lacitec.on.ca ou @collegelacite.ca
               </p>
             </div>
 
@@ -166,11 +166,11 @@ const handleSubmit = async (e) => {
                   />
                   <button
                     type="button"
-                    className={`btn btn-sm fw-semibold px-2 ${domain === "@lacite.on.ca" ? "btn-success" : "btn-outline-success"}`}
-                    onClick={() => setDomain("@lacite.on.ca")}
+                    className={`btn btn-sm fw-semibold px-2 ${domain === "@lacitec.on.ca" ? "btn-success" : "btn-outline-success"}`}
+                    onClick={() => setDomain("@lacitec.on.ca")}
                     style={{ fontSize: "0.75rem" }}
                   >
-                    @lacite.on.ca
+                    @lacitec.on.ca
                   </button>
                   <button
                     type="button"

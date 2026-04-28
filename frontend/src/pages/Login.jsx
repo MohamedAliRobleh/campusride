@@ -14,7 +14,7 @@ export default function Login() {
     document.body.dataset.bsTheme = theme;
   }, [theme]);
   const [prefix, setPrefix] = useState("");
-  const [domain, setDomain] = useState("@lacite.on.ca");
+  const [domain, setDomain] = useState("@lacitec.on.ca");
   const [motDePasse, setMotDePasse] = useState("");
   const email = prefix.trim() + domain;
   const [showPassword, setShowPassword] = useState(false);
@@ -214,11 +214,11 @@ if (data?.user?.role === "ADMIN") {
                   />
                   <button
                     type="button"
-                    className={`btn btn-sm fw-semibold px-2 ${domain === "@lacite.on.ca" ? "btn-success" : "btn-outline-success"}`}
-                    onClick={() => setDomain("@lacite.on.ca")}
+                    className={`btn btn-sm fw-semibold px-2 ${domain === "@lacitec.on.ca" ? "btn-success" : "btn-outline-success"}`}
+                    onClick={() => setDomain("@lacitec.on.ca")}
                     style={{ fontSize: "0.75rem" }}
                   >
-                    @lacite.on.ca
+                    @lacitec.on.ca
                   </button>
                   <button
                     type="button"

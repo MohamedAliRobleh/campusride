@@ -118,7 +118,7 @@ export default function Disclaimer() {
           {/* 5. Vérification des utilisateurs */}
           <Section icon="bi-person-check" title="5. Vérification des utilisateurs">
             <p>
-              L'accès à CampusRide est restreint aux personnes possédant un courriel institutionnel valide du Collège La Cité (<strong>@lacite.on.ca</strong> ou <strong>@collegelacite.ca</strong>). Cependant :
+              L'accès à CampusRide est restreint aux personnes possédant un courriel institutionnel valide du Collège La Cité (<strong>@lacitec.on.ca</strong> ou <strong>@collegelacite.ca</strong>). Cependant :
             </p>
             <Item>CampusRide ne vérifie pas le permis de conduire, le dossier de conduite, ni le casier judiciaire des conducteurs.</Item>
             <Item>CampusRide ne vérifie pas l'état mécanique des véhicules.</Item>
