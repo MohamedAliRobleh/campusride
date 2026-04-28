@@ -118,6 +118,13 @@ export default function ProfilParametres() {
   const [currentRole, setCurrentRole] = useState(user?.role || "PASSAGER");
   const [roleLoading, setRoleLoading] = useState(false);
   const [roleToast, setRoleToast] = useState(null);
+  const [hasVehicule, setHasVehicule] = useState(null);
+
+  useEffect(() => {
+    fetch("/vehicules/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setHasVehicule(r.ok))
+      .catch(() => setHasVehicule(false));
+  }, [token]);
 
   const handleToggleRole = async () => {
     if (currentRole === "ADMIN") return;
@@ -344,41 +351,79 @@ export default function ProfilParametres() {
             </div>
           )}
 
-          <div className="d-flex gap-2">
-            {[
-              { key: "PASSAGER",   icon: "bi-person-fill",    label: "Passager" },
-              { key: "CONDUCTEUR", icon: "bi-car-front-fill", label: "Conducteur" },
-            ].map(({ key, icon, label }) => {
-              const isActive = currentRole === key;
-              return (
+          {/* Cas 1 — Passager sans voiture : bouton unique vers ajout véhicule */}
+          {!hasVehicule && currentRole === "PASSAGER" ? (
+            <>
+              <div className="d-flex gap-2">
                 <button
-                  key={key}
                   type="button"
-                  disabled={roleLoading || isActive}
-                  onClick={isActive ? undefined : handleToggleRole}
+                  disabled
                   className="btn flex-fill rounded-3 d-flex align-items-center justify-content-center gap-2 fw-semibold"
                   style={{
-                    fontSize: "0.88rem",
-                    padding: "10px 16px",
-                    background: isActive ? "#198754" : "transparent",
-                    color: isActive ? "#fff" : isDark ? "#adb5bd" : "#6c757d",
-                    border: isActive ? "2px solid #198754" : `2px solid ${isDark ? "#495057" : "#dee2e6"}`,
-                    transition: "all .15s",
+                    fontSize: "0.88rem", padding: "10px 16px",
+                    background: "#198754", color: "#fff",
+                    border: "2px solid #198754",
                   }}
                 >
-                  <i className={`bi ${icon}`} />
-                  {label}
-                  {isActive && <i className="bi bi-check-lg ms-1" />}
-                  {roleLoading && !isActive && <span className="spinner-border spinner-border-sm" />}
+                  <i className="bi bi-person-fill" />Passager <i className="bi bi-check-lg ms-1" />
                 </button>
-              );
-            })}
-          </div>
-          <p className={`small mt-2 mb-0 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
-            {currentRole === "CONDUCTEUR"
-              ? "Vous pouvez publier des trajets et accepter des passagers."
-              : "Passez en mode conducteur pour proposer des trajets."}
-          </p>
+              </div>
+              <div className={`rounded-3 p-3 mt-3 d-flex align-items-center justify-content-between gap-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}>
+                <div>
+                  <div className="fw-semibold" style={{ fontSize: "0.88rem" }}>Devenir conducteur</div>
+                  <p className={`small mb-0 mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+                    Enregistrez votre véhicule pour proposer des trajets.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-success rounded-3 fw-semibold flex-shrink-0 d-flex align-items-center gap-2"
+                  style={{ fontSize: "0.85rem" }}
+                  onClick={() => navigate("/profil/voitures")}
+                >
+                  <i className="bi bi-car-front-fill" />Devenir conducteur
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Cas 2 — Avec voiture : toggle Passager / Conducteur */
+            <>
+              <div className="d-flex gap-2">
+                {[
+                  { key: "PASSAGER",   icon: "bi-person-fill",    label: "Passager" },
+                  { key: "CONDUCTEUR", icon: "bi-car-front-fill", label: "Conducteur" },
+                ].map(({ key, icon, label }) => {
+                  const isActive = currentRole === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={roleLoading || isActive}
+                      onClick={isActive ? undefined : handleToggleRole}
+                      className="btn flex-fill rounded-3 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                      style={{
+                        fontSize: "0.88rem", padding: "10px 16px",
+                        background: isActive ? "#198754" : "transparent",
+                        color: isActive ? "#fff" : isDark ? "#adb5bd" : "#6c757d",
+                        border: isActive ? "2px solid #198754" : `2px solid ${isDark ? "#495057" : "#dee2e6"}`,
+                        transition: "all .15s",
+                      }}
+                    >
+                      <i className={`bi ${icon}`} />
+                      {label}
+                      {isActive && <i className="bi bi-check-lg ms-1" />}
+                      {roleLoading && !isActive && <span className="spinner-border spinner-border-sm" />}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className={`small mt-2 mb-0 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+                {currentRole === "CONDUCTEUR"
+                  ? "Vous pouvez publier des trajets et accepter des passagers."
+                  : "Passez en mode conducteur pour proposer des trajets."}
+              </p>
+            </>
+          )}
         </Section>
       )}
 
