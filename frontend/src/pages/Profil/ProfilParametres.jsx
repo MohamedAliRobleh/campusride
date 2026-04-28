@@ -120,6 +120,11 @@ export default function ProfilParametres() {
   const [roleToast, setRoleToast] = useState(null);
   const [hasVehicule, setHasVehicule] = useState(null);
 
+  // Sync currentRole quand user charge depuis l'API (arrive de façon asynchrone)
+  useEffect(() => {
+    if (user?.role) setCurrentRole(user.role);
+  }, [user?.role]);
+
   useEffect(() => {
     fetch("/vehicules/me", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => setHasVehicule(r.ok))
