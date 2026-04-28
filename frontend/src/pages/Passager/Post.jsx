@@ -1,9 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import HeaderPrivate from "../../components/HeaderPrivate.jsx";
 import Footer from "../../components/Footer.jsx";
-import PlacesInput from "../../components/PlacesInput.jsx";
 import TripMap from "../../components/TripMap.jsx";
+
+const LACITE = { nom: "Collège La Cité", lat: 45.4510, lng: -75.6414 };
+
+const PLAZAS = [
+  { nom: "Galeries de Hull",            lat: 45.4226, lng: -75.7388 },
+  { nom: "Place Gatineau",              lat: 45.4659, lng: -75.6540 },
+  { nom: "Les Promenades Gatineau",     lat: 45.4714, lng: -75.7191 },
+  { nom: "Carrefour de l'Outaouais",    lat: 45.4789, lng: -75.7371 },
+  { nom: "Place du Centre (Hull)",      lat: 45.4268, lng: -75.7027 },
+  { nom: "Rideau Centre",               lat: 45.4253, lng: -75.6939 },
+  { nom: "Place d'Orléans",             lat: 45.4723, lng: -75.5157 },
+  { nom: "Barrhaven Town Centre",       lat: 45.2767, lng: -75.7564 },
+  { nom: "Merivale Mall",               lat: 45.3530, lng: -75.7435 },
+  { nom: "St. Laurent Shopping Centre", lat: 45.4205, lng: -75.6197 },
+  { nom: "Bayshore Shopping Centre",    lat: 45.3494, lng: -75.8083 },
+  { nom: "Billings Bridge",             lat: 45.3808, lng: -75.6679 },
+  { nom: "Gare Fallowfield",            lat: 45.3192, lng: -75.7647 },
+  { nom: "Aéroport d'Ottawa",           lat: 45.3202, lng: -75.6691 },
+];
 
 export default function Post() {
   const navigate = useNavigate();
@@ -23,20 +41,27 @@ export default function Post() {
       .catch(() => setHasVehicule(false));
   }, []);
 
-  const [formData, setFormData] = useState({
-    depart: "",
-    destination: "",
-    date: "",
-    heure: "",
-    places: 3,
-  });
+  const [formData, setFormData] = useState({ date: "", heure: "", places: 3 });
+  const [direction, setDirection] = useState("vers_cite"); // "vers_cite" | "depuis_cite"
+  const [plazaQuery, setPlazaQuery] = useState("");
+  const [plazaSelected, setPlazaSelected] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const plazaRef = useRef(null);
 
-  // Coordonnées GPS des points de départ et destination
-  const [departCoords, setDepartCoords] = useState(null);  // { lat, lng }
-  const [destCoords,   setDestCoords]   = useState(null);
+  const filteredPlazas = plazaQuery.length > 0
+    ? PLAZAS.filter(p => p.nom.toLowerCase().includes(plazaQuery.toLowerCase()))
+    : PLAZAS;
 
-  // Afficher la carte preview si les deux champs sont remplis
-  const showMapPreview = formData.depart.length > 3 && formData.destination.length > 3;
+  const departPoint  = direction === "vers_cite" ? (plazaSelected || null) : LACITE;
+  const destPoint    = direction === "vers_cite" ? LACITE : (plazaSelected || null);
+  const showMapPreview = !!plazaSelected;
+
+  // Fermer dropdown si clic extérieur
+  useEffect(() => {
+    const handler = (e) => { if (plazaRef.current && !plazaRef.current.contains(e.target)) setShowDropdown(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -77,14 +102,14 @@ export default function Post() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          lieu_depart: formData.depart,
-          destination: formData.destination,
+          lieu_depart:      departPoint?.nom ?? "",
+          destination:      destPoint?.nom   ?? "",
           dateheure_depart: dateHeure,
-          places_total: Number(formData.places),
-          depart_lat: departCoords?.lat ?? null,
-          depart_lng: departCoords?.lng ?? null,
-          dest_lat:   destCoords?.lat   ?? null,
-          dest_lng:   destCoords?.lng   ?? null,
+          places_total:     Number(formData.places),
+          depart_lat:       departPoint?.lat ?? null,
+          depart_lng:       departPoint?.lng ?? null,
+          dest_lat:         destPoint?.lat   ?? null,
+          dest_lng:         destPoint?.lng   ?? null,
         }),
       });
 
@@ -97,10 +122,9 @@ export default function Post() {
       // ✅ Toast succès
       setToastMessage("Trajet publié avec succès 🚗");
 
-      // Reset formulaire
-      setFormData({ depart: "", destination: "", date: "", heure: "", places: 3 });
-      setDepartCoords(null);
-      setDestCoords(null);
+      setFormData({ date: "", heure: "", places: 3 });
+      setPlazaSelected(null);
+      setPlazaQuery("");
 
     } catch (error) {
       setToastMessage(error.message);
@@ -155,6 +179,32 @@ export default function Post() {
                   <span className="fw-bold" style={{ fontSize: "0.88rem" }}>Itinéraire</span>
                 </div>
 
+                {/* Direction toggle */}
+                <div className="d-flex gap-2 mb-3">
+                  {[
+                    { key: "vers_cite",   label: "Je vais au collège",   icon: "bi-arrow-right-circle" },
+                    { key: "depuis_cite", label: "Je pars du collège",   icon: "bi-arrow-left-circle"  },
+                  ].map(({ key, label, icon }) => {
+                    const active = direction === key;
+                    return (
+                      <button key={key} type="button"
+                        onClick={() => { setDirection(key); setPlazaSelected(null); setPlazaQuery(""); }}
+                        className="btn flex-fill rounded-3 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                        style={{
+                          fontSize: "0.82rem", padding: "9px 12px",
+                          background: active ? "#198754" : "transparent",
+                          color: active ? "#fff" : isDark ? "#adb5bd" : "#6c757d",
+                          border: active ? "2px solid #198754" : `2px solid ${isDark ? "#495057" : "#dee2e6"}`,
+                          transition: "all .15s",
+                        }}>
+                        <i className={`bi ${icon}`} />{label}
+                        {active && <i className="bi bi-check-lg ms-1" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Champs départ / destination */}
                 <div className="d-flex gap-3">
                   <div className="d-flex flex-column align-items-center flex-shrink-0" style={{ paddingTop: "0.85rem" }}>
                     <div className="rounded-circle bg-success" style={{ width: 9, height: 9 }} />
@@ -163,29 +213,82 @@ export default function Post() {
                   </div>
 
                   <div className="flex-grow-1 d-flex flex-column gap-2">
+                    {/* Départ */}
                     <div>
                       <label className="form-label" style={{ color: "#198754", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Départ</label>
-                      <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
-                        <PlacesInput
-                          className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
-                          placeholder="Ex: Kanata, Orléans, Gatineau…"
-                          value={formData.depart}
-                          onChange={(val) => setFormData((prev) => ({ ...prev, depart: val }))}
-                          onPlaceSelect={(p) => { setFormData((prev) => ({ ...prev, depart: p.address })); setDepartCoords({ lat: p.lat, lng: p.lng }); }}
-                        />
-                      </div>
+                      {direction === "depuis_cite" ? (
+                        <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.5rem 0.65rem" }}>
+                          <i className="bi bi-building text-success me-2" style={{ fontSize: "0.85rem" }} />
+                          <span className={`${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.88rem" }}>Collège La Cité</span>
+                          <span className="badge bg-success bg-opacity-10 text-success ms-auto" style={{ fontSize: "0.65rem" }}>Fixe</span>
+                        </div>
+                      ) : (
+                        <div ref={plazaRef} className="position-relative">
+                          <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
+                            <i className="bi bi-search text-success me-2" style={{ fontSize: "0.8rem" }} />
+                            <input
+                              className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
+                              placeholder="Tapez votre Plaza (ex: Gatineau, Orléans…)"
+                              value={plazaSelected ? plazaSelected.nom : plazaQuery}
+                              onChange={(e) => { setPlazaQuery(e.target.value); setPlazaSelected(null); setShowDropdown(true); }}
+                              onFocus={() => setShowDropdown(true)}
+                              required
+                            />
+                            {plazaSelected && <i className="bi bi-x text-muted ms-1" style={{ cursor: "pointer" }} onClick={() => { setPlazaSelected(null); setPlazaQuery(""); }} />}
+                          </div>
+                          {showDropdown && filteredPlazas.length > 0 && !plazaSelected && (
+                            <ul className={`position-absolute w-100 rounded-3 shadow border mt-1 py-1 ${isDark ? "bg-dark border-secondary" : "bg-white"}`} style={{ zIndex: 999, maxHeight: 200, overflowY: "auto", listStyle: "none", padding: 0 }}>
+                              {filteredPlazas.map(p => (
+                                <li key={p.nom}
+                                  className={`px-3 py-2 ${isDark ? "text-light" : "text-dark"}`}
+                                  style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                                  onMouseDown={() => { setPlazaSelected(p); setPlazaQuery(""); setShowDropdown(false); }}>
+                                  <i className="bi bi-geo-alt me-2 text-success" />{p.nom}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Destination */}
                     <div>
                       <label className="form-label" style={{ color: "#198754", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Destination</label>
-                      <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
-                        <PlacesInput
-                          className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
-                          placeholder="Ex: Place d'Orléans, Ottawa"
-                          value={formData.destination}
-                          onChange={(val) => setFormData((prev) => ({ ...prev, destination: val }))}
-                          onPlaceSelect={(p) => { setFormData((prev) => ({ ...prev, destination: p.address })); setDestCoords({ lat: p.lat, lng: p.lng }); }}
-                        />
-                      </div>
+                      {direction === "vers_cite" ? (
+                        <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.5rem 0.65rem" }}>
+                          <i className="bi bi-building text-success me-2" style={{ fontSize: "0.85rem" }} />
+                          <span className={`${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.88rem" }}>Collège La Cité</span>
+                          <span className="badge bg-success bg-opacity-10 text-success ms-auto" style={{ fontSize: "0.65rem" }}>Fixe</span>
+                        </div>
+                      ) : (
+                        <div ref={plazaRef} className="position-relative">
+                          <div className={`d-flex align-items-center rounded-3 ${isDark ? "bg-dark border border-secondary" : "bg-light"}`} style={{ padding: "0.35rem 0.65rem" }}>
+                            <i className="bi bi-search text-success me-2" style={{ fontSize: "0.8rem" }} />
+                            <input
+                              className={`flex-grow-1 border-0 bg-transparent p-0 form-control shadow-none ${isDark ? "text-light" : ""}`}
+                              placeholder="Tapez votre Plaza (ex: Gatineau, Orléans…)"
+                              value={plazaSelected ? plazaSelected.nom : plazaQuery}
+                              onChange={(e) => { setPlazaQuery(e.target.value); setPlazaSelected(null); setShowDropdown(true); }}
+                              onFocus={() => setShowDropdown(true)}
+                              required
+                            />
+                            {plazaSelected && <i className="bi bi-x text-muted ms-1" style={{ cursor: "pointer" }} onClick={() => { setPlazaSelected(null); setPlazaQuery(""); }} />}
+                          </div>
+                          {showDropdown && filteredPlazas.length > 0 && !plazaSelected && (
+                            <ul className={`position-absolute w-100 rounded-3 shadow border mt-1 py-1 ${isDark ? "bg-dark border-secondary" : "bg-white"}`} style={{ zIndex: 999, maxHeight: 200, overflowY: "auto", listStyle: "none", padding: 0 }}>
+                              {filteredPlazas.map(p => (
+                                <li key={p.nom}
+                                  className={`px-3 py-2 ${isDark ? "text-light" : "text-dark"}`}
+                                  style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                                  onMouseDown={() => { setPlazaSelected(p); setPlazaQuery(""); setShowDropdown(false); }}>
+                                  <i className="bi bi-geo-alt me-2 text-success" />{p.nom}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -201,10 +304,10 @@ export default function Post() {
                     <span className="fw-bold" style={{ fontSize: "0.88rem" }}>Aperçu du trajet</span>
                   </div>
                   <TripMap
-                    depart={formData.depart}
-                    destination={formData.destination}
-                    fromCoords={departCoords ? { lat: departCoords.lat, lon: departCoords.lng } : null}
-                    toCoords={destCoords ? { lat: destCoords.lat, lon: destCoords.lng } : null}
+                    depart={departPoint?.nom}
+                    destination={destPoint?.nom}
+                    fromCoords={departPoint ? { lat: departPoint.lat, lon: departPoint.lng } : null}
+                    toCoords={destPoint   ? { lat: destPoint.lat,   lon: destPoint.lng   } : null}
                     isDark={isDark}
                     height={220}
                   />
