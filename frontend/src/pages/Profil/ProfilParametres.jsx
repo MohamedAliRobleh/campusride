@@ -344,45 +344,41 @@ export default function ProfilParametres() {
             </div>
           )}
 
-          <div className={`rounded-3 p-3 d-flex align-items-center justify-content-between gap-3 ${isDark ? "bg-dark border border-secondary" : "bg-light border"}`}>
-            <div>
-              <div className="fw-semibold d-flex align-items-center gap-2" style={{ fontSize: "0.92rem" }}>
-                {currentRole === "CONDUCTEUR" ? (
-                  <>
-                    <span className="badge rounded-pill px-2 py-1" style={{ background: "rgba(25,135,84,0.15)", color: "#198754", fontSize: "0.7rem" }}>
-                      <i className="bi bi-car-front-fill me-1" />Conducteur actif
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="badge rounded-pill px-2 py-1 bg-secondary bg-opacity-10 text-secondary" style={{ fontSize: "0.7rem" }}>
-                      <i className="bi bi-person-fill me-1" />Mode passager
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className={`small mb-0 mt-1 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
-                {currentRole === "CONDUCTEUR"
-                  ? "Vous pouvez publier des trajets et accepter des passagers."
-                  : "Activez le mode conducteur pour proposer des trajets."}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className={`btn rounded-3 fw-semibold flex-shrink-0 ${currentRole === "CONDUCTEUR" ? "btn-outline-secondary" : "btn-success"}`}
-              onClick={handleToggleRole}
-              disabled={roleLoading}
-              style={{ fontSize: "0.85rem", minWidth: 130 }}
-            >
-              {roleLoading
-                ? <><span className="spinner-border spinner-border-sm me-2" />Mise à jour...</>
-                : currentRole === "CONDUCTEUR"
-                  ? <><i className="bi bi-person me-2" />Passer passager</>
-                  : <><i className="bi bi-car-front-fill me-2" />Devenir conducteur</>
-              }
-            </button>
+          <div className="d-flex gap-2">
+            {[
+              { key: "PASSAGER",   icon: "bi-person-fill",    label: "Passager" },
+              { key: "CONDUCTEUR", icon: "bi-car-front-fill", label: "Conducteur" },
+            ].map(({ key, icon, label }) => {
+              const isActive = currentRole === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={roleLoading || isActive}
+                  onClick={isActive ? undefined : handleToggleRole}
+                  className="btn flex-fill rounded-3 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                  style={{
+                    fontSize: "0.88rem",
+                    padding: "10px 16px",
+                    background: isActive ? "#198754" : "transparent",
+                    color: isActive ? "#fff" : isDark ? "#adb5bd" : "#6c757d",
+                    border: isActive ? "2px solid #198754" : `2px solid ${isDark ? "#495057" : "#dee2e6"}`,
+                    transition: "all .15s",
+                  }}
+                >
+                  <i className={`bi ${icon}`} />
+                  {label}
+                  {isActive && <i className="bi bi-check-lg ms-1" />}
+                  {roleLoading && !isActive && <span className="spinner-border spinner-border-sm" />}
+                </button>
+              );
+            })}
           </div>
+          <p className={`small mt-2 mb-0 ${isDark ? "text-secondary" : "text-muted"}`} style={{ fontSize: "0.78rem" }}>
+            {currentRole === "CONDUCTEUR"
+              ? "Vous pouvez publier des trajets et accepter des passagers."
+              : "Passez en mode conducteur pour proposer des trajets."}
+          </p>
         </Section>
       )}
 
